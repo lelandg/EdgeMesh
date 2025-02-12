@@ -1,5 +1,5 @@
 __author__ = "Leland Green"
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 __date_created__ = "2025-01-28"
 __last_updated__ = "2025-01-29"
 __email__ = "lelandgreenproductions@gmail.com"
@@ -24,6 +24,7 @@ f"""
 Utilities using opencv for edge detection in a GUI. 
 Features depth map generation via select (implemented) methods via torch, etc. 
 Then 3D mesh generation from the depth map.
+Version 0.3.3 Adds automatic background removal. This only happens when all four corners are a solid color.
 Version 0.3.2 Reopens the 3D viewport when closed, and clears existing geometry before loading a new mesh. 
 Version 0.3.1 Adds full color .PLY export support and a new depth map smoothing method.
               viewport_3d.py now has export_mesh_as_obj and export_mesh_as_stl methods, and a SUPPORTED_EXTENSIONS list.
@@ -103,7 +104,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.processed_image = None
         self.extruded_edges = None
 
-        self.setWindowTitle("3D Mesh Generator")
+        self.setWindowTitle(f"3D Mesh Generator v{__version__}")
         self.setGeometry(100, 100, 800, 500)
 
         # Initialize configuration
@@ -233,6 +234,16 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.resolution_input.textChanged.connect(self.update_resolution)
         depth_hbox.addWidget(self.resolution_input)
 
+        # Add "Dynamic Depth" Checkbox to depth_hbox
+        self.dynamic_depth_checkbox = QCheckBox("Dynamic Depth")
+        self.dynamic_depth_checkbox.setToolTip(
+            "Enable this option to make the mesh dynamically shaped on the back, approximating the front."
+        )
+        self.dynamic_depth_checkbox.stateChanged.connect(self.toggle_dynamic_depth)
+        depth_hbox.addWidget(self.dynamic_depth_checkbox)
+
+        # Initialize the variable to track the checkbox state
+        self.dynamic_depth_enabled = False
 
         # Add Depth Mesh Button
         self.process_button = QPushButton("Depth Mesh")
@@ -253,6 +264,11 @@ class MainWindow_ImageProcessing(QMainWindow):
 
         main_layout.addLayout(bottom_controls)
         self.central_widget.setLayout(main_layout)
+
+    def toggle_dynamic_depth(self, state):
+        """Enable or disable Dynamic Depth based on the checkbox state."""
+        self.dynamic_depth_enabled = state == Qt.Checked
+        print(f"Dynamic Depth Enabled: {self.dynamic_depth_enabled}")
 
     def resizeEvent(self, event):
         """Handles window resize events to adjust label sizes and re-scale images."""
@@ -298,38 +314,26 @@ class MainWindow_ImageProcessing(QMainWindow):
 
     def process_image(self):
         # Get the selected model name
-        value =  self.model_dropdown.currentText()
+        value = self.model_dropdown.currentText()
         model_name = DepthTo3D().model_names[value]
         self.depth_to_3d = DepthTo3D(model_type=model_name)  # Update DepthTo3D instance
 
         # Open file dialog to select an image
         if self.image_path:
             try:
-                images = ImageProcessor().process_image(self.image_path,
-                                                        ["edges", "depth_light", "depth_shading", "depth_combined",
-                                                         "smooth_gaussian", "smooth_bilateral", "smooth_median"], None)
-                                                        #os.path.split(self.image_path)[0])
-
-                # Process the selected image to generate a 3D mesh
                 resolution = int(self.resolution_input.text())
-                self.output_mesh_obj = self.depth_to_3d.process_image(self.image_path, self.smoothing_dropdown.currentText(),
-                                                           (resolution, resolution))
+                smoothing_method = self.smoothing_dropdown.currentText()
+
+                self.output_mesh_obj = self.depth_to_3d.process_image(
+                    self.image_path,
+                    smoothing_method,
+                    (resolution, resolution),
+                    dynamic_depth=self.dynamic_depth_enabled  # Pass the flag here
+                )
                 print(f"3D model generated successfully for model: {value}")
-
-                # dirname, fname = os.path.split(self.image_path)
-                # basename, ext = fname.rsplit(".", 1)
-                #
-                # combined_name = os.path.join(dirname, f"{basename}-depth_combined.png")
-                # self.output_mesh_obj = self.depth_to_3d.process_image(combined_name, self.smoothing_dropdown.currentText(),
-                #                                            (resolution, resolution))
-                # print(f"BONUS! 3D model generated successfully for model: {value}")
-
-                # self.three_d_viewport.set_trimesh(self.output_mesh_obj)
                 self.update_3d_viewport()
             except ValueError as e:
                 print(f"Error: {e}")
-        else:
-            print("No file selected.")
 
     def sharpen_image(self, image):
         """Sharpen the processed image for more prominent edges."""

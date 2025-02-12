@@ -276,64 +276,137 @@ class DepthTo3D:
 
         return mesh
 
-    def create_3d_mesh(self, image, depth, filename, smoothing_method, target_size):
+    def create_3d_mesh(self, image, depth, filename, smoothing_method, target_size, dynamic_depth):
         """
-        Create a 3D solid mesh with texture mapping from the image and depth map.
-        Save the mesh as an OBJ file.
-        :param image: Input image (numpy array).
-        :param depth: Depth map (numpy array).
-        :param filename: Filename for saving the OBJ file.
-        :param smoothing_method: Method used during depth map smoothing. Used for file names.
-        :param target_size: Target size of the depth map used in processing.
-        :return: Path to the saved OBJ file.
+        Create a 3D solid mesh with optional dynamically shaped backs, excluding solid background areas.
         """
-        h, w = depth.shape  # Get the height and width of the depth map
-        y, x = np.meshgrid(np.linspace(0, h - 1, h), np.linspace(0, w - 1, w), indexing='ij')
-        z = depth  # Depth values for the z-axis
+        # Step 1: Background processing
+        h, w, _ = image.shape
+        corners = [image[0, 0], image[0, w - 1], image[h - 1, 0], image[h - 1, w - 1]]
+        tolerance = 10
+        avg_color = np.mean(corners, axis=0)
+        if all(np.all(np.abs(corner - avg_color) < tolerance) for corner in corners):
+            background_color = avg_color.astype(np.uint8)
+        else:
+            background_color = None
 
-        # Project into 3D space
+        if background_color is not None:
+            mask = cv2.inRange(image, background_color - tolerance, background_color + tolerance)
+            mask_resized = cv2.resize(mask, (target_size[1], target_size[0]), interpolation=cv2.INTER_NEAREST)
+            mask_resized = cv2.bitwise_not(mask_resized)
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+            mask_resized = cv2.dilate(mask_resized, kernel, iterations=2)
+        else:
+            mask_resized = np.ones(target_size, dtype=np.uint8) * 255
+
+        depth[mask_resized == 0] = 0
+        image = cv2.resize(image, (target_size[1], target_size[0]), interpolation=cv2.INTER_LINEAR)
+        image[mask_resized == 0] = 0
+
+        # Step 2: Create 3D vertices
+        h, w = target_size
+        y, x = np.meshgrid(np.linspace(0, h - 1, h), np.linspace(0, w - 1, w), indexing="ij")
+        z = depth
         vertices = np.stack([x, y, z], axis=-1).reshape(-1, 3)
+        valid_mask = z.reshape(-1) != 0
+        valid_vertices = vertices[valid_mask]
 
-        # Create the mesh faces
+        # Step 3: Re-map faces
+        index_map = -np.ones(vertices.shape[0], dtype=int)
+        index_map[valid_mask] = np.arange(len(valid_vertices))
+
         faces = []
         for i in range(h - 1):
             for j in range(w - 1):
                 idx = i * w + j
-                faces.append([idx, idx + 1, idx + w])
-                faces.append([idx + 1, idx + w + 1, idx + w])
+                if depth[i, j] != 0 and depth[i, j + 1] != 0 and depth[i + 1, j] != 0:
+                    remapped = [index_map[idx], index_map[idx + 1], index_map[idx + w]]
+                    if all(idx >= 0 for idx in remapped):
+                        faces.append(remapped)
+                if depth[i + 1, j] != 0 and depth[i, j + 1] != 0 and depth[i + 1, j + 1] != 0:
+                    remapped = [index_map[idx + 1], index_map[idx + w + 1], index_map[idx + w]]
+                    if all(idx >= 0 for idx in remapped):
+                        faces.append(remapped)
         faces = np.array(faces)
 
-        # Rescale the original image to match the depth map's resolution
-        resized_image = cv2.resize(image, (w, h), interpolation=cv2.INTER_LINEAR)
+        # Flatten the image to apply vertex_colors
+        colors = image.reshape(-1, 3)
+        valid_colors = colors[valid_mask]
 
-        # Correctly convert BGR to RGB
-        resized_image = cv2.cvtColor(resized_image, cv2.COLOR_BGR2RGB)
+        # Create the mesh
+        mesh = self.flip_mesh(trimesh.Trimesh(vertices=valid_vertices, faces=faces, vertex_colors=valid_colors))
 
-        # Flatten the resized image to map colors to vertices
-        colors = resized_image.reshape(-1, 3)  # RGB color for each vertex
+        if dynamic_depth:
+            flat_back_depth = np.median(z[z != 0]) - np.std(z[z != 0])
+            solid_mesh = self.solidify_mesh_with_flat_back(mesh, flat_back_depth=flat_back_depth)
+        else:
+            solid_mesh = self.solidify_mesh_with_flat_back(mesh)
 
-        # Normalize RGB values to [0, 255] integers, required by Trimesh or the export format
-        colors = np.clip(colors, 0, 255).astype(np.uint8)
+        output_ply = f"{os.path.splitext(filename)[0]}-{self.model_type}_R{target_size[0]},{target_size[1]}_{smoothing_method}.ply"
+        solid_mesh.export(output_ply)
+        print(f"3D mesh saved to {output_ply}")
 
-        # Create a textured trimesh object with vertex colors
-        mesh = self.flip_mesh(trimesh.Trimesh(vertices=vertices, faces=faces, vertex_colors=colors))
+        return output_ply
 
-        # Solidify the mesh to make it 3D (optional)
-        solid_mesh = self.solidify_mesh_with_flat_back(mesh)
+    # def create_3d_mesh(self, image, depth, filename, smoothing_method, target_size):
+    #     """
+    #     Create a 3D solid mesh with texture mapping from the image and depth map.
+    #     Save the mesh as an OBJ file.
+    #     :param image: Input image (numpy array).
+    #     :param depth: Depth map (numpy array).
+    #     :param filename: Filename for saving the OBJ file.
+    #     :param smoothing_method: Method used during depth map smoothing. Used for file names.
+    #     :param target_size: Target size of the depth map used in processing.
+    #     :return: Path to the saved OBJ file.
+    #     """
+    #     h, w = depth.shape  # Get the height and width of the depth map
+    #     y, x = np.meshgrid(np.linspace(0, h - 1, h), np.linspace(0, w - 1, w), indexing='ij')
+    #     z = depth  # Depth values for the z-axis
+    #
+    #     # Project into 3D space
+    #     vertices = np.stack([x, y, z], axis=-1).reshape(-1, 3)
+    #
+    #     # Create the mesh faces
+    #     faces = []
+    #     for i in range(h - 1):
+    #         for j in range(w - 1):
+    #             idx = i * w + j
+    #             faces.append([idx, idx + 1, idx + w])
+    #             faces.append([idx + 1, idx + w + 1, idx + w])
+    #     faces = np.array(faces)
+    #
+    #     # Rescale the original image to match the depth map's resolution
+    #     resized_image = cv2.resize(image, (w, h), interpolation=cv2.INTER_LINEAR)
+    #
+    #     # Correctly convert BGR to RGB
+    #     resized_image = cv2.cvtColor(resized_image, cv2.COLOR_BGR2RGB)
+    #
+    #     # Flatten the resized image to map colors to vertices
+    #     colors = resized_image.reshape(-1, 3)  # RGB color for each vertex
+    #
+    #     # Normalize RGB values to [0, 255] integers, required by Trimesh or the export format
+    #     colors = np.clip(colors, 0, 255).astype(np.uint8)
+    #
+    #     # Create a textured trimesh object with vertex colors
+    #     mesh = self.flip_mesh(trimesh.Trimesh(vertices=vertices, faces=faces, vertex_colors=colors))
+    #
+    #     # Solidify the mesh to make it 3D (optional)
+    #     solid_mesh = self.solidify_mesh_with_flat_back(mesh)
+    #
+    #     # Save the textured mesh
+    #     output_obj = f"{os.path.splitext(filename)[0]}-{self.model_type}_R{target_size[0]},{target_size[1]}_{smoothing_method}_color.ply"
+    #     solid_mesh.export(output_obj)
+    #     print(f"Textured 3D mesh saved to {output_obj}")
+    #
+    #     return output_obj
 
-        # Save the textured mesh
-        output_obj = f"{os.path.splitext(filename)[0]}-{self.model_type}_R{target_size[0]},{target_size[1]}_{smoothing_method}_color.ply"
-        solid_mesh.export(output_obj)
-        print(f"Textured 3D mesh saved to {output_obj}")
-
-        return output_obj
-
-    def process_image(self, image_path, smoothing_method="anisotropic", target_size=(500, 500)):
+    def process_image(self, image_path, smoothing_method="anisotropic", target_size=(500, 500), dynamic_depth=False):
         """
-        Process the input image to estimate depth, project into 3D space, and save as an OBJ file.
+        Process the input image to estimate depth, project into 3D space, and save as a PLY file.
         :param image_path: Path to the input image.
-        :param smoothing_method: Method for depth map smoothing. "gaussian", "bilateral", "median", "anisotropic"
-                                (default: "anisotropic").
+        :param smoothing_method: Depth map smoothing method.
+        :param target_size: Target resolution of the depth map.
+        :param dynamic_depth: If True, adjusts the back of the mesh dynamically.
         """
         # Load the image
         image = cv2.imread(image_path)
@@ -341,33 +414,19 @@ class DepthTo3D:
         if image is None:
             raise ValueError(f"Image not found: {image_path}")
 
-        print(f"Processing image: {image_path}...")
+        print(f"Processing image: {image_path} with Dynamic Depth = {dynamic_depth}...")
 
         # Estimate depth
         depth = self.estimate_depth(image, target_size=target_size)
 
-        # Apply depth smoothing (with error handling)
+        # Apply depth smoothing
         try:
-            if hasattr(smoothing_depth_map_utils, 'SmoothingDepthMapUtils'):
-                smoothing_utils = smoothing_depth_map_utils.SmoothingDepthMapUtils()
-                if hasattr(smoothing_utils, 'apply_smoothing'):
-                    #
-                    smoothed_depth = smoothing_utils.apply_smoothing(depth, method=smoothing_method)
-                    # Ensure the returned depth is in the expected format (e.g., NumPy array)
-                    if isinstance(smoothed_depth, np.ndarray) and smoothed_depth.shape == depth.shape:
-                        depth = smoothed_depth  # Use the smoothed depth
-                    else:
-                        print("Warning: Smoothing did not return a valid depth map. Proceeding without smoothing.")
-                else:
-                    print("Warning: 'apply_smoothing' method is unavailable in SmoothingDepthMapUtils.")
-            else:
-                print("Warning: 'SmoothingDepthMapUtils' class is unavailable in smoothing_depth_map_utils.")
+            depth = smoothing_depth_map_utils.SmoothingDepthMapUtils().apply_smoothing(depth, method=smoothing_method)
         except Exception as e:
-            print(f"Error during depth smoothing: {e}. Proceeding without smoothing.")
+            print(f"Warning: Could not smooth depth. Proceeding with raw depth. {e}")
 
         # Generate and save 3D mesh
-        # self.solid_mesh = self.create_3d_mesh(image, depth, image_path)
-        return self.create_3d_mesh(image, depth, image_path, smoothing_method=smoothing_method, target_size=target_size)
+        return self.create_3d_mesh(image, depth, image_path, smoothing_method, target_size, dynamic_depth)
 
 if __name__ == "__main__":
     # Command-line argument parsing
