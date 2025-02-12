@@ -4,10 +4,13 @@ import os
 import open3d as o3d
 
 class ThreeDViewport:
-    def __init__(self, initial_mesh_file=None):
+    def __init__(self, initial_mesh_file=None, background_color=None):
         """
         Initialize the 3D viewport using Open3D with default parameters
         for camera movement, rotation, and mesh rendering.
+        :param initial_mesh_file: Optional initial mesh file to load and display.
+        :param background_color: Background color for the viewport as a list [R, G, B].
+                                 Uses dark gray [0.2, 0.2, 0.2] if None.
         """
         self.viewer = o3d.visualization.VisualizerWithKeyCallback()
         title = f"3D Viewport - Open3D v{o3d.__version__} - Press 'H' for help - {initial_mesh_file}"
@@ -18,10 +21,35 @@ class ThreeDViewport:
         self.pan_x = 0.0  # Pan translation on x-axis
         self.pan_y = 0.0  # Pan translation on y-axis
 
+        # Set the background color
+        if background_color is None:
+            background_color = [0.2, 0.2, 0.2]  # Dark gray
+        self.background_color = [x / 255.0 for x in background_color]
+        self.viewer.get_render_option().background_color = self.background_color
+
         # Register interaction callbacks
         self._setup_key_callbacks()
         if initial_mesh_file:
             self.load_mesh(initial_mesh_file)
+
+    # def __init__(self, initial_mesh_file=None):
+    #     """
+    #     Initialize the 3D viewport using Open3D with default parameters
+    #     for camera movement, rotation, and mesh rendering.
+    #     """
+    #     self.viewer = o3d.visualization.VisualizerWithKeyCallback()
+    #     title = f"3D Viewport - Open3D v{o3d.__version__} - Press 'H' for help - {initial_mesh_file}"
+    #     self.viewer.create_window(title, width=800, height=600, left=800, top=50)
+    #
+    #     self.mesh = None  # Placeholder for the loaded 3D mesh
+    #     self.zoom_factor = 1.0  # Default zoom factor
+    #     self.pan_x = 0.0  # Pan translation on x-axis
+    #     self.pan_y = 0.0  # Pan translation on y-axis
+    #
+    #     # Register interaction callbacks
+    #     self._setup_key_callbacks()
+    #     if initial_mesh_file:
+    #         self.load_mesh(initial_mesh_file)
 
     def _setup_key_callbacks(self):
         """
@@ -70,6 +98,8 @@ class ThreeDViewport:
             # Add the new mesh for rendering
             self.viewer.add_geometry(self.mesh)
             self._center_mesh_in_view()
+            self.viewer.get_render_option().background_color = self.background_color
+
             print(f"Mesh loaded: {mesh_file}")
         except Exception as e:
             print(f"Error loading mesh: {e}")

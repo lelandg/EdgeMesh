@@ -1,14 +1,15 @@
 import argparse
 import os
-import numpy as np
 import cv2
+import numpy as np
 import torch
-from torchvision.transforms import Compose, ToTensor, Normalize
-from PIL import Image
 import trimesh
+from PIL import Image
+from torchvision.transforms import Compose, ToTensor, Normalize
 from transformers import AutoImageProcessor, AutoModelForDepthEstimation
+
 import smoothing_depth_map_utils
-import subprocess
+
 
 class DepthTo3D:
     def __init__(self, model_type="dpt"):
@@ -285,13 +286,14 @@ class DepthTo3D:
         corners = [image[0, 0], image[0, w - 1], image[h - 1, 0], image[h - 1, w - 1]]
         tolerance = 10
         avg_color = np.mean(corners, axis=0)
+
+        background_color = [2, 2, 2]  # Default background color (dark gray)
+
         if all(np.all(np.abs(corner - avg_color) < tolerance) for corner in corners):
-            background_color = avg_color.astype(np.uint8)
-        else:
-            background_color = None
+            background_color = avg_color.astype(np.uint8).tolist()  # Convert to list for passing to viewport
 
         if background_color is not None:
-            mask = cv2.inRange(image, background_color - tolerance, background_color + tolerance)
+            mask = cv2.inRange(image, avg_color - tolerance, avg_color + tolerance)
             mask_resized = cv2.resize(mask, (target_size[1], target_size[0]), interpolation=cv2.INTER_NEAREST)
             mask_resized = cv2.bitwise_not(mask_resized)
             kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
@@ -346,7 +348,7 @@ class DepthTo3D:
         solid_mesh.export(output_ply)
         print(f"3D mesh saved to {output_ply}")
 
-        return output_ply
+        return output_ply, background_color
 
     # def create_3d_mesh(self, image, depth, filename, smoothing_method, target_size):
     #     """

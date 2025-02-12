@@ -10,27 +10,29 @@ from depth_to_3d import DepthTo3D
 from image_processor import ImageProcessor
 from mesh_generator import MeshGenerator
 from viewport_3d import ThreeDViewport
+from edge_detection import detect_edges
 
 visualize_clustering = False
 visualize_depth = False
 visualize_partitioning = False
 visualize_edges = False
 
-from edge_detection import detect_edges
-
 # At least early versions. Branch, clone, copy, download when ready.
 # Just do not mutilate. If you must, always use your own bytes for that. :)
 f"""
 Utilities using opencv for edge detection in a GUI. 
-Features depth map generation via select (implemented) methods via torch, etc. 
+Also features depth map generation via select (implemented) methods via torch, etc. 
 Then 3D mesh generation from the depth map.
+Version 0.3.4 Adds background color as background color for 3D viewport. For more expected user experience.
+              Note this background color is not saved in the exported mesh. It's simply carried over from
+              the original image to the Open3D viewport.
 Version 0.3.3 Adds automatic background removal. This only happens when all four corners are a solid color.
 Version 0.3.2 Reopens the 3D viewport when closed, and clears existing geometry before loading a new mesh. 
 Version 0.3.1 Adds full color .PLY export support and a new depth map smoothing method.
               viewport_3d.py now has export_mesh_as_obj and export_mesh_as_stl methods, and a SUPPORTED_EXTENSIONS list.
-                              It takes a list of mesh files as arguments and opens a viewport for each valid file. 
-                              (One at a time.) Be careful with many files! *Especially* if they're large. 
-                              Large files take a few seconds to minutes to load, depending on your system specs.
+                             It takes a list of mesh files as arguments and opens a viewport for each valid file. 
+                             (One at a time.) Be careful with many files! *Especially* if they're large. 
+                             Large files take a few seconds to minutes to load, depending on your system specs.
               Fixes 3D viewport update issue. (Now controlled by mouse.)
 Version 0.3.0 adds depth map smoothing options and anisotropic diffusion.
 Version 0.2.0 adds depth map generation from shading and light cues.
@@ -97,6 +99,7 @@ def initialize_config():
 class MainWindow_ImageProcessing(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.background_color = [0.3, 0.3, 0.3]  # Default background color = dark gray
         self.three_d_viewport = None
         self.original_pixmap = None
         self.edge_thickness = 2  # Default line thickness
@@ -313,27 +316,26 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.selected_label.setText(f"Selected: {text}")
 
     def process_image(self):
-        # Get the selected model name
-        value = self.model_dropdown.currentText()
-        model_name = DepthTo3D().model_names[value]
-        self.depth_to_3d = DepthTo3D(model_type=model_name)  # Update DepthTo3D instance
+        if not self.image_path:
+            self.show_error("Please load an image first!")
+            return
 
-        # Open file dialog to select an image
-        if self.image_path:
-            try:
-                resolution = int(self.resolution_input.text())
-                smoothing_method = self.smoothing_dropdown.currentText()
+        try:
+            resolution = int(self.resolution_input.text())
+            smoothing_method = self.smoothing_dropdown.currentText()
+            model_name = DepthTo3D().model_names[self.model_dropdown.currentText()]
+            self.depth_to_3d = DepthTo3D(model_type=model_name)  # Instantiate the DepthTo3D object
 
-                self.output_mesh_obj = self.depth_to_3d.process_image(
-                    self.image_path,
-                    smoothing_method,
-                    (resolution, resolution),
-                    dynamic_depth=self.dynamic_depth_enabled  # Pass the flag here
-                )
-                print(f"3D model generated successfully for model: {value}")
-                self.update_3d_viewport()
-            except ValueError as e:
-                print(f"Error: {e}")
+            # Generate mesh and get background color
+            self.output_mesh_obj, self.background_color = self.depth_to_3d.process_image(
+                self.image_path, smoothing_method, (resolution, resolution), dynamic_depth=self.dynamic_depth_enabled
+            )
+            print(f"3D model generated successfully with background color: {self.background_color}")
+            # Update or initialize 3D viewport with the background color
+            self.update_3d_viewport(self.background_color)
+            print(f"3D model generated successfully with background color: {self.background_color}")
+        except Exception as e:
+            print(f"Error: {e}")
 
     def sharpen_image(self, image):
         """Sharpen the processed image for more prominent edges."""
@@ -378,7 +380,7 @@ class MainWindow_ImageProcessing(QMainWindow):
             self.extruded_edges = mesh_generator.generate(self.processed_image)
 
             # Update the 3D viewport with the new mesh
-            self.update_3d_viewport()
+            self.update_3d_viewport(self.background_color)
 
         except Exception as e:
             self.show_error(f"Error while generating mesh: {str(e)}")
@@ -404,27 +406,20 @@ class MainWindow_ImageProcessing(QMainWindow):
             self.processed_image = cv2.bitwise_not(self.processed_image)
             self.display_processed_image()
 
-    def update_3d_viewport(self):
-        """
-        Update or initialize the 3D viewport with the generated mesh.
-        This ensures the viewport is reopened if it was closed, and clears existing geometry before adding a new one.
-        """
+    def update_3d_viewport(self, background_color=None):
         if self.output_mesh_obj is None:
             print("Must set output_mesh_obj before calling update_3d_viewport.")
             return
 
         if self.three_d_viewport is None or not self.three_d_viewport.viewer.poll_events():
-            # Create a new 3D viewport instance if it doesn't exist or was closed
-            self.three_d_viewport = ThreeDViewport()
+            self.three_d_viewport = ThreeDViewport(background_color=background_color)
             print("3D viewport created or reopened.")
 
-        # Clear existing geometry in the viewport if already open
-        self.three_d_viewport.viewer.clear_geometries()
+        if background_color is not None:
+            self.three_d_viewport.viewer.get_render_option().background_color = background_color
 
-        # Load the new mesh into the viewport
+        self.three_d_viewport.clear_geometries()
         self.three_d_viewport.load_mesh(self.output_mesh_obj)
-
-        # Start the visualization; `run()` can block, but reopening happens only once
         self.three_d_viewport.run()
 
     def export_mesh(self):
