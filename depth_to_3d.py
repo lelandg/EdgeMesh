@@ -265,15 +265,15 @@ class DepthTo3D:
         # Apply the transformation to the mesh
         mesh.apply_transform(flip_matrix)
 
-        # Check if the mesh has vertex colors
-        if hasattr(mesh.visual, 'vertex_colors') and mesh.visual.vertex_colors is not None:
-            # Optionally adjust the vertex colors during flipping
-            # Example: If flipping affects orientation-dependent effects, handle it here
-            # For instance, flipping colors (if mirrored) can be implemented, but often the color remains unchanged
-            flipped_colors = mesh.visual.vertex_colors.copy()  # Currently colors are unchanged
-
-            # Update flipped colors (if needed) - placeholder for any operation on colors.
-            mesh.visual.vertex_colors = flipped_colors
+        # # Check if the mesh has vertex colors
+        # if hasattr(mesh.visual, 'vertex_colors') and mesh.visual.vertex_colors is not None:
+        #     # Optionally adjust the vertex colors during flipping
+        #     # Example: If flipping affects orientation-dependent effects, handle it here
+        #     # For instance, flipping colors (if mirrored) can be implemented, but often the color remains unchanged
+        #     flipped_colors = mesh.visual.vertex_colors.copy()  # Currently colors are unchanged
+        #
+        #     # Update flipped colors (if needed) - placeholder for any operation on colors.
+        #     mesh.visual.vertex_colors = flipped_colors
 
         return mesh
 
@@ -303,6 +303,9 @@ class DepthTo3D:
 
         depth[mask_resized == 0] = 0
         image = cv2.resize(image, (target_size[1], target_size[0]), interpolation=cv2.INTER_LINEAR)
+        # Ensure consistent RGB color conversion
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
         image[mask_resized == 0] = 0
 
         # Step 2: Create 3D vertices
