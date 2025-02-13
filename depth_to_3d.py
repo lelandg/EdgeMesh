@@ -138,7 +138,7 @@ class DepthTo3D:
         depth = depth.squeeze().cpu().numpy()
         depth = cv2.resize(depth, (img_w, img_h))  # Match original input image size
 
-        if target_size != (0,0) and target_size != (img_w, img_h):
+        if target_size and target_size != (0,0) and target_size != (img_w, img_h):
             # Limit the depth map size
             depth = cv2.resize(depth, target_size, interpolation=cv2.INTER_NEAREST)
 
@@ -296,7 +296,7 @@ class DepthTo3D:
 
         if background_color is not None:
             mask = cv2.inRange(image, avg_color - tolerance, avg_color + tolerance)
-            if target_size != (0, 0) and target_size != (w, h):
+            if target_size and target_size != (0, 0) and target_size != (w, h):
                 mask_resized = cv2.resize(mask, (target_size[1], target_size[0]), interpolation=cv2.INTER_NEAREST)
             else:
                 mask_resized = mask
@@ -370,58 +370,6 @@ class DepthTo3D:
 
         return output_ply_filename, background_color
 
-    # def create_3d_mesh(self, image, depth, filename, smoothing_method, target_size):
-    #     """
-    #     Create a 3D solid mesh with texture mapping from the image and depth map.
-    #     Save the mesh as an OBJ file.
-    #     :param image: Input image (numpy array).
-    #     :param depth: Depth map (numpy array).
-    #     :param filename: Filename for saving the OBJ file.
-    #     :param smoothing_method: Method used during depth map smoothing. Used for file names.
-    #     :param target_size: Target size of the depth map used in processing.
-    #     :return: Path to the saved OBJ file.
-    #     """
-    #     h, w = depth.shape  # Get the height and width of the depth map
-    #     y, x = np.meshgrid(np.linspace(0, h - 1, h), np.linspace(0, w - 1, w), indexing='ij')
-    #     z = depth  # Depth values for the z-axis
-    #
-    #     # Project into 3D space
-    #     vertices = np.stack([x, y, z], axis=-1).reshape(-1, 3)
-    #
-    #     # Create the mesh faces
-    #     faces = []
-    #     for i in range(h - 1):
-    #         for j in range(w - 1):
-    #             idx = i * w + j
-    #             faces.append([idx, idx + 1, idx + w])
-    #             faces.append([idx + 1, idx + w + 1, idx + w])
-    #     faces = np.array(faces)
-    #
-    #     # Rescale the original image to match the depth map's resolution
-    #     resized_image = cv2.resize(image, (w, h), interpolation=cv2.INTER_LINEAR)
-    #
-    #     # Correctly convert BGR to RGB
-    #     resized_image = cv2.cvtColor(resized_image, cv2.COLOR_BGR2RGB)
-    #
-    #     # Flatten the resized image to map colors to vertices
-    #     colors = resized_image.reshape(-1, 3)  # RGB color for each vertex
-    #
-    #     # Normalize RGB values to [0, 255] integers, required by Trimesh or the export format
-    #     colors = np.clip(colors, 0, 255).astype(np.uint8)
-    #
-    #     # Create a textured trimesh object with vertex colors
-    #     mesh = self.flip_mesh(trimesh.Trimesh(vertices=vertices, faces=faces, vertex_colors=colors))
-    #
-    #     # Solidify the mesh to make it 3D (optional)
-    #     solid_mesh = self.solidify_mesh_with_flat_back(mesh)
-    #
-    #     # Save the textured mesh
-    #     output_obj = f"{os.path.splitext(filename)[0]}-{self.model_type}_R{target_size[0]},{target_size[1]}_{smoothing_method}_color.ply"
-    #     solid_mesh.export(output_obj)
-    #     print(f"Textured 3D mesh saved to {output_obj}")
-    #
-    #     return output_obj
-
     def process_image(self,image_path, smoothing_method="anisotropic", target_size=(500, 500),
             dynamic_depth=False, grayscale_enabled=False, edge_detection_enabled=False):
         """
@@ -435,6 +383,10 @@ class DepthTo3D:
         """
         # Load the image
         image = cv2.imread(image_path)
+        img_h, img_w, _ = image.shape
+        if target_size == (0,0):
+            size = max(img_h, img_w)
+            target_size = (size, size)
 
         if image is None:
             raise ValueError(f"Image not found: {image_path}")

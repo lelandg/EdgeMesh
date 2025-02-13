@@ -22,6 +22,11 @@ f"""
 Utilities using opencv for edge detection in a GUI. 
 Also features depth map generation via select (implemented) methods via torch, etc. 
 Then 3D mesh generation from the depth map.
+Version 0.3.6 Fixes:
+    * Background color for 3D viewport.
+    * Supports 0 for resolution input. When you use this, the maximum of the image's width or height is used.
+    Updated:
+    ReadMe.md
 Version 0.3.5 Adds: 
     *Includes "date_time" at the end output file name, so you'll always get a new file! 
                     *** Clean your <output folder> as needed. ***
@@ -371,6 +376,10 @@ class MainWindow_ImageProcessing(QMainWindow):
             )
             print(f"3D model generated successfully with background color: {self.background_color}")
 
+            # Ensure background_color is in [0, 1] range
+            if max(self.background_color) > 1.0:
+                self.background_color = [c / 255.0 for c in self.background_color]
+
             # Update or initialize 3D viewport with the background color
             self.update_3d_viewport(self.background_color)
 
@@ -502,6 +511,8 @@ class MainWindow_ImageProcessing(QMainWindow):
         if self.three_d_viewport is None or not self.three_d_viewport.viewer.poll_events():
             self.three_d_viewport = ThreeDViewport(background_color=background_color)
             print("3D viewport created or reopened.")
+
+        print(f"update_3d_viewport: Background color: {background_color}")
 
         if background_color is not None:
             self.three_d_viewport.viewer.get_render_option().background_color = background_color

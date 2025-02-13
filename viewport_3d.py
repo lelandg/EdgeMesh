@@ -14,18 +14,28 @@ class ThreeDViewport:
         """
         self.viewer = o3d.visualization.VisualizerWithKeyCallback()
         title = f"3D Viewport - Open3D v{o3d.__version__} - Press 'H' for help - {initial_mesh_file}"
-        self.viewer.create_window(title, width=800, height=600, left=800, top=50)
+        self.viewer.create_window(title, width=1024, height=768, left=800, top=50)
 
         self.mesh = None  # Placeholder for the loaded 3D mesh
         self.zoom_factor = 1.0  # Default zoom factor
         self.pan_x = 0.0  # Pan translation on x-axis
         self.pan_y = 0.0  # Pan translation on y-axis
 
-        # Set the background color
+        # Default background color (dark gray if None)
         if background_color is None:
-            background_color = [0.2, 0.2, 0.2]  # Dark gray
-        self.background_color = [x / 255.0 for x in background_color]
+            background_color = [0.2, 0.2, 0.2]
+        else:
+            # Check if background_color needs scaling (assume >1.0 implies [0, 255] range)
+            if max(background_color) > 1.0:
+                background_color = [x / 255.0 for x in background_color]
+
+        self.background_color = background_color
+        self.viewer = o3d.visualization.VisualizerWithKeyCallback()
+        self.viewer.create_window("3D Viewport", width=1024, height=768)
         self.viewer.get_render_option().background_color = self.background_color
+
+        self.viewer.get_render_option().background_color = self.background_color
+        print(f"Background color set to: {self.background_color}")
 
         # Register interaction callbacks
         self._setup_key_callbacks()
@@ -106,21 +116,28 @@ class ThreeDViewport:
 
     def _center_mesh_in_view(self):
         """
-        Automatically center the mesh in the viewport by adjusting
-        the camera's viewpoint and zoom level based on the mesh's bounding box.
+        Automatically center and scale the mesh to fit within the viewport.
+        Adjust the camera's viewpoint and zoom level based on the mesh's bounding box.
         """
         if self.mesh is None:
             return
 
         bbox = self.mesh.get_axis_aligned_bounding_box()
         center = bbox.get_center()
-        # extent = bbox.get_extent()
+        extent = max(bbox.extent)  # Get the maximum extent to ensure proper scaling
 
+        # Update the ViewControl to adjust to the bounding box
         ctr = self.viewer.get_view_control()
         ctr.set_lookat(center.tolist())  # Set the camera to look at the mesh's center
-        ctr.set_zoom(1.0 / (self.zoom_factor))  # Adjust zoom level based on the mesh size
-        ctr.set_front([0.0, 0.0, 1.0])  # Set camera front direction
-        ctr.set_up([0.0, 1.0, 0.0])  # Set the camera's up direction
+
+        # Set zoom to fit the entire extent of the bounding box in the viewport
+        ctr.set_zoom(max(0.1, 1.5 / extent))  # Scale based on bounding box extent
+
+        # Set the camera front and up direction for a standard view
+        ctr.set_front([0.0, 0.0, -1.0])  # Camera facing the mesh
+        ctr.set_up([0.0, 1.0, 0.0])  # Camera's up direction
+
+        print("Mesh centered and scaled to fill the viewport.")
 
     def pan(self, dx, dy):
         """
@@ -218,6 +235,7 @@ if __name__ == "__main__":
                     print(f"Error while loading or visualizing {mesh_file}: {e}")
     else:
         fname = "g:/Downloads/UseMe.obj"
+        # E.g. fname = "g:/Downloads/lelandgreen_Technical_perspective_Illustration_of_many_rectan_e4408041-480c-40bb-96b6-f415b199dc70_0*2025*.ply"
         print(f"Usage: python {os.path.basename(__file__)} [path_to_mesh1] [path_to_mesh2] ...")
         print(f"Wildcards are supported for matching multiple files.")
         print("`*.obj`: Matches all `.obj` files in the current directory.")
