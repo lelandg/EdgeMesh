@@ -1,5 +1,5 @@
 __author__ = "Leland Green"
-__version__ = "0.3.4"
+__version__ = "0.3.5"
 __date_created__ = "2025-01-28"
 __last_updated__ = "2025-01-29"
 __email__ = "lelandgreenproductions@gmail.com"
@@ -7,10 +7,9 @@ __email__ = "lelandgreenproductions@gmail.com"
 __license__ = "Open Source" # License of this script is free for all purposes.
 
 from depth_to_3d import DepthTo3D
-from image_processor import ImageProcessor
+from edge_detection import detect_edges
 from mesh_generator import MeshGenerator
 from viewport_3d import ThreeDViewport
-from edge_detection import detect_edges
 
 visualize_clustering = False
 visualize_depth = False
@@ -23,6 +22,20 @@ f"""
 Utilities using opencv for edge detection in a GUI. 
 Also features depth map generation via select (implemented) methods via torch, etc. 
 Then 3D mesh generation from the depth map.
+Version 0.3.5 Adds: 
+    *Includes "date_time" at the end output file name, so you'll always get a new file! 
+                    *** Clean your <output folder> as needed. ***
+    "Use Processed Image" option to create 3D mesh from current results, i.e., the image on the current right in GUI.
+    "Dynamic Depth" option to make the mesh dynamically shaped on the back, approximating the front.
+    "Edge Detection" option to enable or disable edge detection.
+    "Grayscale" option to enable or disable grayscale mode.
+    
+    Notes: "Invert Colors" is intended for edge detection. Should it just be automatic? IDK, because it's fun
+              to have the option. It's like a filter. If you enable it, colors become their opposite, or complementary
+              color. This may be useful sometimes for a grayscale image. Or, if you have a picture of a negative! 
+              So I think it's fun _and_ useful.
+            ***Warning*** Use your new inverted colors with care.  
+    
 Version 0.3.4 Adds background color as background color for 3D viewport. For more expected user experience.
               Note this background color is not saved in the exported mesh. It's simply carried over from
               the original image to the Open3D viewport.
@@ -125,7 +138,7 @@ class MainWindow_ImageProcessing(QMainWindow):
 
         # Main Layout and Controls
         main_layout = QVBoxLayout()
-        edge_sensitivity_layout = QVBoxLayout()  # For images and controls
+        self.edge_sensitivity_layout = QVBoxLayout()  # For images and controls
         image_preview_layout = QHBoxLayout()  # To hold original and processed previews
         bottom_controls = QHBoxLayout()
 
@@ -145,8 +158,25 @@ class MainWindow_ImageProcessing(QMainWindow):
         # self.preview_label.setMaximumHeight(700)  # Limit height
         image_preview_layout.addWidget(self.preview_label)
 
+        # Add "Edge Detection" Option
+        self.edge_detection_checkbox = QCheckBox("Edge Detection")
+        self.edge_detection_checkbox.setChecked(True)  # Default: Enabled
+        self.edge_detection_checkbox.stateChanged.connect(self.toggle_edge_detection)
+        bottom_controls.addWidget(self.edge_detection_checkbox)
+
+        # Initialize the variable to track the checkbox state
+        self.edge_detection_enabled = True
+
+        # Add "Grayscale" Option
+        self.grayscale_checkbox = QCheckBox("Grayscale")
+        self.grayscale_checkbox.setChecked(False)  # Default: Disabled
+        self.grayscale_checkbox.stateChanged.connect(self.toggle_grayscale)
+        bottom_controls.addWidget(self.grayscale_checkbox)
+
+        # Initialize the variable to track checkbox state
+        self.grayscale_enabled = False
         # Add images to the layout
-        edge_sensitivity_layout.addLayout(image_preview_layout)
+        self.edge_sensitivity_layout.addLayout(image_preview_layout)
 
         # Slider for Sensitivity
         sensitivity_hbox = QHBoxLayout()
@@ -161,7 +191,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.sensitivity_slider.valueChanged.connect(self.update_preview)
         sensitivity_hbox.addWidget(self.sensitivity_slider)
 
-        edge_sensitivity_layout.addLayout(sensitivity_hbox)
+        self.edge_sensitivity_layout.addLayout(sensitivity_hbox)
 
         # Slider for Line Thickness
         line_thickness_hbox = QHBoxLayout()
@@ -176,7 +206,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.line_thickness_slider.valueChanged.connect(self.update_line_thickness)
         line_thickness_hbox.addWidget(self.line_thickness_slider)
 
-        edge_sensitivity_layout.addLayout(line_thickness_hbox)
+        self.edge_sensitivity_layout.addLayout(line_thickness_hbox)
 
         # Add "Invert Colors" Option
         self.invert_checkbox = QCheckBox("Invert Colors")
@@ -188,7 +218,7 @@ class MainWindow_ImageProcessing(QMainWindow):
             self.invert_checkbox.setCheckState(Qt.Unchecked)
 
         # Add controls and buttons
-        main_layout.addLayout(edge_sensitivity_layout)
+        main_layout.addLayout(self.edge_sensitivity_layout)
 
         # 3D Viewport (Fill most of the window) - Moved below. Now created/updated when a new mesh is ready.
         # self.three_d_viewport = ThreeDViewport()
@@ -248,6 +278,16 @@ class MainWindow_ImageProcessing(QMainWindow):
         # Initialize the variable to track the checkbox state
         self.dynamic_depth_enabled = False
 
+        # Add the "Use Processed Image" checkbox to the depth_hbox layout
+        self.use_processed_image_checkbox = QCheckBox("Use Processed Image")
+        self.use_processed_image_checkbox.setToolTip(
+            "Enable this to save and use the processed image as input for generating the depth map."
+        )
+        self.use_processed_image_checkbox.stateChanged.connect(self.toggle_use_processed_image)
+        depth_hbox.addWidget(self.use_processed_image_checkbox)
+
+        # Initialize the variable to track the checkbox state
+        self.use_processed_image_enabled = False
         # Add Depth Mesh Button
         self.process_button = QPushButton("Depth Mesh")
         self.process_button.clicked.connect(self.process_image)
@@ -268,10 +308,79 @@ class MainWindow_ImageProcessing(QMainWindow):
         main_layout.addLayout(bottom_controls)
         self.central_widget.setLayout(main_layout)
 
+    def toggle_grayscale(self, state):
+        """Enable or disable grayscale mode based on checkbox state."""
+        self.grayscale_enabled = state == Qt.Checked
+        print(f"Grayscale Enabled: {self.grayscale_enabled}")
+        self.update_preview()
+
+    def update_edge_sensitivity_layout(self):
+        """Enable or disable the edge sensitivity layout based on edge_detection state."""
+        is_enabled = self.edge_detection_enabled
+        for i in range(self.edge_sensitivity_layout.count()):
+            widget = self.edge_sensitivity_layout.itemAt(i).widget()
+            if widget:
+                widget.setEnabled(is_enabled)  # Or use widget.setVisible(is_enabled) if you want to hide it
+
+    def toggle_edge_detection(self, state):
+        """Enable or disable edge detection based on the checkbox state."""
+        self.edge_detection_enabled = state == Qt.Checked
+        print(f"Edge Detection Enabled: {self.edge_detection_enabled}")
+        self.update_edge_sensitivity_layout()
+        self.update_preview()
+
+    def toggle_use_processed_image(self, state):
+        """Enable or disable using the processed image based on the checkbox state."""
+        self.use_processed_image_enabled = state == Qt.Checked
+        print(f"Use Processed Image Enabled: {self.use_processed_image_enabled}")
+
     def toggle_dynamic_depth(self, state):
         """Enable or disable Dynamic Depth based on the checkbox state."""
         self.dynamic_depth_enabled = state == Qt.Checked
         print(f"Dynamic Depth Enabled: {self.dynamic_depth_enabled}")
+
+    def process_image(self):
+        if not self.image_path:
+            self.show_error("Please load an image first!")
+            return
+
+        try:
+            resolution = int(self.resolution_input.text())
+            smoothing_method = self.smoothing_dropdown.currentText()
+            model_name = DepthTo3D().model_names[self.model_dropdown.currentText()]
+            self.depth_to_3d = DepthTo3D(model_type=model_name)  # Instantiate the DepthTo3D object
+
+            # Determine image path to use
+            image_to_use = self.image_path
+
+            # Save and use the processed image if the checkbox is checked
+            if self.use_processed_image_enabled and self.processed_image is not None:
+                processed_image_path = self._get_processed_image_path()
+                cv2.imwrite(processed_image_path, self.processed_image)
+                image_to_use = processed_image_path
+                print(f"Processed image saved and using path: {processed_image_path}")
+
+            # Generate mesh and get background color
+            self.output_mesh_obj, self.background_color = self.depth_to_3d.process_image(
+                image_to_use,
+                smoothing_method=smoothing_method,
+                target_size=(resolution, resolution),
+                dynamic_depth=self.dynamic_depth_enabled,
+                grayscale_enabled=self.grayscale_enabled,
+                edge_detection_enabled=self.edge_detection_enabled,
+            )
+            print(f"3D model generated successfully with background color: {self.background_color}")
+
+            # Update or initialize 3D viewport with the background color
+            self.update_3d_viewport(self.background_color)
+
+        except Exception as e:
+            self.show_error(f"Error: {e}")
+
+    def _get_processed_image_path(self):
+        """Construct the file path for saving the processed image."""
+        base, ext = os.path.splitext(self.image_path)
+        return f"{base}_processed{ext}"
 
     def resizeEvent(self, event):
         """Handles window resize events to adjust label sizes and re-scale images."""
@@ -315,27 +424,6 @@ class MainWindow_ImageProcessing(QMainWindow):
         # Update the label to show the selected item
         self.selected_label.setText(f"Selected: {text}")
 
-    def process_image(self):
-        if not self.image_path:
-            self.show_error("Please load an image first!")
-            return
-
-        try:
-            resolution = int(self.resolution_input.text())
-            smoothing_method = self.smoothing_dropdown.currentText()
-            model_name = DepthTo3D().model_names[self.model_dropdown.currentText()]
-            self.depth_to_3d = DepthTo3D(model_type=model_name)  # Instantiate the DepthTo3D object
-
-            # Generate mesh and get background color
-            self.output_mesh_obj, self.background_color = self.depth_to_3d.process_image(
-                self.image_path, smoothing_method, (resolution, resolution), dynamic_depth=self.dynamic_depth_enabled
-            )
-            print(f"3D model generated successfully with background color: {self.background_color}")
-            # Update or initialize 3D viewport with the background color
-            self.update_3d_viewport(self.background_color)
-            print(f"3D model generated successfully with background color: {self.background_color}")
-        except Exception as e:
-            print(f"Error: {e}")
 
     def sharpen_image(self, image):
         """Sharpen the processed image for more prominent edges."""
@@ -450,41 +538,58 @@ class MainWindow_ImageProcessing(QMainWindow):
         """Reprocess the preview and refresh the 3D viewport."""
         if not self.image_path:  # No image to process
             return
+
         try:
-            # Process the image with the updated settings
-            low_threshold = self.sensitivity_slider.value()
-            self.processed_image = detect_edges(self.image_path, low_threshold, low_threshold * 3,
-                                                thickness=self.edge_thickness)
-            # Apply inversion if enabled
+            # Handle edge detection
+            if self.edge_detection_enabled:
+                # Perform edge detection if enabled
+                low_threshold = self.sensitivity_slider.value()
+                self.processed_image = detect_edges(
+                    self.image_path, low_threshold, low_threshold * 3, thickness=self.edge_thickness
+                )
+            elif self.grayscale_enabled:
+                # Otherwise, convert to grayscale if enabled
+                self.processed_image = cv2.imread(self.image_path, cv2.IMREAD_GRAYSCALE)
+            else:
+                # Load the original color image if neither is enabled
+                self.processed_image = cv2.imread(self.image_path, cv2.IMREAD_COLOR)
+
+            # Apply inversion if enabled (applies to all modes)
             if self.invert_colors_enabled:
                 self.invert_colors()
 
             self.display_processed_image()  # Show the processed image
 
-            # TODO: Update the 3D viewport with the new edges when enabled
-            # Trigger the 3D viewport update
-            # self.update_3d_viewport()
-
         except Exception as e:
             self.show_error(str(e))
 
-    def update_line_thickness(self):
-        self.edge_thickness = self.line_thickness_slider.value()
-        self.update_preview()
-
     def display_processed_image(self):
         if self.processed_image is not None:
-            height, width = self.processed_image.shape
-            bytes_per_line = width
-            q_img = QImage(
-                self.processed_image.data, width, height, bytes_per_line, QImage.Format_Grayscale8
-            )
+            if len(self.processed_image.shape) == 2:  # Grayscale image
+                height, width = self.processed_image.shape
+                bytes_per_line = width
+                q_img = QImage(
+                    self.processed_image.data, width, height, bytes_per_line, QImage.Format_Grayscale8
+                )
+            else:  # Color image
+                height, width, channels = self.processed_image.shape
+                bytes_per_line = channels * width
+                q_img = QImage(
+                    self.processed_image.data, width, height, bytes_per_line, QImage.Format_RGB888
+                ).rgbSwapped()
+
+            # Update the QLabel with the processed image
             self.preview_label.setPixmap(
                 QPixmap.fromImage(q_img).scaled(
                     self.preview_label.width(), self.preview_label.height(),
                     Qt.KeepAspectRatio
                 )
             )
+
+    def update_line_thickness(self):
+        self.edge_thickness = self.line_thickness_slider.value()
+        self.update_preview()
+
 
     ### Drag-and-Drop Handling ###
     def drag_enter_event(self, event):

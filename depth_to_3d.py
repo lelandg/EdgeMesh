@@ -1,6 +1,7 @@
 import argparse
 import os
 import cv2
+from datetime import datetime
 import numpy as np
 import torch
 import trimesh
@@ -277,7 +278,8 @@ class DepthTo3D:
 
         return mesh
 
-    def create_3d_mesh(self, image, depth, filename, smoothing_method, target_size, dynamic_depth):
+    def create_3d_mesh(self, image, depth, filename, smoothing_method, target_size, dynamic_depth, grayscale_enabled,
+                       edge_detection_enabled):
         """
         Create a 3D solid mesh with optional dynamically shaped backs, excluding solid background areas.
         """
@@ -294,7 +296,10 @@ class DepthTo3D:
 
         if background_color is not None:
             mask = cv2.inRange(image, avg_color - tolerance, avg_color + tolerance)
-            mask_resized = cv2.resize(mask, (target_size[1], target_size[0]), interpolation=cv2.INTER_NEAREST)
+            if target_size != (0, 0) and target_size != (w, h):
+                mask_resized = cv2.resize(mask, (target_size[1], target_size[0]), interpolation=cv2.INTER_NEAREST)
+            else:
+                mask_resized = mask
             mask_resized = cv2.bitwise_not(mask_resized)
             kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
             mask_resized = cv2.dilate(mask_resized, kernel, iterations=2)
@@ -347,11 +352,23 @@ class DepthTo3D:
         else:
             solid_mesh = self.solidify_mesh_with_flat_back(mesh)
 
-        output_ply = f"{os.path.splitext(filename)[0]}-{self.model_type}_R{target_size[0]},{target_size[1]}_{smoothing_method}.ply"
-        solid_mesh.export(output_ply)
-        print(f"3D mesh saved to {output_ply}")
+        # Construct file name suffix based on enabled options
+        file_suffix = ""
+        if grayscale_enabled:
+            file_suffix += "_gray"
+        if edge_detection_enabled:
+            file_suffix += "_edge"
 
-        return output_ply, background_color
+        # For part of file name, format current date and time in format: YYYYMMDD_HHmmss
+        now = datetime.now()
+        formatted_datetime = now.strftime("%Y%m%d_%H%M%S")
+
+        output_ply_filename = (f"{os.path.splitext(filename)[0]}-{self.model_type}_R{target_size[0]},{target_size[1]}_"+
+                      f"{smoothing_method}{file_suffix}_{formatted_datetime}.ply")
+        solid_mesh.export(output_ply_filename)
+        print(f"3D mesh saved to {output_ply_filename}")
+
+        return output_ply_filename, background_color
 
     # def create_3d_mesh(self, image, depth, filename, smoothing_method, target_size):
     #     """
@@ -405,13 +422,16 @@ class DepthTo3D:
     #
     #     return output_obj
 
-    def process_image(self, image_path, smoothing_method="anisotropic", target_size=(500, 500), dynamic_depth=False):
+    def process_image(self,image_path, smoothing_method="anisotropic", target_size=(500, 500),
+            dynamic_depth=False, grayscale_enabled=False, edge_detection_enabled=False):
         """
         Process the input image to estimate depth, project into 3D space, and save as a PLY file.
         :param image_path: Path to the input image.
         :param smoothing_method: Depth map smoothing method.
         :param target_size: Target resolution of the depth map.
         :param dynamic_depth: If True, adjusts the back of the mesh dynamically.
+        :param grayscale_enabled: If True, indicates grayscale input was used.
+        :param edge_detection_enabled: If True, indicates edge detection was used.
         """
         # Load the image
         image = cv2.imread(image_path)
@@ -430,8 +450,8 @@ class DepthTo3D:
         except Exception as e:
             print(f"Warning: Could not smooth depth. Proceeding with raw depth. {e}")
 
-        # Generate and save 3D mesh
-        return self.create_3d_mesh(image, depth, image_path, smoothing_method, target_size, dynamic_depth)
+        # Generate and save 3D mesh with updated file suffix
+        return self.create_3d_mesh(image, depth, f"{image_path}", smoothing_method, target_size, dynamic_depth, grayscale_enabled, edge_detection_enabled)
 
 if __name__ == "__main__":
     # Command-line argument parsing

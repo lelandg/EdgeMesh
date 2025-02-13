@@ -1,6 +1,8 @@
+# This is a bonus, standalone script that demonstrates how to process images using OpenCV and custom utility classes.
+# The ImageProcessor class provides methods to apply various image processing techniques, such as edge detection, depth estimation, and smoothing.
+# However, the real work of those are done by the SmoothingDepthMapUtils and DepthCueEstimator classes.
 import cv2
 import os
-import numpy as np
 from edge_detection import detect_edges
 from depth_cue_estimator_util import DepthCueEstimator
 from smoothing_depth_map_utils import SmoothingDepthMapUtils
