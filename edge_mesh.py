@@ -1,10 +1,12 @@
 __author__ = "Leland Green"
-__version__ = "0.3.6"
+__version__ = "0.3.7"
 __date_created__ = "2025-01-28"
 __last_updated__ = "2025-01-29"
 __email__ = "lelandgreenproductions@gmail.com"
 
 __license__ = "Open Source" # License of this script is free for all purposes.
+
+import threading
 
 from depth_to_3d import DepthTo3D
 from edge_detection import detect_edges
@@ -22,6 +24,7 @@ f"""
 Utilities using opencv for edge detection in a GUI. 
 Also features depth map generation via select (implemented) methods via torch, etc. 
 Then 3D mesh generation from the depth map.
+Version 0.3.7 Adds: Resize images on app startup to fit the GUI.
 Version 0.3.6 Adds:
     *Add method to mirror and stitch the generated mesh. Not perfect, but it's a start. 
     *You can still use the old method (no mirrored back) by checking "Dynamic Depth". That's better for 3D printing.
@@ -92,8 +95,8 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QFileDialog, QLabel, QVBoxLayout, QSlider,
     QPushButton, QWidget, QHBoxLayout, QSizePolicy, QCheckBox, QComboBox, QLineEdit
 )
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap, QImage, QIntValidator, QIcon, QDoubleValidator
+from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtGui import QPixmap, QImage, QIntValidator, QIcon, QDoubleValidator, QResizeEvent
 
 import cv2
 import numpy as np
@@ -125,6 +128,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.original_pixmap = None
         self.edge_thickness = 2  # Default line thickness
         self.image_path = None  # To hold the currently loaded image path
+        self.image = None
         self.processed_image = None
         self.extruded_edges = None
 
@@ -134,16 +138,16 @@ class MainWindow_ImageProcessing(QMainWindow):
             self.setWindowIcon(QIcon(icon_path))  # Set the main window's icon
 
         self.setWindowTitle(f"3D Mesh Generator v{__version__}")
-        self.setGeometry(100, 100, 800, 500)
+        self.setGeometry(50, 50, 800, 600)
 
         # Initialize configuration
         self.config = initialize_config()
         self._load_config()
 
         self._init_ui()
-        self.load_last_used_image()
         o3d.visualization.webrtc_server.enable_webrtc()
         print(f"Open3D version: {o3d.__version__}")
+        self.load_last_used_image()
 
     def _init_ui(self):
         self.central_widget = QWidget()
@@ -349,6 +353,13 @@ class MainWindow_ImageProcessing(QMainWindow):
         main_layout.addLayout(bottom_controls)
         self.central_widget.setLayout(main_layout)
 
+        delay_ms = 50  # Delay in milliseconds
+        delay_sec = delay_ms / 1000  # Convert to seconds
+        timer = threading.Timer(delay_sec, self.scale_image_to_fit_original)
+        timer.start()
+        timer2 = threading.Timer(delay_sec, self.scale_image_to_fit_preview)
+        timer2.start()
+
     def toggle_grayscale(self, state):
         """Enable or disable grayscale mode based on checkbox state."""
         self.grayscale_enabled = state == Qt.Checked
@@ -439,6 +450,44 @@ class MainWindow_ImageProcessing(QMainWindow):
         """Construct the file path for saving the processed image."""
         base, ext = os.path.splitext(self.image_path)
         return f"{base}_processed{ext}"
+
+    def scale_image_to_fit_preview(self):
+        # Check if the processed image is valid
+        if not self.processed_image:
+            print("No processed image available to scale.")
+            # Optionally, set a placeholder or clear the label
+            self.preview_label.clear()
+            self.preview_label.setText("No Image Loaded")
+            return
+
+        target_width = self.preview_label.width()
+        target_height = self.processed_image.height()
+
+        # Convert self.image (numpy.ndarray) to QImage
+        height, width, channel = self.image.shape
+        bytes_per_line = width * channel
+        q_img = QImage(self.processed_image.data, target_width, target_height, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
+
+        self.preview_label.setPixmap(QPixmap.fromImage(q_img))
+
+    def scale_image_to_fit_original(self):
+        if self.image is not None:
+            # Get the dimensions of the target QLabel
+            target_width = self.original_label.width()
+            target_height = self.original_label.height()
+
+            # Convert self.image (numpy.ndarray) to QImage
+            height, width, channel = self.image.shape
+            bytes_per_line = width * channel
+            q_img = QImage(self.image.data, width, height, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
+
+            # Scale the QImage to fit within the QLabel dimensions
+            scaled_image = q_img.scaled(target_width, target_height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
+            # Update the QLabel display with the scaled QPixmap
+            self.original_label.setPixmap(QPixmap.fromImage(scaled_image))
+        else:
+            self.original_label.clear()  # Clear the QLabel if no image is loaded
 
     def resizeEvent(self, event):
         """Handles window resize events to adjust label sizes and re-scale images."""
@@ -622,29 +671,6 @@ class MainWindow_ImageProcessing(QMainWindow):
         except Exception as e:
             self.show_error(str(e))
 
-    def display_processed_image(self):
-        if self.processed_image is not None:
-            if len(self.processed_image.shape) == 2:  # Grayscale image
-                height, width = self.processed_image.shape
-                bytes_per_line = width
-                q_img = QImage(
-                    self.processed_image.data, width, height, bytes_per_line, QImage.Format_Grayscale8
-                )
-            else:  # Color image
-                height, width, channels = self.processed_image.shape
-                bytes_per_line = channels * width
-                q_img = QImage(
-                    self.processed_image.data, width, height, bytes_per_line, QImage.Format_RGB888
-                ).rgbSwapped()
-
-            # Update the QLabel with the processed image
-            self.preview_label.setPixmap(
-                QPixmap.fromImage(q_img).scaled(
-                    self.preview_label.width(), self.preview_label.height(),
-                    Qt.KeepAspectRatio
-                )
-            )
-
     def update_line_thickness(self):
         self.edge_thickness = self.line_thickness_slider.value()
         self.update_preview()
@@ -694,15 +720,31 @@ class MainWindow_ImageProcessing(QMainWindow):
                     Qt.KeepAspectRatio
                 )
             )
+            self.scale_image_to_fit_original()
 
-    def process_image1(self):
-        if not self.image_path:
-            self.show_error("Please load an image first!")
-            return
-        self.update_preview()
-        self.save_button.setEnabled(True)
+    def display_processed_image(self):
+        if self.processed_image is not None:
+            if len(self.processed_image.shape) == 2:  # Grayscale image
+                height, width = self.processed_image.shape
+                bytes_per_line = width
+                q_img = QImage(
+                    self.processed_image.data, width, height, bytes_per_line, QImage.Format_Grayscale8
+                )
+            else:  # Color image
+                height, width, channels = self.processed_image.shape
+                bytes_per_line = channels * width
+                q_img = QImage(
+                    self.processed_image.data, width, height, bytes_per_line, QImage.Format_RGB888
+                ).rgbSwapped()
 
-        self.update_3d_viewport()
+            # Update the QLabel with the processed image
+            self.preview_label.setPixmap(
+                QPixmap.fromImage(q_img).scaled(
+                    self.preview_label.width(), self.preview_label.height(),
+                    Qt.KeepAspectRatio
+                )
+            )
+            self.scale_image_to_fit_preview()
 
     def save_image(self):
         if not self.processed_image.any():
