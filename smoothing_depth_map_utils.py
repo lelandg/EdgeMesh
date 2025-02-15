@@ -47,7 +47,7 @@ class SmoothingDepthMapUtils:
         return smoothed_map
 
     @staticmethod
-    def anisotropic_diffusion(depth_map, iterations=10, kappa=50, gamma=0.1):
+    def anisotropic_diffusion(depth_map, iterations=20, kappa=100, gamma=0.1):
         """
         Perform anisotropic diffusion (edge-aware smoothing) on the depth map.
         :param depth_map: The input depth map as a numpy array.

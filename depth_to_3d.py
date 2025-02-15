@@ -10,6 +10,7 @@ from torchvision.transforms import Compose, ToTensor, Normalize
 from transformers import AutoImageProcessor, AutoModelForDepthEstimation
 
 import smoothing_depth_map_utils
+from spinner import Spinner
 
 
 class DepthTo3D:
@@ -22,6 +23,7 @@ class DepthTo3D:
         self.model_type = model_type
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model, self.transform = self.load_model()
+        self.spinner = Spinner(f"{{time}} ")
 
     model_names = {"DenseDepth": "dense_depth", "MiDaS": "midas", "DPT": "dpt", "LeReS": "leres",
                    "DepthAnythingV2": "depth_anything_v2"}
@@ -278,6 +280,92 @@ class DepthTo3D:
 
         return mesh
 
+    def add_mirror_mesh(self, mesh):
+        """
+        Add a mirrored backside to the provided 3D mesh and stitch the halves together.
+        This creates a water-tight mesh by connecting the edges of the original
+        mesh and the mirrored counterpart.
+
+        :param mesh: A Trimesh object representing the front-facing mesh.
+        :return: A new Trimesh object with a water-tight mirrored back side.
+        """
+        print("Adding mirrored backside to the mesh...")
+
+        # Original mesh vertices and faces
+        original_vertices = mesh.vertices
+        original_faces = mesh.faces
+
+        # Create mirrored vertices by negating the z-axis
+        mirrored_vertices = original_vertices.copy()
+        mirrored_vertices[:, 2] = -mirrored_vertices[:, 2]
+
+        # Adjust face indices for mirrored vertices
+        num_original_vertices = len(original_vertices)
+        mirrored_faces = original_faces.copy() + num_original_vertices
+
+        # Reverse the face winding for the mirrored side
+        mirrored_faces = mirrored_faces[:, ::-1]
+
+        # Combine original and mirrored vertices and faces
+        combined_vertices = np.vstack([original_vertices, mirrored_vertices])
+        combined_faces = np.vstack([original_faces, mirrored_faces])
+
+        print("Finding boundary edges...")
+        original_edges = mesh.edges_sorted
+        mirrored_edges = np.roll(original_edges, shift=1, axis=1) + num_original_vertices
+
+        original_edges_set = set(map(tuple, original_edges))
+        mirrored_edges_set = set(map(tuple, mirrored_edges))
+
+        # shared_edges = original_edges_set.intersection(mirrored_edges_set)
+        # boundary_edges = original_edges_set.symmetric_difference(shared_edges)
+        boundary_edges = original_edges_set - mirrored_edges_set
+
+        if len(boundary_edges) == 0:
+            print("Warning: No boundary edges detected! Mesh may already be watertight.")
+
+        print("Stitching boundary edges...")
+        stitching_faces = []
+        for edge in boundary_edges:
+            v1, v2 = edge
+            mv1, mv2 = v1 + num_original_vertices, v2 + num_original_vertices
+            stitching_faces.append([v1, v2, mv1])
+            stitching_faces.append([v2, mv2, mv1])
+            stitching_faces.append([mv2, v2, v1])
+            stitching_faces.append([mv1, mv2, v1])
+
+        stitching_faces = np.array(stitching_faces)
+
+        print("Combining faces, applying colors, creating watertight mesh...")
+        # Combine stitching faces with others
+        watertight_faces = np.vstack([combined_faces, stitching_faces])
+
+        # Optionally combine vertex colors if provided
+        if hasattr(mesh.visual, 'vertex_colors') and mesh.visual.vertex_colors is not None:
+            original_colors = mesh.visual.vertex_colors
+            combined_colors = np.vstack([original_colors, original_colors])
+        else:
+            combined_colors = None
+
+        # Create the watertight Trimesh object
+        watertight_mesh = trimesh.Trimesh(
+            vertices=combined_vertices,
+            faces=watertight_faces,
+            vertex_colors=combined_colors
+        )
+
+        # print("Removing duplicate faces...")
+        # watertight_mesh.remove_duplicate_faces()
+        # print("Removing degenerate faces...")
+        # watertight_mesh.remove_degenerate_faces()
+        # print("Fixing normals...")
+        # watertight_mesh.fix_normals()  # Ensure outward normals
+        # print("Filling holes...")
+        # watertight_mesh.fill_holes()  # Fix any remaining holes
+
+        print("Finished creating mesh.")
+        return watertight_mesh
+
     def create_3d_mesh(self, image, depth, filename, smoothing_method, target_size, dynamic_depth, grayscale_enabled,
                        edge_detection_enabled):
         """
@@ -286,7 +374,7 @@ class DepthTo3D:
         # Step 1: Background processing
         h, w, _ = image.shape
         corners = [image[0, 0], image[0, w - 1], image[h - 1, 0], image[h - 1, w - 1]]
-        tolerance = 10
+        tolerance = 50  # Tolerance for background color detection
         avg_color = np.mean(corners, axis=0)
 
         background_color = [2, 2, 2]  # Default background color (dark gray)
@@ -350,7 +438,7 @@ class DepthTo3D:
             flat_back_depth = np.median(z[z != 0]) - np.std(z[z != 0])
             solid_mesh = self.solidify_mesh_with_flat_back(mesh, flat_back_depth=flat_back_depth)
         else:
-            solid_mesh = self.solidify_mesh_with_flat_back(mesh)
+            solid_mesh = self.add_mirror_mesh(mesh)
 
         # Construct file name suffix based on enabled options
         file_suffix = ""

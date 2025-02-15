@@ -1,5 +1,5 @@
 __author__ = "Leland Green"
-__version__ = "0.3.5"
+__version__ = "0.3.6"
 __date_created__ = "2025-01-28"
 __last_updated__ = "2025-01-29"
 __email__ = "lelandgreenproductions@gmail.com"
@@ -22,11 +22,10 @@ f"""
 Utilities using opencv for edge detection in a GUI. 
 Also features depth map generation via select (implemented) methods via torch, etc. 
 Then 3D mesh generation from the depth map.
-Version 0.3.6 Fixes:
-    * Background color for 3D viewport.
-    * Supports 0 for resolution input. When you use this, the maximum of the image's width or height is used.
-    Updated:
-    ReadMe.md
+Version 0.3.6 Adds:
+    *Add method to mirror and stitch the generated mesh. Not perfect, but it's a start. 
+    *You can still use the old method (no mirrored back) by checking "Dynamic Depth". That's better for 3D printing.
+    *Adds spinner.py for fun.
 Version 0.3.5 Adds: 
     *Includes "date_time" at the end output file name, so you'll always get a new file! 
                     *** Clean your <output folder> as needed. ***
@@ -40,7 +39,11 @@ Version 0.3.5 Adds:
               color. This may be useful sometimes for a grayscale image. Or, if you have a picture of a negative! 
               So I think it's fun _and_ useful.
             ***Warning*** Use your new inverted colors with care.  
-    
+    Fixes:
+        * Background color for 3D viewport.
+        * Supports 0 for resolution input. When you use this, the maximum of the image's width or height is used.
+        Updated:
+        ReadMe.md    
 Version 0.3.4 Adds background color as background color for 3D viewport. For more expected user experience.
               Note this background color is not saved in the exported mesh. It's simply carried over from
               the original image to the Open3D viewport.
@@ -90,7 +93,7 @@ from PyQt5.QtWidgets import (
     QPushButton, QWidget, QHBoxLayout, QSizePolicy, QCheckBox, QComboBox, QLineEdit
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap, QImage, QIntValidator
+from PyQt5.QtGui import QPixmap, QImage, QIntValidator, QIcon, QDoubleValidator
 
 import cv2
 import numpy as np
@@ -125,6 +128,11 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.processed_image = None
         self.extruded_edges = None
 
+        # Set the icon for the main window
+        icon_path = os.path.join(os.getcwd(), "EdgeMesh.ico")
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))  # Set the main window's icon
+
         self.setWindowTitle(f"3D Mesh Generator v{__version__}")
         self.setGeometry(100, 100, 800, 500)
 
@@ -135,7 +143,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         self._init_ui()
         self.load_last_used_image()
         o3d.visualization.webrtc_server.enable_webrtc()
-        print (f"Open3D version: {o3d.__version__}")
+        print(f"Open3D version: {o3d.__version__}")
 
     def _init_ui(self):
         self.central_widget = QWidget()
@@ -152,6 +160,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.original_label.setAlignment(Qt.AlignCenter)
         self.original_label.setStyleSheet("background-color: lightgray;")
         self.original_label.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+        self.original_label.setMinimumSize(100,100)
         # self.original_label.setMaximumHeight(700)  # Limit height
         image_preview_layout.addWidget(self.original_label)
 
@@ -160,6 +169,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.preview_label.setAlignment(Qt.AlignCenter)
         self.preview_label.setStyleSheet("background-color: lightgray;")
         self.preview_label.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+        self.preview_label.setMinimumSize(100,100)
         # self.preview_label.setMaximumHeight(700)  # Limit height
         image_preview_layout.addWidget(self.preview_label)
 
@@ -259,18 +269,44 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.smoothing_dropdown.addItems(["anisotropic", "gaussian", "bilateral", "median", "(none)"])
         depth_hbox.addWidget(self.smoothing_dropdown)
 
-        resolution_label = QLabel("Depth Resolution")
+        resolution_label = QLabel("Resolution")
         resolution_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         depth_hbox.addWidget(resolution_label)
 
         # Add the numeric input box for resolution
         self.resolution_input = QLineEdit()
         self.resolution_input.setValidator(QIntValidator(0, 10000))  # Allows numeric input in the range 0-10000
-        self.resolution_input.setFixedWidth(200)
+        self.resolution_input.setFixedWidth(50)
         self.resolution_input.setText("700")
         self.resolution_input.setToolTip("Enter the resolution for the depth map. 0 = full size.")
         self.resolution_input.textChanged.connect(self.update_resolution)
         depth_hbox.addWidget(self.resolution_input)
+
+        # Add to the Depth Controls (depth_hbox)
+        depth_amount_label = QLabel("Depth Amount")
+        depth_amount_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        depth_hbox.addWidget(depth_amount_label)
+
+        # Add an input field for Depth Amount, with validation
+        self.depth_amount_input = QLineEdit()
+        self.depth_amount_input.setValidator(QIntValidator(0, 10000))  # Limits input to 0+ integers but logic limits > 0
+        self.depth_amount_input.setFixedWidth(100)
+        self.depth_amount_input.setText("200")  # Default depth = 1.0 (current depth)
+        self.depth_amount_input.setToolTip("Depth Amount. 0-10000. Usually 500-1000 is about right. Default: 500")
+        depth_hbox.addWidget(self.depth_amount_input)
+
+        max_depth_label = QLabel("Max Depth")
+        max_depth_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        depth_hbox.addWidget(max_depth_label)
+
+        # Add an input field for Max Depth, validate from 0.0 to 1.0 (floating-point)
+        self.max_depth_input = QLineEdit()
+        double_validator = QDoubleValidator(1.0, 10000.0, 2, self)  # Ranges from 0.0 to 1.0, accuracy up to 2 decimals
+        self.max_depth_input.setValidator(double_validator)
+        self.max_depth_input.setFixedWidth(100)
+        self.max_depth_input.setText("100.0")  # Default max depth = 1.0 (full range)
+        self.max_depth_input.setToolTip("Maximum Depth. Min = 1.0 (basically flat), Max = 10000, which is crazy deep. Try 500-1000, or less for bas-relief. Default: 50.0")
+        depth_hbox.addWidget(self.max_depth_input)
 
         # Add "Dynamic Depth" Checkbox to depth_hbox
         self.dynamic_depth_checkbox = QCheckBox("Dynamic Depth")
@@ -351,21 +387,34 @@ class MainWindow_ImageProcessing(QMainWindow):
 
         try:
             resolution = int(self.resolution_input.text())
+            depth_amount = float(self.depth_amount_input.text())
+            max_depth = float(self.max_depth_input.text())
+
+            # Validate depth_amount > 0 (no flat meshes)
+            if depth_amount <= 0:
+                self.show_error("Depth Amount must be greater than 0!")
+                return
+
+            # Validate max_depth within range [0,10000] -- somewhat arbitrary
+            if not (0.0 <= max_depth <= 10000.0):
+                self.show_error("Max Depth must be between 0.0 and 1.0!")
+                return
+
+            # Get smoothing method and model type
             smoothing_method = self.smoothing_dropdown.currentText()
             model_name = DepthTo3D().model_names[self.model_dropdown.currentText()]
-            self.depth_to_3d = DepthTo3D(model_type=model_name)  # Instantiate the DepthTo3D object
+            self.depth_to_3d = DepthTo3D(model_type=model_name)
 
-            # Determine image path to use
+            # Determine image path
             image_to_use = self.image_path
 
-            # Save and use the processed image if the checkbox is checked
+            # Save processed image if needed
             if self.use_processed_image_enabled and self.processed_image is not None:
                 processed_image_path = self._get_processed_image_path()
                 cv2.imwrite(processed_image_path, self.processed_image)
                 image_to_use = processed_image_path
-                print(f"Processed image saved and using path: {processed_image_path}")
 
-            # Generate mesh and get background color
+            # Pass depth_amount and max_depth into depth_to_3d processing
             self.output_mesh_obj, self.background_color = self.depth_to_3d.process_image(
                 image_to_use,
                 smoothing_method=smoothing_method,
@@ -373,14 +422,14 @@ class MainWindow_ImageProcessing(QMainWindow):
                 dynamic_depth=self.dynamic_depth_enabled,
                 grayscale_enabled=self.grayscale_enabled,
                 edge_detection_enabled=self.edge_detection_enabled,
+                # depth_amount=depth_amount,
+                # max_depth=max_depth,  # Pass max_depth
             )
-            print(f"3D model generated successfully with background color: {self.background_color}")
+            print(f"3D model generated successfully with Depth Amount: {depth_amount}, Max Depth: {max_depth}")
 
-            # Ensure background_color is in [0, 1] range
+            # Update 3D viewport
             if max(self.background_color) > 1.0:
                 self.background_color = [c / 255.0 for c in self.background_color]
-
-            # Update or initialize 3D viewport with the background color
             self.update_3d_viewport(self.background_color)
 
         except Exception as e:
@@ -409,9 +458,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         if self.processed_image is not None:
             height, width = self.processed_image.shape
             bytes_per_line = width
-            q_img = QImage(
-                self.processed_image.data, width, height, bytes_per_line, QImage.Format_Grayscale8
-            )
+            q_img = QImage(self.processed_image.data, width, height, bytes_per_line, QImage.Format_Grayscale8)
             self.preview_label.setPixmap(
                 QPixmap.fromImage(q_img).scaled(
                     self.preview_label.width(),
@@ -520,6 +567,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.three_d_viewport.clear_geometries()
         self.three_d_viewport.load_mesh(self.output_mesh_obj)
         self.three_d_viewport.run()
+        # self.three_d_viewport.show()
 
     def export_mesh(self):
         if not self.three_d_viewport.edges:
