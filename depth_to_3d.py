@@ -369,8 +369,26 @@ class DepthTo3D:
     def create_3d_mesh(self, image, depth, filename, smoothing_method, target_size, dynamic_depth, grayscale_enabled,
                        edge_detection_enabled, invert_colors_enabled=False, depth_amount=1.0):
         """
-        Create a 3D solid mesh with optional dynamically shaped backs, excluding solid background areas.
+         Args:
+            image: Input image data.
+            depth: Depth data corresponding to the image.
+            filename: The path to save the generated 3D mesh.
+            smoothing_method: (Optional) Method used for smoothing depth data.
+            target_size: (Optional) Desired output size.
+            dynamic_depth: (Optional) Adjust depth dynamically based on the data.
+            grayscale_enabled: (Optional) Whether to enable grayscale processing.
+            edge_detection_enabled: (Optional) Whether to enable edge detection.
+            invert_colors_enabled: (Optional) Whether to invert colors for depth data.
+            depth_amount: (Optional) Factor to control the depth scaling (1.0 = current behavior, 0.5 = half, 2.0 = double).
+                          Maximum allowed value is 100.0.
+        Returns:
+            Generated mesh (or related object).
         """
+        depth_amount = max(0.0, min(depth_amount, 100.0))
+
+        # Adjust the depth data based on the depth_amount
+        depth = depth * depth_amount
+
         # Step 1: Background processing
         h, w, _ = image.shape
         corners = [image[0, 0], image[0, w - 1], image[h - 1, 0], image[h - 1, w - 1]]

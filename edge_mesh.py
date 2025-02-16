@@ -24,29 +24,32 @@ f"""
 Utilities using opencv for edge detection in a GUI. 
 Also features depth map generation via select (implemented) methods via torch, etc. 
 Then 3D mesh generation from the depth map.
-Version 0.4.0
-    *Fixes several issues listed as "Known Issues" in the previous commit. Good checkpoint.
-Version 0.3.7 
-    *Fixes: 
-        *Color issues (again). 
-    *Adds: 
-        *"Project on Original" option. Works with and without grayscale enabled.
-    *Known Issues:
-        *Preview window may not update correctly. Change options a time or two to "fix it". 
-        *Preview image scaling is not perfect at startup. Resize the window to fix it. (For now.)
-Version 0.3.6 Adds:
-    *Add method to mirror and stitch the generated mesh. Not perfect, but it's a start. 
-    *You can still use the old method (no mirrored back) by checking "Dynamic Depth". That's better for 3D printing.
-    *Adds spinner.py for fun.
-Version 0.3.5 Adds: 
-    *Includes "date_time" at the end output file name, so you'll always get a new file! 
+Version history:
+* 0.4.1:
+    * Fixes a bug where the processed image was not displayed correctly in the preview at startup.
+* 0.4.0
+    * Fixes several issues listed as "Known Issues" in the previous commit. Good checkpoint.
+* 0.3.7 
+    * Fixes: 
+        * Color issues (again). 
+    * Adds: 
+        * "Project on Original" option. Works with and without grayscale enabled.
+    * Known Issues:
+        * Preview window may not update correctly. Change options a time or two to "fix it". 
+        * Preview image scaling is not perfect at startup. Resize the window to fix it. (For now.)
+* 0.3.6 Adds:
+    * Add method to mirror and stitch the generated mesh. Not perfect, but it's a start. 
+    * You can still use the old method (no mirrored back) by checking "Dynamic Depth". That's better for 3D printing.
+    * Adds spinner.py for fun.
+* 0.3.5 Adds: 
+    * Includes "date_time" at the end output file name, so you'll always get a new file! 
                     *** Clean your <output folder> as needed. ***
-    "Use Processed Image" option to create 3D mesh from current results, i.e., the image on the current right in GUI.
-    "Dynamic Depth" option to make the mesh dynamically shaped on the back, approximating the front.
-    "Edge Detection" option to enable or disable edge detection.
-    "Grayscale" option to enable or disable grayscale mode.
+    " Use Processed Image" option to create 3D mesh from current results, i.e., the image on the current right in GUI.
+    " Dynamic Depth" option to make the mesh dynamically shaped on the back, approximating the front.
+    " Edge Detection" option to enable or disable edge detection.
+    " Grayscale" option to enable or disable grayscale mode.
     
-    Notes: "Invert Colors" is intended for edge detection. Should it just be automatic? IDK, because it's fun
+    *Notes: "Invert Colors" is intended for edge detection. Should it just be automatic? IDK, because it's fun
               to have the option. It's like a filter. If you enable it, colors become their opposite, or complementary
               color. This may be useful sometimes for a grayscale image. Or, if you have a picture of a negative! 
               So I think it's fun _and_ useful.
@@ -54,22 +57,22 @@ Version 0.3.5 Adds:
     Fixes:
         * Background color for 3D viewport.
         * Supports 0 for resolution input. When you use this, the maximum of the image's width or height is used.
-        Updated:
-        ReadMe.md    
-Version 0.3.4 Adds background color as background color for 3D viewport. For more expected user experience.
+    * Updated:
+        * ReadMe.md    
+* 0.3.4 Adds background color as background color for 3D viewport. For more expected user experience.
               Note this background color is not saved in the exported mesh. It's simply carried over from
               the original image to the Open3D viewport.
-Version 0.3.3 Adds automatic background removal. This only happens when all four corners are a solid color.
-Version 0.3.2 Reopens the 3D viewport when closed, and clears existing geometry before loading a new mesh. 
-Version 0.3.1 Adds full color .PLY export support and a new depth map smoothing method.
+* 0.3.3 Adds automatic background removal. This only happens when all four corners are a solid color.
+* 0.3.2 Reopens the 3D viewport when closed, and clears existing geometry before loading a new mesh. 
+* 0.3.1 Adds full color .PLY export support and a new depth map smoothing method.
               viewport_3d.py now has export_mesh_as_obj and export_mesh_as_stl methods, and a SUPPORTED_EXTENSIONS list.
                              It takes a list of mesh files as arguments and opens a viewport for each valid file. 
                              (One at a time.) Be careful with many files! *Especially* if they're large. 
                              Large files take a few seconds to minutes to load, depending on your system specs.
               Fixes 3D viewport update issue. (Now controlled by mouse.)
-Version 0.3.0 adds depth map smoothing options and anisotropic diffusion.
-Version 0.2.0 adds depth map generation from shading and light cues.
-Version 0.1.0 adds edge detection and 3D mesh generation from edges.
+* 0.3.0 adds depth map smoothing options and anisotropic diffusion.
+* 0.2.0 adds depth map generation from shading and light cues.
+* 0.1.0 adds edge detection and 3D mesh generation from edges.
 ---
 
 Author: {__author__}
@@ -185,7 +188,6 @@ class MainWindow_ImageProcessing(QMainWindow):
         self._init_ui()
         o3d.visualization.webrtc_server.enable_webrtc()
         print(f"Open3D version: {o3d.__version__}")
-        self.load_last_used_image()
 
     def _init_ui(self):
         self.central_widget = QWidget()
@@ -399,6 +401,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         main_layout.addLayout(bottom_controls)
         self.central_widget.setLayout(main_layout)
 
+        self.load_last_used_image()
         delay_ms = 500  # Delay in milliseconds
         delay_sec = delay_ms / 1000  # Convert to seconds
         timer = threading.Timer(delay_sec, self.scale_image_to_fit_original)
@@ -512,6 +515,8 @@ class MainWindow_ImageProcessing(QMainWindow):
         return f"{base}_processed{ext}"
 
     def scale_image_to_fit_preview(self):
+        if self.processed_image is None:
+            self.update_preview()
         # Check if the processed image is valid
         if not isinstance(self.processed_image, np.ndarray):
             print("No processed image available to scale.")
