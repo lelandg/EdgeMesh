@@ -367,7 +367,7 @@ class DepthTo3D:
         return watertight_mesh
 
     def create_3d_mesh(self, image, depth, filename, smoothing_method, target_size, dynamic_depth, grayscale_enabled,
-                       edge_detection_enabled):
+                       edge_detection_enabled, invert_colors_enabled=False, depth_amount=1.0):
         """
         Create a 3D solid mesh with optional dynamically shaped backs, excluding solid background areas.
         """
@@ -441,7 +441,7 @@ class DepthTo3D:
             solid_mesh = self.add_mirror_mesh(mesh)
 
         # Construct file name suffix based on enabled options
-        file_suffix = ""
+        file_suffix = f"_D{depth_amount}".replace(".", "_")
         if grayscale_enabled:
             file_suffix += "_gray"
         if edge_detection_enabled:
@@ -459,7 +459,7 @@ class DepthTo3D:
         return output_ply_filename, background_color
 
     def process_image(self,image_path, smoothing_method="anisotropic", target_size=(500, 500),
-            dynamic_depth=False, grayscale_enabled=False, edge_detection_enabled=False):
+            dynamic_depth=False, grayscale_enabled=False, edge_detection_enabled=False, invert_colors_enabled=False, depth_amount=1.0):
         """
         Process the input image to estimate depth, project into 3D space, and save as a PLY file.
         :param image_path: Path to the input image.
@@ -491,7 +491,8 @@ class DepthTo3D:
             print(f"Warning: Could not smooth depth. Proceeding with raw depth. {e}")
 
         # Generate and save 3D mesh with updated file suffix
-        return self.create_3d_mesh(image, depth, f"{image_path}", smoothing_method, target_size, dynamic_depth, grayscale_enabled, edge_detection_enabled)
+        return self.create_3d_mesh(image, depth, f"{image_path}", smoothing_method, target_size, dynamic_depth,
+                                   grayscale_enabled, edge_detection_enabled, invert_colors_enabled, depth_amount)
 
 if __name__ == "__main__":
     # Command-line argument parsing

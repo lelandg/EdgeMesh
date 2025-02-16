@@ -24,7 +24,14 @@ f"""
 Utilities using opencv for edge detection in a GUI. 
 Also features depth map generation via select (implemented) methods via torch, etc. 
 Then 3D mesh generation from the depth map.
-Version 0.3.7 Adds: Resize images on app startup to fit the GUI.
+Version 0.3.7 
+    *Fixes: 
+        *Color issues (again). 
+    *Adds: 
+        *"Project on Original" option. Works with and without grayscale enabled.
+    *Known Issues:
+        *Preview window may not update correctly. Change options a time or two to "fix it". 
+        *Preview image scaling is not perfect at startup. Resize the window to fix it. (For now.)
 Version 0.3.6 Adds:
     *Add method to mirror and stitch the generated mesh. Not perfect, but it's a start. 
     *You can still use the old method (no mirrored back) by checking "Dynamic Depth". That's better for 3D printing.
@@ -119,10 +126,39 @@ def initialize_config():
             config.write(configfile)
     return config
 
+def process_preview_image(image, is_grayscale=False, invert_colors=False):
+    """
+    Ensures preview images are handled consistently by converting to RGB color space.
+    Applies optional grayscale and invert-color transformations.
+
+    :param image: Input image (expected as BGR or grayscale).
+    :param is_grayscale: Whether to convert the image to grayscale.
+    :param invert_colors: Whether to invert the colors for the preview.
+    :return: Processed image suitable for preview (RGB format).
+    """
+    # Handle None input
+    if image is None:
+        raise ValueError("Provided image is None.")
+
+    # Convert to RGB if the image is in BGR color space
+    if len(image.shape) == 3:  # Color image
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+    # Apply grayscale conversion if needed
+    if is_grayscale:
+        grayscale_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        image = cv2.cvtColor(grayscale_image, cv2.COLOR_GRAY2RGB)  # Keep 3 channels for RGB compatibility
+
+    # Apply color inversion if needed
+    if invert_colors:
+        image = cv2.bitwise_not(image)
+
+    return image
 
 class MainWindow_ImageProcessing(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.project_on_original = False
         self.background_color = [0.3, 0.3, 0.3]  # Default background color = dark gray
         self.three_d_viewport = None
         self.original_pixmap = None
@@ -185,6 +221,14 @@ class MainWindow_ImageProcessing(QMainWindow):
 
         # Initialize the variable to track the checkbox state
         self.edge_detection_enabled = True
+
+        # Add the "Project on Original" checkbox
+        self.project_on_original_checkbox = QCheckBox("Project on Original")
+        self.project_on_original_checkbox.setChecked(False)  # Set default to False
+        self.project_on_original_checkbox.stateChanged.connect(self.toggle_project_on_original)
+
+        # Add the checkbox to the layout (example) - customize it based on your layout details
+        bottom_controls.addWidget(self.project_on_original_checkbox)
 
         # Add "Grayscale" Option
         self.grayscale_checkbox = QCheckBox("Grayscale")
@@ -360,6 +404,11 @@ class MainWindow_ImageProcessing(QMainWindow):
         timer2 = threading.Timer(delay_sec, self.scale_image_to_fit_preview)
         timer2.start()
 
+    def toggle_project_on_original(self, state):
+        """Handles the toggling of 'Project on Original' checkbox."""
+        self.project_on_original = bool(state)  # Store the checkbox state in the attribute
+        print(f"Project on Original: {self.project_on_original}")
+
     def toggle_grayscale(self, state):
         """Enable or disable grayscale mode based on checkbox state."""
         self.grayscale_enabled = state == Qt.Checked
@@ -425,6 +474,12 @@ class MainWindow_ImageProcessing(QMainWindow):
                 cv2.imwrite(processed_image_path, self.processed_image)
                 image_to_use = processed_image_path
 
+            depth_amount = 1.0
+            try:
+                depth_amount = float(self.depth_amount_input.text())
+            except ValueError:
+                print("Invalid depth amount. Using default value of 1.0.")
+
             # Pass depth_amount and max_depth into depth_to_3d processing
             self.output_mesh_obj, self.background_color = self.depth_to_3d.process_image(
                 image_to_use,
@@ -433,6 +488,8 @@ class MainWindow_ImageProcessing(QMainWindow):
                 dynamic_depth=self.dynamic_depth_enabled,
                 grayscale_enabled=self.grayscale_enabled,
                 edge_detection_enabled=self.edge_detection_enabled,
+                invert_colors_enabled=self.invert_colors_enabled,
+                depth_amount=depth_amount,
                 # depth_amount=depth_amount,
                 # max_depth=max_depth,  # Pass max_depth
             )
@@ -453,7 +510,7 @@ class MainWindow_ImageProcessing(QMainWindow):
 
     def scale_image_to_fit_preview(self):
         # Check if the processed image is valid
-        if not self.processed_image:
+        if not isinstance(self.processed_image, np.ndarray):
             print("No processed image available to scale.")
             # Optionally, set a placeholder or clear the label
             self.preview_label.clear()
@@ -461,14 +518,15 @@ class MainWindow_ImageProcessing(QMainWindow):
             return
 
         target_width = self.preview_label.width()
-        target_height = self.processed_image.height()
+        target_height = self.preview_label.height()
 
         # Convert self.image (numpy.ndarray) to QImage
         height, width, channel = self.image.shape
         bytes_per_line = width * channel
-        q_img = QImage(self.processed_image.data, target_width, target_height, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
+        q_img = QImage(self.processed_image.data, width, height, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
 
-        self.preview_label.setPixmap(QPixmap.fromImage(q_img))
+        scaled_image = q_img.scaled(target_width, target_height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.preview_label.setPixmap(QPixmap.fromImage(scaled_image))
 
     def scale_image_to_fit_original(self):
         if self.image is not None:
@@ -504,8 +562,8 @@ class MainWindow_ImageProcessing(QMainWindow):
             )
 
         # Resize and scale the Processed Image
-        if self.processed_image is not None:
-            height, width = self.processed_image.shape
+        if self.processed_image is not None and isinstance(self.processed_image, np.ndarray):
+            height, width, depth = self.processed_image.shape
             bytes_per_line = width
             q_img = QImage(self.processed_image.data, width, height, bytes_per_line, QImage.Format_Grayscale8)
             self.preview_label.setPixmap(
@@ -652,15 +710,25 @@ class MainWindow_ImageProcessing(QMainWindow):
             if self.edge_detection_enabled:
                 # Perform edge detection if enabled
                 low_threshold = self.sensitivity_slider.value()
-                self.processed_image = detect_edges(
-                    self.image_path, low_threshold, low_threshold * 3, thickness=self.edge_thickness
-                )
+                fname = self.image_path
+                if self.processed_image is None:
+                    if self.grayscale_enabled:
+                        self.processed_image = cv2.cvtColor(cv2.imread(self.image_path, cv2.IMREAD_GRAYSCALE), cv2.COLOR_RGB2GRAY)
+                    else:
+                        self.processed_image = cv2.cvtColor(cv2.imread(self.image_path, cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
+                if self.grayscale_enabled and self.project_on_original:
+                    grayscale = cv2.cvtColor(cv2.imread(self.image_path, cv2.IMREAD_GRAYSCALE), cv2.COLOR_RGB2GRAY)
+                    basename, ext = os.path.splitext(self.image_path)
+                    fname = f"{basename}_gray.{ext}"
+                    cv2.imwrite(fname, grayscale)
+                self.processed_image = detect_edges(fname, low_threshold, low_threshold * 3,
+                    thickness=self.edge_thickness, project_on_original=self.project_on_original)
             elif self.grayscale_enabled:
                 # Otherwise, convert to grayscale if enabled
-                self.processed_image = cv2.imread(self.image_path, cv2.IMREAD_GRAYSCALE)
+                self.processed_image = cv2.cvtColor(cv2.imread(self.image_path, cv2.IMREAD_GRAYSCALE), cv2.COLOR_RGB2GRAY)
             else:
                 # Load the original color image if neither is enabled
-                self.processed_image = cv2.imread(self.image_path, cv2.IMREAD_COLOR)
+                self.processed_image = cv2.cvtColor(cv2.imread(self.image_path, cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
 
             # Apply inversion if enabled (applies to all modes)
             if self.invert_colors_enabled:
@@ -724,12 +792,14 @@ class MainWindow_ImageProcessing(QMainWindow):
 
     def display_processed_image(self):
         if self.processed_image is not None:
+            self.processed_image = process_preview_image(self.processed_image, is_grayscale=self.grayscale_enabled, invert_colors=self.invert_colors_enabled)
             if len(self.processed_image.shape) == 2:  # Grayscale image
                 height, width = self.processed_image.shape
                 bytes_per_line = width
                 q_img = QImage(
                     self.processed_image.data, width, height, bytes_per_line, QImage.Format_Grayscale8
                 )
+
             else:  # Color image
                 height, width, channels = self.processed_image.shape
                 bytes_per_line = channels * width
@@ -737,13 +807,10 @@ class MainWindow_ImageProcessing(QMainWindow):
                     self.processed_image.data, width, height, bytes_per_line, QImage.Format_RGB888
                 ).rgbSwapped()
 
+            target_height = self.preview_label.height()
+            target_width = self.preview_label.width()
             # Update the QLabel with the processed image
-            self.preview_label.setPixmap(
-                QPixmap.fromImage(q_img).scaled(
-                    self.preview_label.width(), self.preview_label.height(),
-                    Qt.KeepAspectRatio
-                )
-            )
+            self.preview_label.setPixmap(QPixmap.fromImage(q_img).scaled(target_width, target_height,Qt.KeepAspectRatio))
             self.scale_image_to_fit_preview()
 
     def save_image(self):
