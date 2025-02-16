@@ -1,5 +1,5 @@
 __author__ = "Leland Green"
-__version__ = "0.3.7"
+__version__ = "0.4.0"
 __date_created__ = "2025-01-28"
 __last_updated__ = "2025-01-29"
 __email__ = "lelandgreenproductions@gmail.com"
@@ -24,6 +24,8 @@ f"""
 Utilities using opencv for edge detection in a GUI. 
 Also features depth map generation via select (implemented) methods via torch, etc. 
 Then 3D mesh generation from the depth map.
+Version 0.4.0
+    *Fixes several issues listed as "Known Issues" in the previous commit. Good checkpoint.
 Version 0.3.7 
     *Fixes: 
         *Color issues (again). 
@@ -397,7 +399,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         main_layout.addLayout(bottom_controls)
         self.central_widget.setLayout(main_layout)
 
-        delay_ms = 50  # Delay in milliseconds
+        delay_ms = 500  # Delay in milliseconds
         delay_sec = delay_ms / 1000  # Convert to seconds
         timer = threading.Timer(delay_sec, self.scale_image_to_fit_original)
         timer.start()
@@ -408,6 +410,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         """Handles the toggling of 'Project on Original' checkbox."""
         self.project_on_original = bool(state)  # Store the checkbox state in the attribute
         print(f"Project on Original: {self.project_on_original}")
+        self.update_preview()
 
     def toggle_grayscale(self, state):
         """Enable or disable grayscale mode based on checkbox state."""
@@ -427,7 +430,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         """Enable or disable edge detection based on the checkbox state."""
         self.edge_detection_enabled = state == Qt.Checked
         print(f"Edge Detection Enabled: {self.edge_detection_enabled}")
-        self.update_edge_sensitivity_layout()
+        # self.update_edge_sensitivity_layout()
         self.update_preview()
 
     def toggle_use_processed_image(self, state):
@@ -640,11 +643,13 @@ class MainWindow_ImageProcessing(QMainWindow):
         """Toggle invert colors based on checkbox state."""
         self.invert_colors_enabled = state == Qt.Checked
         # You can add any necessary logic here, such as applying inversion immediately
-        if self.invert_colors_enabled:
-            self.invert_checkbox.setCheckState(Qt.Checked)
-        else:
-            self.invert_checkbox.setCheckState(Qt.Unchecked)
+        # if self.invert_colors_enabled:
+        #     self.invert_checkbox.setCheckState(Qt.Checked)
+        # else:
+        #     self.invert_checkbox.setCheckState(Qt.Unchecked)
+        print(f"Toggle Invert Colors: {self.invert_colors_enabled}")
         self.invert_colors()
+        self.update_preview()
 
     def invert_colors(self):
         """Invert colors of the original and processed image."""
@@ -713,11 +718,11 @@ class MainWindow_ImageProcessing(QMainWindow):
                 fname = self.image_path
                 if self.processed_image is None:
                     if self.grayscale_enabled:
-                        self.processed_image = cv2.cvtColor(cv2.imread(self.image_path, cv2.IMREAD_GRAYSCALE), cv2.COLOR_RGB2GRAY)
+                        self.processed_image = cv2.cvtColor(cv2.imread(self.image_path, cv2.IMREAD_GRAYSCALE), cv2.COLOR_GRAY2RGB)
                     else:
                         self.processed_image = cv2.cvtColor(cv2.imread(self.image_path, cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
                 if self.grayscale_enabled and self.project_on_original:
-                    grayscale = cv2.cvtColor(cv2.imread(self.image_path, cv2.IMREAD_GRAYSCALE), cv2.COLOR_RGB2GRAY)
+                    grayscale = cv2.imread(self.image_path, cv2.IMREAD_GRAYSCALE)
                     basename, ext = os.path.splitext(self.image_path)
                     fname = f"{basename}_gray.{ext}"
                     cv2.imwrite(fname, grayscale)
