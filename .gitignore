@@ -172,3 +172,4 @@ cython_debug/
 edge_mesh_error_log.txt
 .idea/editor.xml
 .idea/.name
+nuitka-crash-report.xml
