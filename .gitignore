@@ -169,3 +169,6 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+edge_mesh_error_log.txt
+.idea/editor.xml
+.idea/.name
