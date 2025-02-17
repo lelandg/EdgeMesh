@@ -459,15 +459,18 @@ class DepthTo3D:
 
         if dynamic_depth:
             flat_back_depth = np.median(z[z != 0]) - np.std(z[z != 0])
+            print (f"Dynamic flat back depth = {flat_back_depth}")
             solid_mesh = self.solidify_mesh_with_flat_back(mesh, flat_back_depth=flat_back_depth)
         else:
             solid_mesh = self.add_mirror_mesh(mesh)
 
         # Construct file name suffix based on enabled options
         file_suffix = f"_D{depth_amount}".replace(".", "_")
+        if smoothing_method:
+            file_suffix += f"_{smoothing_method}"
         file_suffix += f"-{self.model_type}"
-        file_suffix += "_B" + "".join(str(c) for c in background_color)
-        file_suffix += "_R{target_size[0]},{target_size[1]}"
+        file_suffix += f"_B" + "".join(str(c) for c in background_color)
+        file_suffix += f"_R{target_size[0]}x{target_size[1]}"
         if grayscale_enabled:
             file_suffix += "_gray"
         if edge_detection_enabled:
@@ -476,8 +479,6 @@ class DepthTo3D:
             file_suffix += "_invert"
         if dynamic_depth:
             file_suffix += "_dynamic"
-        if smoothing_method:
-            file_suffix += f"_{smoothing_method}"
 
         # For part of file name, format current date and time in format: YYYYMMDD_HHmmss
         now = datetime.now()
