@@ -28,6 +28,9 @@ class DepthTo3D:
     model_names = {"DenseDepth": "dense_depth", "MiDaS": "midas", "DPT": "dpt", "LeReS": "leres",
                    "DepthAnythingV2": "depth_anything_v2"}
 
+    model_lookup = {v: k for k, v in model_names.items()}
+    print (f"model_lookup = model_lookup")
+
     def load_model(self):
         """
         Load the depth estimation model.
@@ -98,6 +101,7 @@ class DepthTo3D:
         :param target_size: Tuple defining the target size (width, height) for the output depth map.
         :return: Depth map (numpy array) of the limited size.
         """
+        print(f"Estimating depth with target size: {target_size}...")
         img_h, img_w, _ = image.shape  # Use NumPy shape to get height and width
         depth = None
 
@@ -384,6 +388,7 @@ class DepthTo3D:
         Returns:
             Generated mesh (or related object).
         """
+        print (f"Creating 3D mesh with depth amount: {depth_amount}...")
         depth_amount = max(0.0, min(depth_amount, 100.0))
 
         # Adjust the depth data based on the depth_amount
@@ -460,21 +465,54 @@ class DepthTo3D:
 
         # Construct file name suffix based on enabled options
         file_suffix = f"_D{depth_amount}".replace(".", "_")
+        file_suffix += f"-{self.model_type}"
+        file_suffix += "_B" + "".join(str(c) for c in background_color)
+        file_suffix += "_R{target_size[0]},{target_size[1]}"
         if grayscale_enabled:
             file_suffix += "_gray"
         if edge_detection_enabled:
             file_suffix += "_edge"
+        if invert_colors_enabled:
+            file_suffix += "_invert"
+        if dynamic_depth:
+            file_suffix += "_dynamic"
+        if smoothing_method:
+            file_suffix += f"_{smoothing_method}"
 
         # For part of file name, format current date and time in format: YYYYMMDD_HHmmss
         now = datetime.now()
-        formatted_datetime = now.strftime("%Y%m%d_%H%M%S")
+        file_suffix += now.strftime("%Y%m%d_%H%M%S")
 
-        output_ply_filename = (f"{os.path.splitext(filename)[0]}-{self.model_type}_R{target_size[0]},{target_size[1]}_"+
-                      f"{smoothing_method}{file_suffix}_{formatted_datetime}.ply")
+        output_ply_filename = (f"{os.path.splitext(filename)[0]}{file_suffix}.ply")
         solid_mesh.export(output_ply_filename)
         print(f"3D mesh saved to {output_ply_filename}")
 
         return output_ply_filename, background_color
+
+    def modify_depth(self, depth_array, percentage: float):
+        """
+        Modify depth by removing the lowest values based on a given percentage.
+
+        Args:
+            depth_array (ndarray): 2D or 3D numpy array of depth values.
+            percentage (float): Percentage of lowest depth values to remove (0-100). Usually < 10 is good.
+
+        Returns:
+            ndarray: Modified depth array with the lowest values removed.
+        """
+        if not 0 <= percentage <= 100:
+            raise ValueError("Percentage must be between 0 and 100.")
+
+        # Flatten the depth array for percentile calculation
+        flattened = depth_array.flatten()
+
+        # Calculate the threshold value based on the given percentage
+        threshold = np.percentile(flattened, percentage)
+
+        # Apply a mask to set values below the threshold to zero
+        modified_depth = np.where(depth_array > threshold, depth_array, 0)
+
+        return modified_depth
 
     def process_image(self,image_path, smoothing_method="anisotropic", target_size=(500, 500),
             dynamic_depth=False, grayscale_enabled=False, edge_detection_enabled=False, invert_colors_enabled=False, depth_amount=1.0):
@@ -488,6 +526,7 @@ class DepthTo3D:
         :param edge_detection_enabled: If True, indicates edge detection was used.
         """
         # Load the image
+        print(f"Processing image: {image_path} \r\n\t\t\tWith: Depth map resolution = {target_size}, Grayscale = {grayscale_enabled} Edge detection = {edge_detection_enabled}, Invert colors = {invert_colors_enabled}, Dynamic depth = {dynamic_depth}, Depth amount = {depth_amount}...")
         image = cv2.imread(image_path)
         img_h, img_w, _ = image.shape
         if target_size == (0,0):
@@ -497,10 +536,10 @@ class DepthTo3D:
         if image is None:
             raise ValueError(f"Image not found: {image_path}")
 
-        print(f"Processing image: {image_path} with Dynamic Depth = {dynamic_depth}...")
-
         # Estimate depth
-        depth = self.estimate_depth(image, target_size=target_size)
+        depth = self.estimate_depth(image, target_size)
+        # Remove the lowest values. 0.05 = remove 5% of the lowest depth values.
+        depth = self.modify_depth(depth, 1)
 
         # Apply depth smoothing
         try:

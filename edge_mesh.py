@@ -1,5 +1,5 @@
 __author__ = "Leland Green"
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 __date_created__ = "2025-01-28"
 __last_updated__ = "2025-01-29"
 __email__ = "lelandgreenproductions@gmail.com"
@@ -26,7 +26,11 @@ Also features depth map generation via select (implemented) methods via torch, e
 Then 3D mesh generation from the depth map.
 Version history:
 * 0.4.1:
+    * Implements depth amount. This is just a simple multiplier for the depth map. (Still does not use "max depth".)
+    * Changed default depth amount to 1.0.
     * Fixes a bug where the processed image was not displayed correctly in the preview at startup.
+    * Fix problems when using grayscale mode.
+    * Tweak output file name to include more information.
 * 0.4.0
     * Fixes several issues listed as "Known Issues" in the previous commit. Good checkpoint.
 * 0.3.7 
@@ -343,7 +347,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.depth_amount_input = QLineEdit()
         self.depth_amount_input.setValidator(QIntValidator(0, 10000))  # Limits input to 0+ integers but logic limits > 0
         self.depth_amount_input.setFixedWidth(100)
-        self.depth_amount_input.setText("200")  # Default depth = 1.0 (current depth)
+        self.depth_amount_input.setText("1.0")  # Default depth = 1.0 (current depth)
         self.depth_amount_input.setToolTip("Depth Amount. 0-10000. Usually 500-1000 is about right. Default: 500")
         depth_hbox.addWidget(self.depth_amount_input)
 
