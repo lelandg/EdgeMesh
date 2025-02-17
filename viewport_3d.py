@@ -201,6 +201,38 @@ class ThreeDViewport:
             print(f"Error exporting mesh to STL: {e}")
 
 
+def find_newest_file_in_directory(directory_path):
+    # Define the list of allowed file extensions
+    allowed_extensions = [".obj", ".ply", ".stl", ".off", ".gltf", ".glb"]
+
+    # Scan the directory and collect files with allowed extensions
+    files_with_timestamps = []
+    for root, dirs, files in os.walk(directory_path):
+        for file in files:
+            # Check file extension
+            if any(file.lower().endswith(ext) for ext in allowed_extensions):
+                file_path = os.path.join(root, file)
+                modified_time = os.path.getmtime(file_path)  # Get the last modified timestamp
+                files_with_timestamps.append((file_path, modified_time))
+
+    # Check if any files are collected
+    if not files_with_timestamps:
+        return None  # Return None if no valid files are found
+
+    # Find the newest file
+    newest_file = max(files_with_timestamps, key=lambda x: x[1])
+    return newest_file[0]  # Return the file name of the newest file
+
+
+    # # Example usage
+    # directory_to_scan = "C:/example_directory"  # Replace with your directory path
+    # newest_file = find_newest_file_in_directory(directory_to_scan)
+    # if newest_file:
+    #     print(f"The newest file is: {newest_file}")
+    # else:
+    #     print("No valid files found in the directory.")
+
+
 if __name__ == "__main__":
     # Supported mesh formats
     SUPPORTED_EXTENSIONS = [".obj", ".ply", ".stl", ".off", ".gltf", ".glb"]
@@ -234,14 +266,14 @@ if __name__ == "__main__":
                 except Exception as e:
                     print(f"Error while loading or visualizing {mesh_file}: {e}")
     else:
-        fname = "g:/Downloads/UseMe.obj"
         # E.g. fname = "g:/Downloads/lelandgreen_Technical_perspective_Illustration_of_many_rectan_e4408041-480c-40bb-96b6-f415b199dc70_0*2025*.ply"
+        fname = find_newest_file_in_directory("G:/Downloads/")
         print(f"Usage: python {os.path.basename(__file__)} [path_to_mesh1] [path_to_mesh2] ...")
         print(f"Wildcards are supported for matching multiple files.")
         print("`*.obj`: Matches all `.obj` files in the current directory.")
         print("`models/**/*.stl`: Matches all `.stl` files recursively in the `models` directory.\r\n"
                 "Supported mesh formats: ", ", ".join(SUPPORTED_EXTENSIONS))
         print(f"Example: python {os.path.basename(__file__)} *.obj *.ply sample.stl")
-        print(f"Using hard-coded mesh file for demonstration: {fname}")
+        print(f"Using newest matching file in Downloads for demonstration: {fname}")
         viewport = ThreeDViewport(initial_mesh_file=fname)
         viewport.run()
