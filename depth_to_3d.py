@@ -371,7 +371,8 @@ class DepthTo3D:
         return watertight_mesh
 
     def create_3d_mesh(self, image, depth, filename, smoothing_method, target_size, dynamic_depth, grayscale_enabled,
-                       edge_detection_enabled, invert_colors_enabled=False, depth_amount=1.0):
+                       edge_detection_enabled, invert_colors_enabled=False, depth_amount=1.0, project_on_original=False,
+                       background_removal=False, background_tolerance=10):
         """
          Args:
             image: Input image data.
@@ -385,6 +386,9 @@ class DepthTo3D:
             invert_colors_enabled: (Optional) Whether to invert colors for depth data.
             depth_amount: (Optional) Factor to control the depth scaling (1.0 = current behavior, 0.5 = half, 2.0 = double).
                           Maximum allowed value is 100.0.
+            project_on_original: (Optional) Whether to project the mesh onto the original image.
+            background_removal: (Optional) Whether to remove the background based on the average color.
+            background_tolerance: (Optional) Tolerance for background color removal.
         Returns:
             Generated mesh (or related object).
         """
@@ -397,16 +401,16 @@ class DepthTo3D:
         # Step 1: Background processing
         h, w, _ = image.shape
         corners = [image[0, 0], image[0, w - 1], image[h - 1, 0], image[h - 1, w - 1]]
-        tolerance = 50  # Tolerance for background color detection
         avg_color = np.mean(corners, axis=0)
 
-        background_color = [2, 2, 2]  # Default background color (dark gray)
-
-        if all(np.all(np.abs(corner - avg_color) < tolerance) for corner in corners):
+        if background_removal and all(np.all(np.abs(corner - avg_color) < background_tolerance) for corner in corners):
             background_color = avg_color.astype(np.uint8).tolist()  # Convert to list for passing to viewport
+        else:
+            background_color = None
 
         if background_color is not None:
-            mask = cv2.inRange(image, avg_color - tolerance, avg_color + tolerance)
+            print (f"Masking background color = {background_color}")
+            mask = cv2.inRange(image, avg_color - background_tolerance, avg_color + background_tolerance)
             if target_size and target_size != (0, 0) and target_size != (w, h):
                 mask_resized = cv2.resize(mask, (target_size[1], target_size[0]), interpolation=cv2.INTER_NEAREST)
             else:
@@ -468,8 +472,13 @@ class DepthTo3D:
         file_suffix = f"_D{depth_amount}".replace(".", "_")
         if smoothing_method:
             file_suffix += f"_{smoothing_method}"
+        if project_on_original:
+            file_suffix += "_projected"
+        if background_removal:
+            file_suffix += "_noBG"
         file_suffix += f"-{self.model_type}"
-        file_suffix += f"_B" + "".join(str(c) for c in background_color)
+        if background_color is not None:
+            file_suffix += f"_B" + "".join(str(c) for c in background_color)
         file_suffix += f"_R{target_size[0]}x{target_size[1]}"
         if grayscale_enabled:
             file_suffix += "_gray"
@@ -488,9 +497,11 @@ class DepthTo3D:
         solid_mesh.export(output_ply_filename)
         print(f"3D mesh saved to {output_ply_filename}")
 
+        if background_color is None:
+            background_color = [-1, -1, -1]
         return output_ply_filename, background_color
 
-    def modify_depth(self, depth_array, percentage: float):
+    def modify_depth(self, depth_array, percentage):
         """
         Modify depth by removing the lowest values based on a given percentage.
 
@@ -515,8 +526,10 @@ class DepthTo3D:
 
         return modified_depth
 
-    def process_image(self,image_path, smoothing_method="anisotropic", target_size=(500, 500),
-            dynamic_depth=False, grayscale_enabled=False, edge_detection_enabled=False, invert_colors_enabled=False, depth_amount=1.0):
+    def process_image(self, image_path, smoothing_method="anisotropic", target_size=(500, 500), dynamic_depth=False,
+                      grayscale_enabled=False, edge_detection_enabled=False, invert_colors_enabled=False,
+                      depth_amount=1.0, depth_drop_percentage=0, project_on_original=False, background_removal=False,
+                      background_tolerance=0):
         """
         Process the input image to estimate depth, project into 3D space, and save as a PLY file.
         :param image_path: Path to the input image.
@@ -527,7 +540,12 @@ class DepthTo3D:
         :param edge_detection_enabled: If True, indicates edge detection was used.
         """
         # Load the image
-        print(f"Processing image: {image_path} \r\n\t\t\tWith: Depth map resolution = {target_size}, Grayscale = {grayscale_enabled} Edge detection = {edge_detection_enabled}, Invert colors = {invert_colors_enabled}, Dynamic depth = {dynamic_depth}, Depth amount = {depth_amount}...")
+        print(f"Processing image: {image_path} \r\n\t\t\tWith: Depth map resolution = {target_size}, "
+              f"Grayscale = {grayscale_enabled} Edge detection = {edge_detection_enabled}, "
+              f"Invert colors = {invert_colors_enabled}, Dynamic depth = {dynamic_depth}, Depth amount = {depth_amount}, "
+              f"Removing {depth_drop_percentage}% of the lowest depth values, Smoothing method = {smoothing_method}, "
+              f"Project on original = {project_on_original}, Background removal = {background_removal}, "
+              f"Background tolerance = {background_tolerance}")
         image = cv2.imread(image_path)
         img_h, img_w, _ = image.shape
         if target_size == (0,0):
@@ -540,7 +558,7 @@ class DepthTo3D:
         # Estimate depth
         depth = self.estimate_depth(image, target_size)
         # Remove the lowest values. 0.05 = remove 5% of the lowest depth values.
-        depth = self.modify_depth(depth, 1)
+        depth = self.modify_depth(depth, depth_drop_percentage)
 
         # Apply depth smoothing
         try:
@@ -549,8 +567,10 @@ class DepthTo3D:
             print(f"Warning: Could not smooth depth. Proceeding with raw depth. {e}")
 
         # Generate and save 3D mesh with updated file suffix
-        return self.create_3d_mesh(image, depth, f"{image_path}", smoothing_method, target_size, dynamic_depth,
-                                   grayscale_enabled, edge_detection_enabled, invert_colors_enabled, depth_amount)
+        return self.create_3d_mesh(image, depth, f"{image_path}", smoothing_method, target_size,
+                                   dynamic_depth, grayscale_enabled, edge_detection_enabled,
+                                   invert_colors_enabled, depth_amount, project_on_original,
+                                   background_removal, background_tolerance=background_tolerance)
 
 if __name__ == "__main__":
     # Command-line argument parsing

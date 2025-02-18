@@ -39,7 +39,7 @@ Note that some of these features are not exposed in the GUI, but are available i
 
 ### 4. **Image Manipulation and Visualization**
 - Resize and sharpen processed images for best results in edge and mesh processing.
-- Adjustable background colors during visualization.
+- If you select "Remove Background" and all four corners of the image are the same color, the background is removed automatically.
 - Toggle between processed and unprocessed outputs for real-time comparisons.
 
 ### 5. **3D Viewport**
