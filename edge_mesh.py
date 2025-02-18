@@ -1,10 +1,10 @@
 __author__ = "Leland Green"
-__version__ = "0.4.1"
+__version__ = "0.4.2"
 __date_created__ = "2025-01-28"
 __last_updated__ = "2025-01-29"
 __email__ = "lelandgreenproductions@gmail.com"
 
-__license__ = "Open Source" # License of this script is free for all purposes.
+__license__ = "Commercial" # License of this script is free for all purposes.
 
 import threading
 
@@ -18,13 +18,13 @@ visualize_depth = False
 visualize_partitioning = False
 visualize_edges = False
 
-# At least early versions. Branch, clone, copy, download when ready.
-# Just do not mutilate. If you must, always use your own bytes for that. :)
 f"""
 Utilities using opencv for edge detection in a GUI. 
 Also features depth map generation via select (implemented) methods via torch, etc. 
 Then 3D mesh generation from the depth map.
 Version history:
+* 0.4.2: 
+    * Corrected input validation for depth to allow float.
 * 0.4.1:
     * Implements depth amount. This is just a simple multiplier for the depth map. (Still does not use "max depth".)
     * Changed default depth amount to 1.0.
@@ -273,7 +273,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.line_thickness_slider = QSlider(Qt.Horizontal)
         self.line_thickness_slider.setMinimum(1)
         self.line_thickness_slider.setMaximum(10)
-        self.line_thickness_slider.setValue(3)
+        self.line_thickness_slider.setValue(2)
         self.line_thickness_slider.valueChanged.connect(self.update_line_thickness)
         line_thickness_hbox.addWidget(self.line_thickness_slider)
 
@@ -345,7 +345,7 @@ class MainWindow_ImageProcessing(QMainWindow):
 
         # Add an input field for Depth Amount, with validation
         self.depth_amount_input = QLineEdit()
-        self.depth_amount_input.setValidator(QIntValidator(0, 10000))  # Limits input to 0+ integers but logic limits > 0
+        self.depth_amount_input.setValidator(QDoubleValidator(1.0, 10000.0, 5, self))
         self.depth_amount_input.setFixedWidth(100)
         self.depth_amount_input.setText("1.0")  # Default depth = 1.0 (current depth)
         self.depth_amount_input.setToolTip("Depth Amount. 0-10000. Usually 500-1000 is about right. Default: 500")
@@ -357,7 +357,7 @@ class MainWindow_ImageProcessing(QMainWindow):
 
         # Add an input field for Max Depth, validate from 0.0 to 1.0 (floating-point)
         self.max_depth_input = QLineEdit()
-        double_validator = QDoubleValidator(1.0, 10000.0, 2, self)  # Ranges from 0.0 to 1.0, accuracy up to 2 decimals
+        double_validator = QDoubleValidator(1.0, 10000.0, 5, self)  # Ranges from 0.0 to 10000.0, accuracy up to 5 decimals
         self.max_depth_input.setValidator(double_validator)
         self.max_depth_input.setFixedWidth(100)
         self.max_depth_input.setText("100.0")  # Default max depth = 1.0 (full range)
