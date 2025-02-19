@@ -3,6 +3,8 @@ import sys
 import os
 import open3d as o3d
 
+from measurement_grid_visualizer import MeasurementGrid
+
 class ThreeDViewport:
     def __init__(self, initial_mesh_file=None, background_color=None):
         """
@@ -17,6 +19,8 @@ class ThreeDViewport:
         self.viewer.create_window(title, width=1024, height=768, left=800, top=50)
 
         self.mesh = None  # Placeholder for the loaded 3D mesh
+        self.measurement_grid = None  # Placeholder for the measurement grid
+        self.display_grid = False  # Flag to toggle the measurement grid visibility
         self.zoom_factor = 1.0  # Default zoom factor
         self.pan_x = 0.0  # Pan translation on x-axis
         self.pan_y = 0.0  # Pan translation on y-axis
@@ -41,6 +45,7 @@ class ThreeDViewport:
         self._setup_key_callbacks()
         if initial_mesh_file:
             self.load_mesh(initial_mesh_file)
+            self.show_grid()
 
     def _setup_key_callbacks(self):
         """
@@ -61,6 +66,25 @@ class ThreeDViewport:
         # Support for Shift + Arrow Keys for zoom
         self.viewer.register_key_callback(ord("U"), lambda _: self.zoom(0.1))  # Zoom in
         self.viewer.register_key_callback(ord("J"), lambda _: self.zoom(-0.1))  # Zoom out
+        self.viewer.register_key_callback(ord("g"), lambda _: self.toggle_grid())  # Zoom out
+        self.viewer.register_key_callback(ord("G"), lambda _: self.toggle_grid())  # Zoom out
+
+    def toggle_grid(self):
+        """
+        Toggle the visibility of the measurement grid in the viewport.
+        """
+        self.display_grid = not self.display_grid
+        print(f"Measurement grid {'enabled' if self.display_grid else 'disabled'}.")
+        self.show_grid()
+
+    def show_grid(self):
+        if self.display_grid:
+            if self.measurement_grid is None:
+                self.measurement_grid = self.create_measurement_grid()
+            self.viewer.add_geometry(self.measurement_grid)
+        else:
+            self.viewer.remove_geometry(self.measurement_grid)
+
 
     def clear_geometries(self):
         """
@@ -90,37 +114,31 @@ class ThreeDViewport:
 
             # Add the new mesh for rendering
             self.viewer.add_geometry(self.mesh)
-            self._center_mesh_in_view()
+            # self._center_mesh_in_view()
             self.viewer.get_render_option().background_color = self.background_color
 
+            self.measurement_grid = MeasurementGrid(self.mesh).create_measurement_grid()
             print(f"Mesh loaded: {mesh_file}")
         except Exception as e:
             print(f"Error loading mesh: {e}")
 
-    def _center_mesh_in_view(self):
+    def create_measurement_grid(self):
         """
-        Automatically center and scale the mesh to fit within the viewport.
-        Adjust the camera's viewpoint and zoom level based on the mesh's bounding box.
+        Create a measurement grid using Open3D's LineSet to overlay on the viewport.
+
+        :return: An Open3D LineSet object representing the measurement grid.
         """
         if self.mesh is None:
-            return
+            print("No mesh loaded to create a measurement grid.")
+            return None
 
-        bbox = self.mesh.get_axis_aligned_bounding_box()
-        center = bbox.get_center()
-        extent = max(bbox.extent)  # Get the maximum extent to ensure proper scaling
+        # Create a measurement grid based on the bounding box of the mesh
+        grid = MeasurementGrid(self.mesh).create_measurement_grid()
 
-        # Update the ViewControl to adjust to the bounding box
-        ctr = self.viewer.get_view_control()
-        ctr.set_lookat(center.tolist())  # Set the camera to look at the mesh's center
+        # # Set the grid color to light gray
+        # grid.paint_uniform_color([0.7, 0.7, 0.7])
 
-        # Set zoom to fit the entire extent of the bounding box in the viewport
-        ctr.set_zoom(max(0.1, 1.5 / extent))  # Scale based on bounding box extent
-
-        # Set the camera front and up direction for a standard view
-        ctr.set_front([0.0, 0.0, -1.0])  # Camera facing the mesh
-        ctr.set_up([0.0, 1.0, 0.0])  # Camera's up direction
-
-        print("Mesh centered and scaled to fill the viewport.")
+        return grid
 
     def pan(self, dx, dy):
         """

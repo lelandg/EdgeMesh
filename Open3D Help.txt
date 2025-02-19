@@ -55,16 +55,12 @@
 
 -- Keys registered for callback functions --
   
-[+] 
-[-] 
-[A] 
-[D] 
-[J] 
-[S] 
-[U] 
-[W] 
+[=] = Zoom in
+[-] = Zoom out
+[J] = Zoom out
+[U] = Zoom in
+[G] = Toggle grid visibility.
 
   The default functions of these keys will be overridden.
 
-  Custom mouse callbacks registered for: 
 

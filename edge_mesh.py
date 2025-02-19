@@ -1,5 +1,5 @@
 __author__ = "Leland Green"
-__version__ = "0.5.0"
+__version__ = "0.5.1"
 __date_created__ = "2025-01-28"
 __last_updated__ = "2025-01-29"
 __email__ = "lelandgreenproductions@gmail.com"
@@ -24,6 +24,9 @@ Utilities using opencv for edge detection in a GUI.
 Also features depth map generation via select (implemented) methods via torch, etc. 
 Then 3D mesh generation from the depth map.
 Version history:
+* 0.5.1:
+    * Adds: G key now toggles a "measuring grid" on and off. It's just color lines on the edge of the mesh, right now.
+      This should come in handy to figure out what percentage depth drop to use!
 * 0.5.0:
     * Fixes:
         * Grayscale mode works without edge detection.
