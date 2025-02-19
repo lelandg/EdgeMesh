@@ -1,5 +1,5 @@
 __author__ = "Leland Green"
-__version__ = "0.4.3"
+__version__ = "0.5.0"
 __date_created__ = "2025-01-28"
 __last_updated__ = "2025-01-29"
 __email__ = "lelandgreenproductions@gmail.com"
@@ -24,6 +24,13 @@ Utilities using opencv for edge detection in a GUI.
 Also features depth map generation via select (implemented) methods via torch, etc. 
 Then 3D mesh generation from the depth map.
 Version history:
+* 0.5.0:
+    * Fixes:
+        * Grayscale mode works without edge detection.
+        * Only flip the image before processing when DepthAnythingV2 is used. (Not sure why it reverses depth map?)
+        * ThreeDViewport class no longer binds some keys, mostly so W for wireframe works.
+    * Adds:
+        * Tweaks to depth map to allow modifications.
 * 0.4.3:
     * UI improvements. Added tooltips to all input fields and buttons.
     * Fixed the depth removal by percentage. 
@@ -827,11 +834,15 @@ class MainWindow_ImageProcessing(QMainWindow):
             return
 
         try:
-            # Handle edge detection
+            fname = self.image_path
+            if self.grayscale_enabled:
+                grayscale = cv2.imread(self.image_path, cv2.IMREAD_GRAYSCALE)
+                basename, ext = os.path.splitext(self.image_path)
+                fname = f"{basename}_gray.{ext}"
+                cv2.imwrite(fname, grayscale)
             if self.edge_detection_enabled:
                 # Perform edge detection if enabled
                 low_threshold = self.sensitivity_slider.value()
-                fname = self.image_path
                 if self.processed_image is None:
                     if self.grayscale_enabled:
                         self.processed_image = cv2.cvtColor(cv2.imread(self.image_path, cv2.IMREAD_GRAYSCALE), cv2.COLOR_GRAY2RGB)
@@ -846,7 +857,7 @@ class MainWindow_ImageProcessing(QMainWindow):
                     thickness=self.edge_thickness, project_on_original=self.project_on_original)
             elif self.grayscale_enabled:
                 # Otherwise, convert to grayscale if enabled
-                self.processed_image = cv2.cvtColor(cv2.imread(self.image_path, cv2.IMREAD_GRAYSCALE), cv2.COLOR_RGB2GRAY)
+                self.processed_image = cv2.imread(fname, cv2.IMREAD_COLOR)
             else:
                 # Load the original color image if neither is enabled
                 self.processed_image = cv2.cvtColor(cv2.imread(self.image_path, cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)

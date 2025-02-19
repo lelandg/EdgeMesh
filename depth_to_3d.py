@@ -94,7 +94,7 @@ class DepthTo3D:
                 f"Unsupported model type. Use one of:\n{', '.join(self.model_names.keys())}.")
         return model, transform
 
-    def estimate_depth(self, image, target_size=(500, 500)):
+    def estimate_depth(self, image, target_size=(500, 500), flip=False):
         """
         Estimate depth from a single image.
         :param image: Input image (numpy array).
@@ -108,7 +108,10 @@ class DepthTo3D:
         # Resize to ensure divisibility by 32
         new_h = (img_h + 31) // 32 * 32
         new_w = (img_w + 31) // 32 * 32
-        resized_image = cv2.flip(cv2.resize(image, (new_w, new_h)), 1)  # Resize and flip horizontally
+        resized_image = cv2.resize(image, (new_w, new_h)) # Resize
+        if flip:
+            resized_image = cv2.flip(resized_image, 1) # Flip horizontally
+
 
         # Convert to tensor
         img_input = Image.fromarray(cv2.cvtColor(resized_image, cv2.COLOR_BGR2RGB))
@@ -556,7 +559,10 @@ class DepthTo3D:
             raise ValueError(f"Image not found: {image_path}")
 
         # Estimate depth
-        depth = self.estimate_depth(image, target_size)
+        flip = False
+        if self.model_type == "depth_anything_v2":
+            flip = True
+        depth = self.estimate_depth(image, target_size, flip)
         # Remove the lowest values. 0.05 = remove 5% of the lowest depth values.
         depth = self.modify_depth(depth, depth_drop_percentage)
 

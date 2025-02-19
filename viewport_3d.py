@@ -42,37 +42,20 @@ class ThreeDViewport:
         if initial_mesh_file:
             self.load_mesh(initial_mesh_file)
 
-    # def __init__(self, initial_mesh_file=None):
-    #     """
-    #     Initialize the 3D viewport using Open3D with default parameters
-    #     for camera movement, rotation, and mesh rendering.
-    #     """
-    #     self.viewer = o3d.visualization.VisualizerWithKeyCallback()
-    #     title = f"3D Viewport - Open3D v{o3d.__version__} - Press 'H' for help - {initial_mesh_file}"
-    #     self.viewer.create_window(title, width=800, height=600, left=800, top=50)
-    #
-    #     self.mesh = None  # Placeholder for the loaded 3D mesh
-    #     self.zoom_factor = 1.0  # Default zoom factor
-    #     self.pan_x = 0.0  # Pan translation on x-axis
-    #     self.pan_y = 0.0  # Pan translation on y-axis
-    #
-    #     # Register interaction callbacks
-    #     self._setup_key_callbacks()
-    #     if initial_mesh_file:
-    #         self.load_mesh(initial_mesh_file)
-
     def _setup_key_callbacks(self):
         """
         Set up key callbacks for panning, zooming, and navigation in the viewport.
         """
         # Panning with arrow keys (WASD for directions)
-        self.viewer.register_key_callback(ord("W"), lambda _: self.pan(0, 10))  # Pan up
-        self.viewer.register_key_callback(ord("S"), lambda _: self.pan(0, -10))  # Pan down
-        self.viewer.register_key_callback(ord("A"), lambda _: self.pan(-10, 0))  # Pan left
-        self.viewer.register_key_callback(ord("D"), lambda _: self.pan(10, 0))  # Pan right
-
-        # Zooming with '+' and '-' keys
-        self.viewer.register_key_callback(ord("+"), lambda _: self.zoom(10))  # Zoom in
+        # self.viewer.register_key_callback(ord("W"), lambda _: self.pan(0, 10))  # Pan up
+        # self.viewer.register_key_callback(ord("S"), lambda _: self.pan(0, -10))  # Pan down
+        # self.viewer.register_key_callback(ord("A"), lambda _: self.pan(-10, 0))  # Pan left
+        # self.viewer.register_key_callback(ord("D"), lambda _: self.pan(10, 0))  # Pan right
+        #
+        # # Zooming with '+' and '-' keys
+        # self.viewer.register_key_callback(ord("+"), lambda _: self.zoom(10))  # Zoom in
+        # self.viewer.register_key_callback(ord("-"), lambda _: self.zoom(-10))  # Zoom out
+        self.viewer.register_key_callback(ord("="), lambda _: self.zoom(10))  # Zoom in
         self.viewer.register_key_callback(ord("-"), lambda _: self.zoom(-10))  # Zoom out
 
         # Support for Shift + Arrow Keys for zoom
@@ -267,8 +250,32 @@ if __name__ == "__main__":
                     print(f"Error while loading or visualizing {mesh_file}: {e}")
     else:
         # E.g. fname = "g:/Downloads/lelandgreen_Technical_perspective_Illustration_of_many_rectan_e4408041-480c-40bb-96b6-f415b199dc70_0*2025*.ply"
-        fname = find_newest_file_in_directory("G:/Downloads/")
+        import os
+        import platform
+
+        os_name = os.name
+        platform_system = platform.system()
+        fname = ""
+        if os_name == 'nt':
+            print("Operating System: Windows")
+            fname = find_newest_file_in_directory("G:/Downloads/")
+        elif os_name == 'posix':
+            fname = find_newest_file_in_directory("~/Downloads/")
+            if platform_system == 'Darwin':
+                print("Operating System: macOS")
+            elif platform_system == 'Linux':
+                print("Operating System: Linux")
+            else:
+                print("Operating System: POSIX-compliant system (Unknown)")
+        else:
+            fname = find_newest_file_in_directory("~/Downloads/")
+            print(f"Operating System: Unknown ({os_name})")
+
+        print(f"Detailed Information: {platform.platform()}")
+
         print(f"Usage: python {os.path.basename(__file__)} [path_to_mesh1] [path_to_mesh2] ...")
+        print(f"If [path_to_mesh1] is is a folder name, the newest mesh file in the folder will be used.")
+        print(f"If no arguments are provided, the newest mesh file in G:/Downloads will be used.")
         print(f"Wildcards are supported for matching multiple files.")
         print("`*.obj`: Matches all `.obj` files in the current directory.")
         print("`models/**/*.stl`: Matches all `.stl` files recursively in the `models` directory.\r\n"
