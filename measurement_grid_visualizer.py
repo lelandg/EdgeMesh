@@ -1,24 +1,29 @@
 import numpy as np
 import open3d as o3d
+import text_3d
 
 from color_transition_gradient_generator import ColorTransition
 
+rainbow_colors = ["red", "orange", "yellow", "green", "blue", "indigo", "violet"]
 
 class MeasurementGrid:
-    def __init__(self, trimesh):
+    def __init__(self, trimesh, colors=None):
         """
         Initialize the MeasurementGrid class with a TriMesh instance.
 
         :param trimesh: TriMesh instance representing the target mesh.
         """
         self.mesh = trimesh
-        self.colors = ColorTransition("red", "orange", "yellow").generate_gradient(21)
+        if not colors:
+            colors = rainbow_colors
 
-    def create_measurement_grid(self):
+        self.colors = ColorTransition(*colors).generate_gradient(21)
+
+    def _create_grid_with_labels(self):
         """
-        Create a measurement grid using Open3D's LineSet to overlay on the viewport.
+        Create the grid lines with associated labels positioned at the endpoints.
 
-        :return: An Open3D LineSet object representing the measurement grid.
+        :return: List of grid line vertices, edges, colors, and text labels as Open3D geometries.
         """
         if self.mesh is None:
             print("No mesh loaded to create a measurement grid.")
@@ -37,63 +42,68 @@ class MeasurementGrid:
         # Define grid spacing (step size)
         spacing = depth * 0.05  # 5% of the depth
 
-        # Grid vertices and edges
+        # Grid vertices, edges, line colors, and labels container
         vertices = []
         edges = []
         line_colors = []  # To store colors for each line
+        labels = []  # Store label geometries (text objects)
 
-        # Generate grid lines
+        # Generate grid lines and labels
         num_intervals = 21  # 21 intervals for 5% steps (0 to 100%)
         for i in range(num_intervals):
             z = min_bound[2] + i * spacing  # Calculate z-level
+            label_text = f"{i * 5}"  # Label for the line (0, 5, 10, ..., 100)
 
             # Horizontal line along the x-axis, at fixed y and z
-            vertices.append([min_bound[0], min_bound[1], z])  # Start point
-            vertices.append([max_bound[0], min_bound[1], z])  # End point
+            start_x = [min_bound[0], min_bound[1], z]
+            end_x = [max_bound[0], min_bound[1], z]
+            vertices.extend([start_x, end_x])
             edges.append([len(vertices) - 2, len(vertices) - 1])  # Connect start and end
             line_colors.append(self.colors[i])  # Assign corresponding color
 
+            # Add text label at the end of the horizontal line
+            text_label_x = text_3d.create_text_3d(label_text, position=end_x, color=self.colors[i], height=20, depth=2)
+            labels.append(text_label_x)
+
             # Vertical line along the y-axis, at fixed x and z
-            vertices.append([min_bound[0], min_bound[1], z])  # Start point
-            vertices.append([min_bound[0], max_bound[1], z])  # End point
+            start_y = [min_bound[0], min_bound[1], z]
+            end_y = [min_bound[0], max_bound[1], z]
+            vertices.extend([start_y, end_y])
             edges.append([len(vertices) - 2, len(vertices) - 1])  # Connect start and end
             line_colors.append(self.colors[i])  # Assign corresponding color
+
+            # Add text label at the end of the vertical line
+            text_label_y = text_3d.create_text_3d(label_text, position=end_y, color=self.colors[i], height=20, depth=2)
+            labels.append(text_label_y)
 
         # Convert vertices and edges to numpy arrays
         vertices = np.array(vertices, dtype=np.float64)
         edges = np.array(edges, dtype=np.int32)
 
+        return vertices, edges, line_colors, labels
+
+    def create_measurement_grid(self):
+        """
+        Create a list of Open3D geometries (LineSet and text labels)
+        to be used for the measurement grid.
+
+        :return: A list of Open3D geometries, including the grid lines and text labels.
+        """
+        if self.mesh is None:
+            print("No mesh loaded to create a measurement grid.")
+            return []
+
+        # Generate grid components
+        vertices, edges, line_colors, labels = self._create_grid_with_labels()
+
         # Create and configure LineSet for the grid
         grid_lines = o3d.geometry.LineSet()
         grid_lines.points = o3d.utility.Vector3dVector(vertices)
         grid_lines.lines = o3d.utility.Vector2iVector(edges)
-
-        # Assign colors to lines
         grid_lines.colors = o3d.utility.Vector3dVector(line_colors)
 
-        return grid_lines
+        # Collect all geometries (LineSet + text labels) into a list
+        geometries = [grid_lines]  # Start with the grid lines
+        geometries.extend(labels)  # Add all the text labels
 
-    def overlay_on_mesh(self, viewer=None):
-        """
-        Adds the measurement grid to the mesh and visualizes it.
-
-        :param viewer: Open3D visualization environment to render the mesh and grid. If none, a new window is opened.
-        """
-        if self.grid_lines is None:
-            self.create_measurement_grid()
-
-        if viewer is None:
-            # Create a new visualization environment
-            viewer = o3d.visualization.Visualizer()
-            viewer.create_window()
-
-            # Add the mesh and grid to the viewer
-            viewer.add_geometry(self.mesh)
-            viewer.add_geometry(self.grid_lines)
-
-            # Run the viewer
-            viewer.run()
-            viewer.destroy_window()
-        else:
-            # If a viewer is provided, add the grid overlay
-            viewer.add_geometry(self.grid_lines)
+        return geometries

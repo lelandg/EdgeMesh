@@ -81,10 +81,15 @@ class ThreeDViewport:
         if self.display_grid:
             if self.measurement_grid is None:
                 self.measurement_grid = self.create_measurement_grid()
-            self.viewer.add_geometry(self.measurement_grid)
-        else:
-            self.viewer.remove_geometry(self.measurement_grid)
 
+            # Add each grid component separately to the viewer
+            for geometry in self.measurement_grid:
+                self.viewer.add_geometry(geometry)
+        else:
+            # Remove each grid component separately from the viewer
+            if self.measurement_grid:
+                for geometry in self.measurement_grid:
+                    self.viewer.remove_geometry(geometry)
 
     def clear_geometries(self):
         """
