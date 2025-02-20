@@ -31,8 +31,8 @@ class DepthTo3D:
     model_names = {"DenseDepth": "dense_depth", "MiDaS": "midas", "DPT": "dpt", "LeReS": "leres",
                    "DepthAnythingV2": "depth_anything_v2"}
 
-    model_lookup = {v: k for k, v in model_names.items()}
-    print (f"model_lookup = model_lookup")
+    self.model_lookup = {k: v for k, v in model_names.items()}
+    # print (f"model_lookup = {self.model_lookup}")
 
     def load_model(self):
         """

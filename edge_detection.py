@@ -24,10 +24,14 @@ def detect_and_project_edges(image, low_threshold, high_threshold, thickness=1, 
 
     if original_image.ndim == 3:
         # Convert Original Image to RGB (if required)
-        rgb_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
+        if original_image.ndim == 3 and original_image.shape[2] != 3:
+            rgb_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
+        else:
+            rgb_image = original_image
     elif original_image.ndim == 2:
-        # Convert Grayscale Image to RGB
-        rgb_image = cv2.cvtColor(original_image, cv2.COLOR_GRAY2RGB)
+        if original_image.ndim == 3 and original_image.shape[2] != 3:
+            # Convert Grayscale Image to RGB
+            rgb_image = cv2.cvtColor(original_image, cv2.COLOR_GRAY2RGB)
     else:
         raise ValueError("Invalid image format. Please provide an image in RGB or Grayscale format.")
 

@@ -1,5 +1,5 @@
 __author__ = "Leland Green"
-__version__ = "0.5.3"
+__version__ = "0.5.5"
 __date_created__ = "2025-01-28"
 __last_updated__ = "2025-01-29"
 __email__ = "lelandgreenproductions@gmail.com"
@@ -64,22 +64,7 @@ import cv2
 import numpy as np
 import open3d as o3d
 
-# Config file path
-CONFIG_FILE_PATH = "config.ini"
 
-
-# Ensure configuration file exists with default settings
-def initialize_config():
-    config = configparser.ConfigParser()
-    if not os.path.exists(CONFIG_FILE_PATH):
-        # Create default config.ini
-        config["Settings"] = {
-            "last_used_image": "",
-            "invert_colors": "True"
-        }
-        with open(CONFIG_FILE_PATH, "w") as configfile:
-            config.write(configfile)
-    return config
 
 def process_preview_image(image, is_grayscale=False, invert_colors=False):
     """
@@ -104,19 +89,29 @@ def process_preview_image(image, is_grayscale=False, invert_colors=False):
         grayscale_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
         image = cv2.cvtColor(grayscale_image, cv2.COLOR_GRAY2RGB)  # Keep 3 channels for RGB compatibility
 
+    # Invert colors if needed
+    if invert_colors:
+        image = cv2.bitwise_not(image)
     return image
 
 class MainWindow_ImageProcessing(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.initialized = False
+        self.resolution = 700
+        self.depth_amount = 1.0
+        self.max_depth = 50.0
+        self.background_tolerance = 1  # Default value
+        self.use_processed_image_enabled = True
+        self.project_on_original = True
+        self.invert_colors_enabled = False
+        self.edge_thickness = 1  # Default line thickness
         self.depth_labels = None
-        self.project_on_original = False
+        self.depth_drop_percentage = 0.0  # Default percentage depth drop
+        self.image_path = None  # To hold the currently loaded image path
         self.background_color = [0, 0, 0]  # Default background color = dark gray
         self.three_d_viewport = None
         self.original_pixmap = None
-        self.edge_thickness = 2  # Default line thickness
-        self.depth_drop_percentage = 0.0  # Default percentage depth drop
-        self.image_path = None  # To hold the currently loaded image path
         self.image = None
         self.processed_image = None
         self.extruded_edges = None
@@ -130,12 +125,16 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.setGeometry(50, 50, 800, 600)
         os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'  # Enable OneDNN optimizations for TensorFlow
         # Initialize configuration
-        self.config = initialize_config()
-        self._load_config()
+        # Config file path
+        self.CONFIG_FILE_PATH = "config.ini"
+        self.config = self.initialize_config()
 
         self._init_ui()
+        self._load_config()
+
         o3d.visualization.webrtc_server.enable_webrtc()
         print(f"Open3D version: {o3d.__version__}")
+
 
     def _init_ui(self):
         self.central_widget = QWidget()
@@ -224,7 +223,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.line_thickness_slider = QSlider(Qt.Horizontal)
         self.line_thickness_slider.setMinimum(1)
         self.line_thickness_slider.setMaximum(10)
-        self.line_thickness_slider.setValue(2)
+        self.line_thickness_slider.setValue(self.edge_thickness)
         self.line_thickness_slider.setMinimumSize(200, 0)
         self.line_thickness_slider.setToolTip("Adjust the thickness of the lines drawn for detected edges.")
         self.line_thickness_slider.valueChanged.connect(self.update_line_thickness)
@@ -353,7 +352,6 @@ class MainWindow_ImageProcessing(QMainWindow):
         depth_hbox.addWidget(self.drop_background_checkbox)
 
         # Background tolerance input
-        self.background_tolerance = 1  # Default value
         self.background_tolerance_label = QLabel("Background Tolerance:")
         self.background_tolerance_input = QSpinBox()
         self.background_tolerance_input.setToolTip(
@@ -395,7 +393,6 @@ class MainWindow_ImageProcessing(QMainWindow):
         depth_hbox.addWidget(self.use_processed_image_checkbox)
 
         # Initialize the variable to track the checkbox state
-        self.use_processed_image_enabled = False
         # Add Depth Mesh Button
         self.process_button = QPushButton("Depth Mesh")
         self.process_button.setToolTip("Generate a 3D mesh from the original or processed image.")
@@ -417,10 +414,17 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.export_mesh_button.clicked.connect(self.export_mesh)
         bottom_controls.addWidget(self.export_mesh_button)
 
+        self.reset_defaults_button = QPushButton("Reset Defaults")  # Button labeled "Reset Defaults"
+        self.reset_defaults_button.clicked.connect(self.reset_defaults)  # Connect button to reset_defaults method
+        bottom_controls.addWidget(self.reset_defaults_button)  # Add button to layout
+
         main_layout.addLayout(bottom_controls)
         self.central_widget.setLayout(main_layout)
 
+        self.initialized = True
+        self.load_ui_settings()
         self.load_last_used_image()
+        # self.update_preview()
         delay_ms = 500  # Delay in milliseconds
         delay_sec = delay_ms / 1000  # Convert to seconds
         timer = threading.Timer(delay_sec, self.scale_image_to_fit_original)
@@ -507,17 +511,17 @@ class MainWindow_ImageProcessing(QMainWindow):
             return
 
         try:
-            resolution = int(self.resolution_input.text())
-            depth_amount = float(self.depth_amount_input.text())
-            max_depth = float(self.max_depth_input.text())
+            self.resolution = int(self.resolution_input.text())
+            self.depth_amount = float(self.depth_amount_input.text())
+            self.max_depth = float(self.max_depth_input.text())
 
             # Validate depth_amount > 0 (no flat meshes)
-            if depth_amount <= 0:
+            if self.depth_amount <= 0:
                 self.show_error("Depth Amount must be greater than 0!")
                 return
 
             # Validate max_depth within range [0,10000] -- somewhat arbitrary
-            if not (0.0 <= max_depth <= 10000.0):
+            if not (0.0 <= self.max_depth <= 10000.0):
                 self.show_error("Max Depth must be between 0.0 and 1.0!")
                 return
 
@@ -545,7 +549,7 @@ class MainWindow_ImageProcessing(QMainWindow):
             self.output_mesh_obj, self.background_color = self.depth_to_3d.process_image(
                 image_to_use,
                 smoothing_method=smoothing_method,
-                target_size=(resolution, resolution),
+                target_size=(self.resolution, self.resolution),
                 dynamic_depth=self.dynamic_depth_enabled,
                 grayscale_enabled=self.grayscale_enabled,
                 edge_detection_enabled=self.edge_detection_enabled,
@@ -557,7 +561,7 @@ class MainWindow_ImageProcessing(QMainWindow):
                 background_tolerance=self.background_tolerance,
                 # max_depth=max_depth,  # Pass max_depth
             )
-            print(f"3D model generated successfully with Depth Amount: {depth_amount}, Max Depth: {max_depth}")
+            print(f"3D model generated successfully with Depth Amount: {depth_amount}, Max Depth: {self.max_depth}")
             self.depth_values = self.depth_to_3d.depth_values
             self.depth_labels = self.depth_to_3d.depth_labels
             print(f"Depth Range: {min(self.depth_values)}-{max(self.depth_values)}")
@@ -714,14 +718,15 @@ class MainWindow_ImageProcessing(QMainWindow):
 
     def toggle_invert_colors(self, state):
         """Toggle invert colors based on checkbox state."""
-        self.invert_colors_enabled = state == Qt.Checked
         # You can add any necessary logic here, such as applying inversion immediately
         # if self.invert_colors_enabled:
         #     self.invert_checkbox.setCheckState(Qt.Checked)
         # else:
         #     self.invert_checkbox.setCheckState(Qt.Unchecked)
+        if not self.initialized:
+            return
+        self.invert_colors_enabled = state == Qt.Checked
         print(f"Toggle Invert Colors: {self.invert_colors_enabled}")
-        self.invert_colors()
         self.update_preview()
 
     def invert_colors(self):
@@ -731,6 +736,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         #     self.image = cv2.bitwise_not(self.image)
         #     self.display_original_image()
         if self.processed_image is not None:
+            print("Inverting processed image.")
             # Invert the processed image
             self.processed_image = cv2.bitwise_not(self.processed_image)
             self.display_processed_image()
@@ -786,6 +792,10 @@ class MainWindow_ImageProcessing(QMainWindow):
         try:
             fname = self.image_path
             if self.grayscale_enabled:
+                self.processed_image = cv2.cvtColor(cv2.imread(fname, cv2.IMREAD_GRAYSCALE), cv2.COLOR_GRAY2RGB)
+            else:
+                self.processed_image = cv2.imread(fname, cv2.IMREAD_COLOR)
+            if self.grayscale_enabled:
                 grayscale = cv2.imread(self.image_path, cv2.IMREAD_GRAYSCALE)
                 basename, ext = os.path.splitext(self.image_path)
                 fname = f"{basename}_gray.{ext}"
@@ -793,11 +803,6 @@ class MainWindow_ImageProcessing(QMainWindow):
             if self.edge_detection_enabled:
                 # Perform edge detection if enabled
                 low_threshold = self.sensitivity_slider.value()
-                if self.processed_image is None:
-                    if self.grayscale_enabled:
-                        self.processed_image = cv2.cvtColor(cv2.imread(self.image_path, cv2.IMREAD_GRAYSCALE), cv2.COLOR_GRAY2RGB)
-                    else:
-                        self.processed_image = cv2.cvtColor(cv2.imread(self.image_path, cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
                 if self.grayscale_enabled and self.project_on_original:
                     grayscale = cv2.imread(self.image_path, cv2.IMREAD_GRAYSCALE)
                     basename, ext = os.path.splitext(self.image_path)
@@ -807,19 +812,17 @@ class MainWindow_ImageProcessing(QMainWindow):
                     thickness=self.edge_thickness, project_on_original=self.project_on_original)
             elif self.grayscale_enabled:
                 # Otherwise, convert to grayscale if enabled
-                self.processed_image = cv2.imread(fname, cv2.IMREAD_COLOR)
-            else:
-                # Load the original color image if neither is enabled
-                self.processed_image = cv2.cvtColor(cv2.imread(self.image_path, cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
+                self.processed_image = cv2.cvtColor(cv2.imread(fname, cv2.IMREAD_GRAYSCALE), cv2.COLOR_GRAY2RGB)
 
             # Apply inversion if enabled (applies to all modes)
             if self.invert_colors_enabled:
                 self.invert_colors()
 
-            self.display_processed_image()  # Show the processed image
-
+            self.display_processed_image()
         except Exception as e:
-            self.show_error(str(e))
+            s = f"Error in update_preview(): {traceback.format_exc()}"
+            print (s)
+            self.show_error(s)
 
     def update_line_thickness(self):
         self.edge_thickness = self.line_thickness_slider.value()
@@ -852,12 +855,13 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.image_path = path
         self._update_config("Settings", "last_used_image", path)
 
-        self.image = cv2.imread(path)
+        self.image = cv2.imread(self.image_path, cv2.IMREAD_COLOR)
         if self.image is None:
             self.show_error("Failed to load image.")
             return
         self.display_original_image()
         self.update_preview()
+
 
     def display_original_image(self):
         if self.image is not None:
@@ -874,7 +878,7 @@ class MainWindow_ImageProcessing(QMainWindow):
 
     def display_processed_image(self):
         if self.processed_image is not None:
-            self.processed_image = process_preview_image(self.processed_image, is_grayscale=self.grayscale_enabled, invert_colors=self.invert_colors_enabled)
+            # self.processed_image = process_preview_image(self.image, is_grayscale=self.grayscale_enabled)
             if len(self.processed_image.shape) == 2:  # Grayscale image
                 height, width = self.processed_image.shape
                 bytes_per_line = width
@@ -893,7 +897,7 @@ class MainWindow_ImageProcessing(QMainWindow):
             target_width = self.preview_label.width()
             # Update the QLabel with the processed image
             self.preview_label.setPixmap(QPixmap.fromImage(q_img).scaled(target_width, target_height,Qt.KeepAspectRatio))
-            # self.scale_image_to_fit_preview()
+            self.scale_image_to_fit_preview()
 
     def save_image(self):
         if not self.processed_image.any():
@@ -916,13 +920,134 @@ class MainWindow_ImageProcessing(QMainWindow):
             self.load_image()  # Open load image dialog on startup, or if the last_image_path doesn't exist.
 
     def _load_config(self):
-        self.config.read(CONFIG_FILE_PATH)
-        self.invert_colors_enabled = self.config.getboolean("Settings", "invert_colors")
+        self.config.read(self.CONFIG_FILE_PATH)
+        self.image_path = self.config.get("Settings", "last_used_image", fallback="")
+        self.load_ui_settings()
+
+    def _save_config(self):
+        self.config.set("Settings", "last_used_image", self.image_path)
+        self.save_ui_settings()
 
     def _update_config(self, section, option, value):
+        if not self.config.has_section(section):
+            self.config.add_section(section)
         self.config.set(section, option, value)
-        with open(CONFIG_FILE_PATH, "w") as configfile:
+        with open(self.CONFIG_FILE_PATH, "w") as configfile:
             self.config.write(configfile)
+        self.save_ui_settings()
+
+    def save_ui_settings(self):
+        """Save all UI settings to the config.ini file."""
+        if not self.config.has_section("UI_Settings"):
+            self.config.add_section("UI_Settings")
+
+        # Add settings to the section
+        self.config.set("UI_Settings", "invert_colors", str(self.invert_colors_enabled))
+        self.config.set("UI_Settings", "grayscale", str(self.grayscale_enabled))
+        self.config.set("UI_Settings", "drop_background", str(self.drop_background_enabled))
+        self.config.set("UI_Settings", "background_tolerance", str(self.background_tolerance))
+        self.config.set("UI_Settings", "resolution", str(self.resolution))
+        self.config.set("UI_Settings", "edge_detection", str(self.edge_detection_enabled))
+        self.config.set("UI_Settings", "sensitivity", str(self.sensitivity_slider.value()))
+        self.config.set("UI_Settings", "line_thickness", str(self.line_thickness_slider.value()))
+        self.config.set("UI_Settings", "project_on_original", str(self.project_on_original))
+        self.config.set("UI_Settings", "use_processed_image", str(self.use_processed_image_enabled))
+        self.config.set("UI_Settings", "depth_amount", str(self.depth_amount_input.text()))
+        self.config.set("UI_Settings", "dynamic_depth", str(self.dynamic_depth_enabled))
+        self.config.set("UI_Settings", "depth_drop_percentage", str(self.depth_drop_percentage))
+
+        # Add more settings as needed...
+
+        # Write settings to the config file
+        with open(self.CONFIG_FILE_PATH, "w") as configfile:
+            self.config.write(configfile)
+
+    def reset_defaults(self):
+        self.invert_checkbox.setChecked(False)
+        self.grayscale_checkbox.setChecked(False)
+        self.drop_background_checkbox.setChecked(True)
+        self.background_tolerance_input.setValue(1)
+        self.resolution_input.setText("700")
+        self.line_thickness_slider.setValue(1)  # Set the desired value
+        self.edge_detection_checkbox.setChecked(True)
+        self.project_on_original_checkbox.setChecked(True)
+        self.use_processed_image_checkbox.setChecked(True)
+        self.dynamic_depth_checkbox.setChecked(False)
+        self.percentage_input.setText("0")
+        self.sensitivity_slider.setValue(50)
+        self.depth_amount_input.setText("1.0")
+        self.update_preview()
+
+    def load_ui_settings(self):
+        """Load UI settings from the config.ini file."""
+        if not self.initialized:
+            return
+        if os.path.exists(self.CONFIG_FILE_PATH):
+            self.config.read(self.CONFIG_FILE_PATH)
+
+            if self.config.has_section("UI_Settings"):
+                # Load settings
+                self.invert_colors_enabled = self.config.getboolean("UI_Settings", "invert_colors", fallback=False)
+                self.grayscale_enabled = self.config.getboolean("UI_Settings", "grayscale", fallback=False)
+                self.drop_background_enabled = self.config.getboolean("UI_Settings", "drop_background", fallback=False)
+                self.background_tolerance = self.config.getfloat("UI_Settings", "background_tolerance", fallback=0.5)
+                self.depth_amount_input.setText(self.config.get("UI_Settings", "depth_amount", fallback="1.0"))
+                self.resolution = self.config.get("UI_Settings", "resolution", fallback="Default")
+                self.edge_detection_enabled = self.config.getboolean("UI_Settings", "edge_detection", fallback=False)
+                self.sensitivity_slider.setValue(self.config.getint("UI_Settings", "sensitivity", fallback=50))
+                self.line_thickness_slider.setValue(self.config.getint("UI_Settings", "line_thickness", fallback=2))
+                self.project_on_original = self.config.getboolean("UI_Settings", "project_on_original", fallback=False)
+                self.use_processed_image_enabled = self.config.getboolean("UI_Settings", "use_processed_image", fallback=False)
+                self.dynamic_depth_enabled = self.config.getboolean("UI_Settings", "dynamic_depth", fallback=False)
+                self.depth_drop_percentage = self.config.getfloat("UI_Settings", "depth_drop_percentage", fallback=0.0)
+
+                # Apply loaded values to the UI components
+                self.invert_checkbox.setChecked(self.invert_colors_enabled)
+                self.grayscale_checkbox.setChecked(self.grayscale_enabled)
+                self.drop_background_checkbox.setChecked(self.drop_background_enabled)
+                self.background_tolerance_input.setValue(int(self.background_tolerance))
+                self.resolution_input.setText(self.resolution)
+                self.edge_detection_checkbox.setChecked(self.edge_detection_enabled)
+                self.project_on_original_checkbox.setChecked(self.project_on_original)
+                self.use_processed_image_checkbox.setChecked(self.use_processed_image_enabled)
+                self.dynamic_depth_checkbox.setChecked(self.dynamic_depth_enabled)
+                self.percentage_input.setText(str(self.depth_drop_percentage))
+                # Apply other UI updates as needed...
+
+    SETTINGS = [
+        ("invert_colors_enabled", "invert_checkbox"),
+        ("grayscale_enabled", "grayscale_checkbox"),
+        ("drop_background_enabled", "drop_background_checkbox"),
+        ("background_tolerance", "background_tolerance_input"),
+        ("resolution", "resolution_input"),
+        ("edge_detection_enabled", "edge_detection_checkbox"),
+        ("sensitivity_slider", "sensitivity_slider"),
+        ("line_thickness_slider", "line_thickness_slider"),
+        ("project_on_original", "project_on_original_checkbox"),
+        ("use_processed_image_enabled", "use_processed_image_checkbox"),
+        ("dynamic_depth_enabled", "dynamic_depth_checkbox"),
+        ("depth_drop_percentage", "percentage_input"),
+    ]
+
+    # Ensure configuration file exists with default settings
+    def initialize_config(self):
+        config = configparser.ConfigParser()
+        if not os.path.exists(self.CONFIG_FILE_PATH):
+            # Create default config.ini
+            config["Settings"] = self.SETTINGS
+            with open(self.CONFIG_FILE_PATH, "w") as configfile:
+                config.write(configfile)
+        return config
+
+    def closeEvent(self, event):
+        """
+        This method is invoked when the window is about to be closed.
+        """
+        try:
+            self._save_config()
+            super(MainWindow_ImageProcessing, self).closeEvent(event)  # Ensure the close event proceeds
+        except Exception as e:
+            print(f"Error during close event: {traceback.format_exc()}")
 
 
 if __name__ == "__main__":

@@ -165,6 +165,10 @@ This application combines cutting-edge computer vision and 3D rendering techniqu
 
 
 Version history:
+* 0.5.5:
+    * Added save/load configuration for all user inputs.
+    * Added "Reset Defaults" button to reset all user inputs to default values.
+    * Yet more color fixes. (I hope this is the last time I have to say that.) <-- Suggested by CoPilot! (The part in parentheses was! Haha!)
 * 0.5.4:
     * Added a 'D' toggle to the 'G' grid toggle. It toggles between percentages and depth values. 
       Sides of mesh are coming out colored based on the front/back portion. Need to look into that, but sides are flat.
@@ -254,4 +258,4 @@ Version history:
 
 *   **WIP 20250213** *Leland Green, Springfield, MO, USA*   
 *   *This is a work in progress.*
-*   **Please report any issues via github/lelandg/EdgeMesh/issues.**
+*   **Please report any issues via GitHub/lelandg/EdgeMesh/issues.**
