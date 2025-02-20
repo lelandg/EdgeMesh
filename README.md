@@ -165,6 +165,8 @@ This application combines cutting-edge computer vision and 3D rendering techniqu
 
 
 Version history:
+* 0.5.6:
+    * Fix bug I just created in depth_to_3d.py
 * 0.5.5:
     * Added save/load configuration for all user inputs.
     * Added "Reset Defaults" button to reset all user inputs to default values.
