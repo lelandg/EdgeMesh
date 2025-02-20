@@ -1,16 +1,11 @@
+import argparse
 import os
 import random
 
-import numpy as np
-import open3d as o3d
-import trimesh
-import argparse
-import pyvista as pv
-from open3d.cpu.pybind.geometry import TriangleMesh
-
-
 # Function to create 3D text mesh
 import numpy as np
+import open3d as o3d
+import pyvista as pv
 
 
 def create_text_3d(text, position=[0, 0, 0], depth=10, height=100, color=[0.5, 0.5, 0.5]):

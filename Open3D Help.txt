@@ -60,6 +60,7 @@
 [J] = Zoom out
 [U] = Zoom in
 [G] = Toggle grid visibility.
+[C] = Colorize mesh with rainbow colors based on depth.
 
   The default functions of these keys will be overridden.
 

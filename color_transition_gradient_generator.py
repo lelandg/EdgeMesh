@@ -12,11 +12,11 @@ class ColorTransition:
 
     def generate_gradient(self, num_steps):
         """
-        Generate a list of distinct colors transitioning evenly through the specified colors.
+            Generate a list of distinct colors transitioning evenly through the specified colors.
 
-        :param num_steps: The number of colors to generate in the gradient.
-        :return: A list of unique RGB tuples (0-1 range) for the color transitions.
-        """
+            :param num_steps: The number of colors to generate in the gradient.
+            :return: A list of unique RGB tuples (0-1 range) for the color transitions.
+            """
         if len(self.colors) < 2:
             raise ValueError("At least two colors are required for a gradient.")
 
@@ -39,10 +39,12 @@ class ColorTransition:
 
         # Check if the number of unique colors satisfies the required steps
         if len(unique_colors) < num_steps:
-            raise ValueError(
-                "Unable to generate the required number of distinct colors. "
-                "Consider changing input colors or the number of steps."
+            print(
+                f"Info: Fewer unique colors than requested ({len(unique_colors)} < {num_steps}). "
+                f"Evenly spreading the colors to fill the steps."
             )
+            indices = np.linspace(0, len(unique_colors) - 1, num_steps)
+            unique_colors = [unique_colors[int(round(i))] for i in indices]
 
         return unique_colors
 

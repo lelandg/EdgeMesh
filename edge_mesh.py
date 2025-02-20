@@ -1,10 +1,12 @@
 __author__ = "Leland Green"
-__version__ = "0.5.2"
+__version__ = "0.5.3"
 __date_created__ = "2025-01-28"
 __last_updated__ = "2025-01-29"
 __email__ = "lelandgreenproductions@gmail.com"
 
-__license__ = "Commercial" # License of this script is free for all purposes.
+__license__ = "Commercial. License Required." # License of this script is free for all purposes.
+
+from flow_layout import FlowLayout
 
 debug = True # Set False to disable debug messages. Yes. We do need this.
 verbose = True # Not used, yet. When I add logging, this will also print messages to console when enabled.
@@ -23,78 +25,6 @@ f"""
 Utilities using opencv for edge detection in a GUI. 
 Also features depth map generation via select (implemented) methods via torch, etc. 
 Then 3D mesh generation from the depth map.
-Version history:
-* 0.5.2:
-    * Updates: Grid lines are now rainbow colored and numbered at each end. 
-    * Added text_3d.py for 3D text generation in color, at position.
-* 0.5.1:
-    * Adds: G key now toggles a "measuring grid" on and off. It's just color lines on the edge of the mesh, right now.
-      This should come in handy to figure out what percentage depth drop to use!
-* 0.5.0:
-    * Fixes:
-        * Grayscale mode works without edge detection.
-        * Only flip the image before processing when DepthAnythingV2 is used. (Not sure why it reverses depth map?)
-        * ThreeDViewport class no longer binds some keys, mostly so W for wireframe works.
-    * Adds:
-        * Tweaks to depth map to allow modifications.
-* 0.4.3:
-    * UI improvements. Added tooltips to all input fields and buttons.
-    * Fixed the depth removal by percentage. 
-* 0.4.2:
-    * Corrected input validation for depth to allow float.
-* 0.4.1:
-    * Implements depth amount. This is just a simple multiplier for the depth map. (Still does not use "max depth".)
-    * Changed default depth amount to 1.0.
-    * Fixes a bug where the processed image was not displayed correctly in the preview at startup.
-    * Fix problems when using grayscale mode.
-    * Tweak output file name to include more information.
-* 0.4.0
-    * Fixes several issues listed as "Known Issues" in the previous commit. Good checkpoint.
-* 0.3.7 
-    * Fixes: 
-        * Color issues (again). 
-    * Adds: 
-        * "Project on Original" option. Works with and without grayscale enabled.
-    * Known Issues:
-        * Preview window may not update correctly. Change options a time or two to "fix it". 
-        * Preview image scaling is not perfect at startup. Resize the window to fix it. (For now.)
-* 0.3.6 Adds:
-    * Add method to mirror and stitch the generated mesh. Not perfect, but it's a start. 
-    * You can still use the old method (no mirrored back) by checking "Dynamic Depth". That's better for 3D printing.
-    * Adds spinner.py for fun.
-* 0.3.5 Adds: 
-    * Includes "date_time" at the end output file name, so you'll always get a new file! 
-                    *** Clean your <output folder> as needed. ***
-    " Use Processed Image" option to create 3D mesh from current results, i.e., the image on the current right in GUI.
-    " Dynamic Depth" option to make the mesh dynamically shaped on the back, approximating the front.
-    " Edge Detection" option to enable or disable edge detection.
-    " Grayscale" option to enable or disable grayscale mode.
-    
-    *Notes: "Invert Colors" is intended for edge detection. Should it just be automatic? IDK, because it's fun
-              to have the option. It's like a filter. If you enable it, colors become their opposite, or complementary
-              color. This may be useful sometimes for a grayscale image. Or, if you have a picture of a negative! 
-              So I think it's fun _and_ useful.
-            ***Warning*** Use your new inverted colors with care.  
-    Fixes:
-        * Background color for 3D viewport.
-        * Supports 0 for resolution input. When you use this, the maximum of the image's width or height is used.
-    * Updated:
-        * ReadMe.md    
-* 0.3.4 Adds background color as background color for 3D viewport. For more expected user experience.
-              Note this background color is not saved in the exported mesh. It's simply carried over from
-              the original image to the Open3D viewport.
-* 0.3.3 Adds automatic background removal. This only happens when all four corners are a solid color.
-* 0.3.2 Reopens the 3D viewport when closed, and clears existing geometry before loading a new mesh. 
-* 0.3.1 Adds full color .PLY export support and a new depth map smoothing method.
-              viewport_3d.py now has export_mesh_as_obj and export_mesh_as_stl methods, and a SUPPORTED_EXTENSIONS list.
-                             It takes a list of mesh files as arguments and opens a viewport for each valid file. 
-                             (One at a time.) Be careful with many files! *Especially* if they're large. 
-                             Large files take a few seconds to minutes to load, depending on your system specs.
-              Fixes 3D viewport update issue. (Now controlled by mouse.)
-* 0.3.0 adds depth map smoothing options and anisotropic diffusion.
-* 0.2.0 adds depth map generation from shading and light cues.
-* 0.1.0 adds edge detection and 3D mesh generation from edges.
----
 
 Author: {__author__}
 Version: {__version__}
@@ -104,10 +34,7 @@ Email: {__email__}
 
 Requirements:
 - Python 3.8 or newer
-- tkinter (standard library)
-- zipfile (standard library)
-
-Install Python modules using `pip install -r python_requirements`
+- Modules in python_requirements.txt. Run "pip install -r python_requirements.txt" to install.
 
 How to Run:
 Run this script using the command `python MainWindow_ImageProcessing.py`.
@@ -115,6 +42,7 @@ Run this script using the command `python MainWindow_ImageProcessing.py`.
 License:
 {__license__}
 
+** Moved Version History to ReadMe.md
 """
 
 import configparser
@@ -197,7 +125,7 @@ class MainWindow_ImageProcessing(QMainWindow):
 
         self.setWindowTitle(f"3D Mesh Generator v{__version__}")
         self.setGeometry(50, 50, 800, 600)
-
+        os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'  # Enable OneDNN optimizations for TensorFlow
         # Initialize configuration
         self.config = initialize_config()
         self._load_config()
@@ -214,7 +142,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         main_layout = QVBoxLayout()
         self.edge_sensitivity_layout = QVBoxLayout()  # For images and controls
         image_preview_layout = QHBoxLayout()  # To hold original and processed previews
-        bottom_controls = QHBoxLayout()
+        bottom_controls = FlowLayout()
 
         # Original Image Preview
         self.original_label = QLabel("Original Image")
@@ -222,6 +150,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.original_label.setStyleSheet("background-color: lightgray;")
         self.original_label.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         self.original_label.setMinimumSize(10,10)
+        self.original_label.setToolTip("This is the original image. Load an image to start processing.")
         # self.original_label.setMaximumHeight(700)  # Limit height
         image_preview_layout.addWidget(self.original_label)
 
@@ -231,6 +160,8 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.preview_label.setStyleSheet("background-color: lightgray;")
         self.preview_label.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         self.preview_label.setMinimumSize(10,10)
+        self.preview_label.setToolTip("This is the processed image, based on your selections below. "
+                                      "Click 'Depth Mesh' to generate a 3D mesh.")
         # self.preview_label.setMaximumHeight(700)  # Limit height
         image_preview_layout.addWidget(self.preview_label)
 
@@ -263,22 +194,26 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.edge_sensitivity_layout.addLayout(image_preview_layout)
 
         # Slider for Sensitivity
-        sensitivity_hbox = QHBoxLayout()
+        # sensitivity_hbox = QHBoxLayout()
+        sensitivity_hbox = FlowLayout()
         slider_label = QLabel("Edge Detection Sensitivity")
         slider_label.setAlignment(Qt.AlignCenter)
         sensitivity_hbox.addWidget(slider_label)
 
         self.sensitivity_slider = QSlider(Qt.Horizontal)
-        self.sensitivity_slider.setMinimum(10)
-        self.sensitivity_slider.setMaximum(150)
+        self.sensitivity_slider.setMinimum(1)
+        self.sensitivity_slider.setMaximum(200)
         self.sensitivity_slider.setValue(50)
+        self.sensitivity_slider.setMinimumSize(200, 0)
+        self.sensitivity_slider.setToolTip("Adjust the edge detection sensitivity. Higher values detect more edges.")
         self.sensitivity_slider.valueChanged.connect(self.update_preview)
         sensitivity_hbox.addWidget(self.sensitivity_slider)
 
         self.edge_sensitivity_layout.addLayout(sensitivity_hbox)
 
         # Slider for Line Thickness
-        line_thickness_hbox = QHBoxLayout()
+        # line_thickness_hbox = QHBoxLayout()
+        line_thickness_hbox = FlowLayout()
         line_thickness_label = QLabel("Line Thickness")
         line_thickness_label.setAlignment(Qt.AlignCenter)
         line_thickness_hbox.addWidget(line_thickness_label)
@@ -287,6 +222,8 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.line_thickness_slider.setMinimum(1)
         self.line_thickness_slider.setMaximum(10)
         self.line_thickness_slider.setValue(2)
+        self.line_thickness_slider.setMinimumSize(200, 0)
+        self.line_thickness_slider.setToolTip("Adjust the thickness of the lines drawn for detected edges.")
         self.line_thickness_slider.valueChanged.connect(self.update_line_thickness)
         line_thickness_hbox.addWidget(self.line_thickness_slider)
 
@@ -294,6 +231,7 @@ class MainWindow_ImageProcessing(QMainWindow):
 
         # Add "Invert Colors" Option
         self.invert_checkbox = QCheckBox("Invert Colors")
+        self.invert_checkbox.setToolTip("Invert the colors of the image. Useful with edge detection, but can be fun.")
         self.invert_checkbox.stateChanged.connect(self.toggle_invert_colors)
         bottom_controls.addWidget(self.invert_checkbox)
         if self.invert_colors_enabled:
@@ -321,7 +259,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.save_button.setToolTip("Save the processed image. What you see in the right hand image is what you get.")
         bottom_controls.addWidget(self.save_button)
 
-        depth_hbox = QHBoxLayout()
+        depth_hbox = FlowLayout()
         depth_method_label = QLabel("Depth Method")
         depth_method_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         depth_hbox.addWidget(depth_method_label)
@@ -332,6 +270,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.model_dropdown.setToolTip("Depth estimation model to use.\r\n"
                                        "DepthAnythingV2 is usually better, but DPT can be good for architecture.\r\n"
                                        "MiDaS is good for general depth. Results are very different, so experiment!")
+        self.model_dropdown.setToolTip("Select the depth estimation model to use.")
         depth_hbox.addWidget(self.model_dropdown)
         # main_layout.addLayout(depth_hbox)
 
@@ -341,7 +280,7 @@ class MainWindow_ImageProcessing(QMainWindow):
 
         self.smoothing_dropdown = QComboBox()
         self.smoothing_dropdown.addItems(["anisotropic", "gaussian", "bilateral", "median", "(none)"])
-        self.smoothing_dropdown.setToolTip("Select the depth map smoothing method for the depth map.")
+        self.smoothing_dropdown.setToolTip("Select smoothing method for the depth map.")
         depth_hbox.addWidget(self.smoothing_dropdown)
 
         resolution_label = QLabel("Resolution")

@@ -164,8 +164,30 @@ This application combines cutting-edge computer vision and 3D rendering techniqu
 - *Or* use it from your code to display a mesh.
 
 
-History:
-* 0.4.2: 
+Version history:
+* 0.5.3:
+    * Move history to ReadMe.md
+    * Add mesh_gradient_colorizer to shade the mesh based on depth, given a range of colors. Press 'C' for "Colorize".
+    * Window can now be sized much smaller. (Still need to rework UI to organize widgets better!)
+    * Added the FlowLayout class to implement this. (It's a start.)
+    * Disabled tensor OneDNN option. It may be slower, but it's more accurate. And it's not much slower.
+* 0.5.2:
+    * Updates: Grid lines are now rainbow colored and numbered at each end. 
+    * Added text_3d.py for 3D text generation in color, at position.
+* 0.5.1:
+    * Adds: G key now toggles a "measuring grid" on and off. It's just color lines on the edge of the mesh, right now.
+      This should come in handy to figure out what percentage depth drop to use!
+* 0.5.0:
+    * Fixes:
+        * Grayscale mode works without edge detection.
+        * Only flip the image before processing when DepthAnythingV2 is used. (Not sure why it reverses depth map?)
+        * ThreeDViewport class no longer binds some keys, mostly so W for wireframe works.
+    * Adds:
+        * Tweaks to depth map to allow modifications.
+* 0.4.3:
+    * UI improvements. Added tooltips to all input fields and buttons.
+    * Fixed the depth removal by percentage. 
+* 0.4.2:
     * Corrected input validation for depth to allow float.
 * 0.4.1:
     * Implements depth amount. This is just a simple multiplier for the depth map. (Still does not use "max depth".)
@@ -219,6 +241,7 @@ History:
 * 0.3.0 adds depth map smoothing options and anisotropic diffusion.
 * 0.2.0 adds depth map generation from shading and light cues.
 * 0.1.0 adds edge detection and 3D mesh generation from edges.
+
 
     Notes: "Invert Colors" is intended for edge detection. Should it just be automatic? IDK, because it's fun
               to have the option. It's like a filter. If you enable it, colors become their opposite, or complementary
