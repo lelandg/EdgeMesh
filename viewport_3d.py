@@ -3,9 +3,14 @@ import sys
 import os
 import open3d as o3d
 
+from color_transition_gradient_generator import ColorTransition
 from measurement_grid_visualizer import MeasurementGrid
+from mesh_gradient_colorizer import MeshColorizer
+
 
 class ThreeDViewport:
+    custom_labels: object
+
     def __init__(self, initial_mesh_file=None, background_color=None):
         """
         Initialize the 3D viewport using Open3D with default parameters
@@ -14,10 +19,17 @@ class ThreeDViewport:
         :param background_color: Background color for the viewport as a list [R, G, B].
                                  Uses dark gray [0.2, 0.2, 0.2] if None.
         """
+        self.custom_labels = None
+        self.prev_show_depth_values = True
+        self.show_depth_values = False
         self.viewer = o3d.visualization.VisualizerWithKeyCallback()
         title = f"3D Viewport - Open3D v{o3d.__version__} - Press 'H' for help - {initial_mesh_file}"
         self.viewer.create_window(title, width=1024, height=768, left=800, top=50)
 
+        rainbow_colors = ["red", "orange", "yellow", "green", "blue", "indigo", "violet"]
+        self.rainbow_colors = ColorTransition(*rainbow_colors).generate_gradient(255)
+        self.rainbow_mesh = None
+        self.show_rainbow_mesh = False
         self.mesh = None  # Placeholder for the loaded 3D mesh
         self.measurement_grid = None  # Placeholder for the measurement grid
         self.display_grid = False  # Flag to toggle the measurement grid visibility
@@ -68,6 +80,41 @@ class ThreeDViewport:
         self.viewer.register_key_callback(ord("J"), lambda _: self.zoom(-0.1))  # Zoom out
         self.viewer.register_key_callback(ord("g"), lambda _: self.toggle_grid())  # Zoom out
         self.viewer.register_key_callback(ord("G"), lambda _: self.toggle_grid())  # Zoom out
+        self.viewer.register_key_callback(ord("c"), lambda _: self.toggle_rainbow_mesh())
+        self.viewer.register_key_callback(ord("C"), lambda _: self.toggle_rainbow_mesh())
+        self.viewer.register_key_callback(ord("D"), lambda _: self.toggle_depth_values())
+
+    def toggle_depth_values(self):
+
+        self.show_depth_values = not self.show_depth_values
+        print(f"Depth values {'visible' if self.show_depth_values else 'hidden'}.")
+        self.show_grid()
+
+    def toggle_rainbow_mesh(self):
+        """
+        Toggle the visibility of the rainbow-colored mesh in the viewport.
+        """
+        self.viewer.clear_geometries()
+        self.show_rainbow_mesh = not self.show_rainbow_mesh
+        print(f"Rainbow-colored mesh {'visible' if self.show_rainbow_mesh else 'hidden'}.")
+        self.show_mesh()
+        if self.rainbow_mesh is None:
+            # Create a rainbow-colored mesh for the current mesh
+            print ("Creating rainbow mesh...")
+            self.rainbow_mesh = MeshColorizer().apply_gradient_to_mesh(self.mesh, self.rainbow_colors)
+            self.viewer.add_geometry(self.rainbow_mesh)
+            print("Rainbow-colored mesh added to the viewport.")
+        else:
+            # Toggle the visibility of the rainbow-colored mesh
+            print(f"Rainbow-colored mesh {'visible' if self.show_rainbow_mesh else 'hidden'}.")
+        self.show_grid()
+
+    def show_mesh(self):
+        self.viewer.clear_geometries()
+        if self.show_rainbow_mesh:
+            self.viewer.add_geometry(self.rainbow_mesh)
+        else:
+            self.viewer.add_geometry(self.mesh)
 
     def toggle_grid(self):
         """
@@ -78,9 +125,17 @@ class ThreeDViewport:
         self.show_grid()
 
     def show_grid(self):
+        """
+        Show or hide the measurement grid in the viewport based on the display_grid flag.
+        """
+        self.show_mesh()
         if self.display_grid:
-            if self.measurement_grid is None:
-                self.measurement_grid = self.create_measurement_grid()
+            if self.show_depth_values != self.prev_show_depth_values or self.measurement_grid is None:
+                self.prev_show_depth_values = self.show_depth_values
+                if self.show_depth_values:
+                    self.measurement_grid = MeasurementGrid(self.mesh).create_measurement_grid(labels=self.custom_labels)
+                else:
+                    self.measurement_grid = MeasurementGrid(self.mesh).create_measurement_grid()
 
             # Add each grid component separately to the viewer
             for geometry in self.measurement_grid:
@@ -99,7 +154,7 @@ class ThreeDViewport:
         self.viewer.clear_geometries()
         print("Existing geometries cleared from the viewport.")
 
-    def load_mesh(self, mesh_file):
+    def load_mesh(self, mesh_file, depth_labels=None):
         """
         Load a new 3D triangular mesh file into the viewport.
         Clears any existing geometry to ensure no duplicates.
@@ -107,6 +162,7 @@ class ThreeDViewport:
         :param mesh_file: Path to the new mesh file (.obj, .stl, .ply, etc.).
         """
         try:
+            self.custom_labels = depth_labels
             # Clear existing geometry before loading a new mesh
             self.clear_geometries()
 
@@ -127,18 +183,19 @@ class ThreeDViewport:
         except Exception as e:
             print(f"Error loading mesh: {e}")
 
-    def create_measurement_grid(self):
+    def create_measurement_grid(self, custom_labels=None):
         """
         Create a measurement grid using Open3D's LineSet to overlay on the viewport.
 
         :return: An Open3D LineSet object representing the measurement grid.
         """
+        self.custom_labels = custom_labels
         if self.mesh is None:
             print("No mesh loaded to create a measurement grid.")
             return None
 
         # Create a measurement grid based on the bounding box of the mesh
-        grid = MeasurementGrid(self.mesh).create_measurement_grid()
+        grid = MeasurementGrid(self.mesh).create_measurement_grid(custom_labels)
 
         # # Set the grid color to light gray
         # grid.paint_uniform_color([0.7, 0.7, 0.7])

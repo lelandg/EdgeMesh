@@ -19,6 +19,9 @@ class DepthTo3D:
         Initialize the depth estimation and mesh generation pipeline.
         :param model_type: "midas" (default) or "dense_depth". Specifies the depth estimation model.
         """
+        self.depth_map = None
+        self.depth_values = None
+        self.depth_labels = None
         self.solid_mesh = None
         self.model_type = model_type
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -529,6 +532,38 @@ class DepthTo3D:
 
         return modified_depth
 
+    def create_text_values_from_depth(self, depth_map, num_segments=21):
+        """
+            Generate 21 text values based on a depth map divided evenly.
+
+            Args:
+                depth_map (numpy.ndarray): Depth map containing depth values.
+
+            Returns:
+                list: List of 21 string values representing evenly divided intervals.
+
+            Raises:
+                ValueError: If depth_map is not a valid NumPy array.
+            """
+        # Ensure the depth_map is a numpy array
+        if not isinstance(depth_map, np.ndarray):
+            try:
+                depth_map = np.array(depth_map)
+            except Exception as e:
+                raise ValueError(f"Invalid depth map format. Expected ndarray, got {type(depth_map)}. Error: {e}")
+
+        # Flatten depth_map to 1D and get min, max values
+        depth_values = depth_map.flatten()
+        min_depth, max_depth = depth_values.min(), depth_values.max()
+
+        # Create 21 evenly spaced intervals
+        intervals = np.linspace(min_depth, max_depth, num_segments)
+
+        # Format the intervals as text
+        text_values = [f"{value:.2f}" for value in intervals]
+
+        return depth_values, text_values
+
     def process_image(self, image_path, smoothing_method="anisotropic", target_size=(500, 500), dynamic_depth=False,
                       grayscale_enabled=False, edge_detection_enabled=False, invert_colors_enabled=False,
                       depth_amount=1.0, depth_drop_percentage=0, project_on_original=False, background_removal=False,
@@ -565,6 +600,7 @@ class DepthTo3D:
         depth = self.estimate_depth(image, target_size, flip)
         # Remove the lowest values. 0.05 = remove 5% of the lowest depth values.
         depth = self.modify_depth(depth, depth_drop_percentage)
+        self.depth_values, self.depth_labels = self.create_text_values_from_depth(depth)
 
         # Apply depth smoothing
         try:

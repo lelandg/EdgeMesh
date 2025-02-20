@@ -19,10 +19,11 @@ class MeasurementGrid:
 
         self.colors = ColorTransition(*colors).generate_gradient(21)
 
-    def _create_grid_with_labels(self):
+    def _create_grid_with_labels(self, custom_labels=None):
         """
         Create the grid lines with associated labels positioned at the endpoints.
 
+        :param custom_labels: Optional list of 21 labels to use instead of the default percentage labels.
         :return: List of grid line vertices, edges, colors, and text labels as Open3D geometries.
         """
         if self.mesh is None:
@@ -48,11 +49,18 @@ class MeasurementGrid:
         line_colors = []  # To store colors for each line
         labels = []  # Store label geometries (text objects)
 
+        # Use custom labels if provided, otherwise generate default percentage labels
+        if custom_labels:
+            if len(custom_labels) != 21:
+                raise ValueError("custom_labels must be a list of exactly 21 elements.")
+            label_texts = custom_labels
+        else:
+            label_texts = [f"{i * 5}%" for i in range(21)]  # Default labels (0, 5, 10, ..., 100)
+
         # Generate grid lines and labels
         num_intervals = 21  # 21 intervals for 5% steps (0 to 100%)
-        for i in range(num_intervals):
+        for i, label_text in enumerate(label_texts):
             z = min_bound[2] + i * spacing  # Calculate z-level
-            label_text = f"{i * 5}"  # Label for the line (0, 5, 10, ..., 100)
 
             # Horizontal line along the x-axis, at fixed y and z
             start_x = [min_bound[0], min_bound[1], z]
@@ -82,7 +90,7 @@ class MeasurementGrid:
 
         return vertices, edges, line_colors, labels
 
-    def create_measurement_grid(self):
+    def create_measurement_grid(self, labels=None):
         """
         Create a list of Open3D geometries (LineSet and text labels)
         to be used for the measurement grid.
@@ -94,7 +102,7 @@ class MeasurementGrid:
             return []
 
         # Generate grid components
-        vertices, edges, line_colors, labels = self._create_grid_with_labels()
+        vertices, edges, line_colors, labels = self._create_grid_with_labels(labels)
 
         # Create and configure LineSet for the grid
         grid_lines = o3d.geometry.LineSet()

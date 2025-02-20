@@ -6,6 +6,8 @@ __email__ = "lelandgreenproductions@gmail.com"
 
 __license__ = "Commercial. License Required." # License of this script is free for all purposes.
 
+import traceback
+
 from flow_layout import FlowLayout
 
 debug = True # Set False to disable debug messages. Yes. We do need this.
@@ -107,6 +109,7 @@ def process_preview_image(image, is_grayscale=False, invert_colors=False):
 class MainWindow_ImageProcessing(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.depth_labels = None
         self.project_on_original = False
         self.background_color = [0, 0, 0]  # Default background color = dark gray
         self.three_d_viewport = None
@@ -449,7 +452,7 @@ class MainWindow_ImageProcessing(QMainWindow):
                 value = float(self.percentage_input.text())
 
             # Validate range (e.g., between 0–100)
-            if 0.00000001 <= value <= 100.0:
+            if 0.0 <= value <= 100.0:
                 self.depth_drop_percentage = value
                 print(f"Updated depth_drop_percentage to {value}")  # For debugging/logging
             else:
@@ -555,7 +558,9 @@ class MainWindow_ImageProcessing(QMainWindow):
                 # max_depth=max_depth,  # Pass max_depth
             )
             print(f"3D model generated successfully with Depth Amount: {depth_amount}, Max Depth: {max_depth}")
-
+            self.depth_values = self.depth_to_3d.depth_values
+            self.depth_labels = self.depth_to_3d.depth_labels
+            print(f"Depth Range: {min(self.depth_values)}-{max(self.depth_values)}")
             # Update 3D viewport
             if max(self.background_color) > 0:
                 self.background_color = [c / 255.0 for c in self.background_color]
@@ -565,7 +570,7 @@ class MainWindow_ImageProcessing(QMainWindow):
                 self.update_3d_viewport([10,10,10])
 
         except Exception as e:
-            self.show_error(f"Error: {e}")
+            self.show_error(f"Error: {e}\r\n{traceback.format_exc()}")
 
     def _get_processed_image_path(self):
         """Construct the file path for saving the processed image."""
@@ -745,7 +750,7 @@ class MainWindow_ImageProcessing(QMainWindow):
             self.three_d_viewport.viewer.get_render_option().background_color = background_color
 
         self.three_d_viewport.clear_geometries()
-        self.three_d_viewport.load_mesh(self.output_mesh_obj)
+        self.three_d_viewport.load_mesh(self.output_mesh_obj, self.depth_labels)
         self.three_d_viewport.run()
         # self.three_d_viewport.show()
 

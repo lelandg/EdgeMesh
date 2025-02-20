@@ -165,6 +165,9 @@ This application combines cutting-edge computer vision and 3D rendering techniqu
 
 
 Version history:
+* 0.5.4:
+    * Added a 'D' toggle to the 'G' grid toggle. It toggles between percentages and depth values. 
+      Sides of mesh are coming out colored based on the front/back portion. Need to look into that, but sides are flat.
 * 0.5.3:
     * Move history to ReadMe.md
     * Add mesh_gradient_colorizer to shade the mesh based on depth, given a range of colors. Press 'C' for "Colorize".
