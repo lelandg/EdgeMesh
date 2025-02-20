@@ -1,5 +1,5 @@
 __author__ = "Leland Green"
-__version__ = "0.5.6"
+__version__ = "0.5.7"
 __date_created__ = "2025-01-28"
 __last_updated__ = "2025-01-29"
 __email__ = "lelandgreenproductions@gmail.com"

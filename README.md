@@ -165,6 +165,9 @@ This application combines cutting-edge computer vision and 3D rendering techniqu
 
 
 Version history:
+* 0.5.7:
+    * Added rotate left and right with arrow keys in 3D viewport. It's slow, but it works. Mouse is responsive.
+    * Note the new MeshManipulation.move() function is untested, but it's not used, yet. :)
 * 0.5.6:
     * Fix bug I just created in depth_to_3d.py
 * 0.5.5:

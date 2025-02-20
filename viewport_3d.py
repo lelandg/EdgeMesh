@@ -1,8 +1,9 @@
 import glob
 import sys
-import os
+
 import open3d as o3d
 
+import mesh_manipulation
 from color_transition_gradient_generator import ColorTransition
 from measurement_grid_visualizer import MeasurementGrid
 from mesh_gradient_colorizer import MeshColorizer
@@ -58,6 +59,7 @@ class ThreeDViewport:
         if initial_mesh_file:
             self.load_mesh(initial_mesh_file)
             self.show_grid()
+        self.mesh_manipulator = mesh_manipulation.MeshManipulation(self.viewer, self.mesh)
 
     def _setup_key_callbacks(self):
         """
@@ -83,6 +85,14 @@ class ThreeDViewport:
         self.viewer.register_key_callback(ord("c"), lambda _: self.toggle_rainbow_mesh())
         self.viewer.register_key_callback(ord("C"), lambda _: self.toggle_rainbow_mesh())
         self.viewer.register_key_callback(ord("D"), lambda _: self.toggle_depth_values())
+        self.viewer.register_key_callback(263, lambda _: self.rotate_left())
+        self.viewer.register_key_callback(262, lambda _: self.rotate_right())
+
+    def rotate_left(self):
+        self.mesh_manipulator.rotate_object(10, counter_clockwise=False)
+
+    def rotate_right(self):
+        self.mesh_manipulator.rotate_object(10, counter_clockwise=True)
 
     def toggle_depth_values(self):
 
