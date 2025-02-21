@@ -1,3 +1,4 @@
+import ctypes
 import glob
 import sys
 
@@ -24,8 +25,13 @@ class ThreeDViewport:
         self.prev_show_depth_values = True
         self.show_depth_values = False
         self.viewer = o3d.visualization.VisualizerWithKeyCallback()
-        title = f"3D Viewport - Open3D v{o3d.__version__} - Press 'H' for help - {initial_mesh_file}"
-        self.viewer.create_window(title, width=1024, height=768, left=800, top=50)
+        if initial_mesh_file:
+            fname = os.path.split(initial_mesh_file)[-1]
+        else:
+            fname = ""
+        title = f"3D Viewport - Open3D v{o3d.__version__} - Press 'H' for help - {fname}"
+        print (f"Creating window with title: {title}")
+        self.viewer.create_window(window_name=title, width=1024, height=768, left=800, top=50)
 
         rainbow_colors = ["red", "orange", "yellow", "green", "blue", "indigo", "violet"]
         self.rainbow_colors = ColorTransition(*rainbow_colors).generate_gradient(255)
@@ -47,9 +53,6 @@ class ThreeDViewport:
                 background_color = [x / 255.0 for x in background_color]
 
         self.background_color = background_color
-        self.viewer = o3d.visualization.VisualizerWithKeyCallback()
-        self.viewer.create_window("3D Viewport", width=1024, height=768)
-        self.viewer.get_render_option().background_color = self.background_color
 
         self.viewer.get_render_option().background_color = self.background_color
         print(f"Background color set to: {self.background_color}")

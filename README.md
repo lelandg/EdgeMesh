@@ -165,6 +165,13 @@ This application combines cutting-edge computer vision and 3D rendering techniqu
 
 
 Version history:
+* 0.5.9:
+    * Started reworking UI. Window now can be sized smaller and still access all widgets.
+    * Saves/restores window size and position in config.ini.
+    * Fixed window name of 3D viewport to include the file name if given.
+* 0.5.8:
+    * Added _version to store the version so the main file is not always updated.
+    * Removed __last_updated__ from the main file since I didn't update it.
 * 0.5.7:
     * Added rotate left and right with arrow keys in 3D viewport. It's slow, but it works. Mouse is responsive.
     * Note the new MeshManipulation.move() function is untested, but it's not used, yet. :)
