@@ -203,7 +203,7 @@ class DepthTo3D:
 
         return solid_mesh
 
-    def solidify_mesh_with_flat_back(self, mesh, flat_back_depth=-1.0):
+    def solidify_mesh_with_flat_back(self, mesh, flat_back_depth=0):
         """
         Solidify the mesh by making the back side flat while preserving vertex colors.
         :param mesh: Existing 3D trimesh object with vertex colors.
@@ -482,9 +482,9 @@ class DepthTo3D:
         mesh = self.flip_mesh(trimesh.Trimesh(vertices=valid_vertices, faces=faces, vertex_colors=valid_colors))
 
         if dynamic_depth:
-            flat_back_depth = np.median(z[z != 0]) - np.std(z[z != 0])
+            flat_back_depth = z[z != 0].min()
             print(f"Dynamic flat back depth = {flat_back_depth}")
-            solid_mesh = self.solidify_mesh_with_flat_back(mesh, flat_back_depth=flat_back_depth)
+            solid_mesh = self.solidify_mesh_with_flat_back(mesh, flat_back_depth=float(flat_back_depth))
         else:
             solid_mesh = self.add_mirror_mesh(mesh)
 

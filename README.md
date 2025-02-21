@@ -165,6 +165,8 @@ This application combines cutting-edge computer vision and 3D rendering techniqu
 
 
 Version history:
+* 0.5.11:
+    * Much improved "flat back" functionality.
 * 0.5.10:
     * Added "pick color" to let you pick the background color from the image. (Or from anything on your desktop!)
     * After you pick it, the background will not be detected until you click "Clear Color"
