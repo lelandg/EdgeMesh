@@ -175,3 +175,6 @@ edge_mesh_error_log.txt
 nuitka-crash-report.xml
 config.ini
 config.ini
+Notes.txt
+Notes_uniq.txt
+grep.py
