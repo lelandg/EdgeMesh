@@ -12,6 +12,7 @@ from transformers import AutoImageProcessor, AutoModelForDepthEstimation
 import smoothing_depth_map_utils
 from spinner import Spinner
 
+import PyQt5.QtGui as QtGui
 
 class DepthTo3D:
     def __init__(self, model_type="dpt"):
@@ -378,9 +379,9 @@ class DepthTo3D:
 
     def create_3d_mesh(self, image, depth, filename, smoothing_method, target_size, dynamic_depth, grayscale_enabled,
                        edge_detection_enabled, invert_colors_enabled=False, depth_amount=1.0, project_on_original=False,
-                       background_removal=False, background_tolerance=10):
+                       background_removal=False, background_tolerance=10, color_to_remove=None):
         """
-         Args:
+        Args:
             image: Input image data.
             depth: Depth data corresponding to the image.
             filename: The path to save the generated 3D mesh.
@@ -395,10 +396,11 @@ class DepthTo3D:
             project_on_original: (Optional) Whether to project the mesh onto the original image.
             background_removal: (Optional) Whether to remove the background based on the average color.
             background_tolerance: (Optional) Tolerance for background color removal.
+            color_to_remove: (Optional) RGB color to explicitly remove as the background. Overrides automatic detection.
         Returns:
             Generated mesh (or related object).
         """
-        print (f"Creating 3D mesh with depth amount: {depth_amount}...")
+        print(f"Creating 3D mesh with depth amount: {depth_amount}...")
         depth_amount = max(0.0, min(depth_amount, 100.0))
 
         # Adjust the depth data based on the depth_amount
@@ -406,17 +408,29 @@ class DepthTo3D:
 
         # Step 1: Background processing
         h, w, _ = image.shape
-        corners = [image[0, 0], image[0, w - 1], image[h - 1, 0], image[h - 1, w - 1]]
-        avg_color = np.mean(corners, axis=0)
 
-        if background_removal and all(np.all(np.abs(corner - avg_color) < background_tolerance) for corner in corners):
-            background_color = avg_color.astype(np.uint8).tolist()  # Convert to list for passing to viewport
+        # If color_to_remove is provided, use it as the background color.
+        if color_to_remove is not None:
+            # Handle QColor if it is passed
+            if isinstance(color_to_remove, QtGui.QColor):
+                # Convert QColor to a list of RGB values
+                color_to_remove = list(color_to_remove.getRgb()[:3])  # Discard the alpha channel
+            # Convert to uint8 numpy array
+            background_color = np.array(color_to_remove, dtype=np.uint8)
         else:
-            background_color = None
+            # Otherwise, calculate the background color from image corners
+            corners = [image[0, 0], image[0, w - 1], image[h - 1, 0], image[h - 1, w - 1]]
+            avg_color = np.mean(corners, axis=0)
+
+            if background_removal and all(
+                    np.all(np.abs(corner - avg_color) < background_tolerance) for corner in corners):
+                background_color = avg_color.astype(np.uint8)
+            else:
+                background_color = None
 
         if background_color is not None:
-            print (f"Masking background color = {background_color}")
-            mask = cv2.inRange(image, avg_color - background_tolerance, avg_color + background_tolerance)
+            print(f"Masking background color = {background_color.tolist()}")
+            mask = cv2.inRange(image, background_color - background_tolerance, background_color + background_tolerance)
             if target_size and target_size != (0, 0) and target_size != (w, h):
                 mask_resized = cv2.resize(mask, (target_size[1], target_size[0]), interpolation=cv2.INTER_NEAREST)
             else:
@@ -469,7 +483,7 @@ class DepthTo3D:
 
         if dynamic_depth:
             flat_back_depth = np.median(z[z != 0]) - np.std(z[z != 0])
-            print (f"Dynamic flat back depth = {flat_back_depth}")
+            print(f"Dynamic flat back depth = {flat_back_depth}")
             solid_mesh = self.solidify_mesh_with_flat_back(mesh, flat_back_depth=flat_back_depth)
         else:
             solid_mesh = self.add_mirror_mesh(mesh)
@@ -518,8 +532,8 @@ class DepthTo3D:
         Returns:
             ndarray: Modified depth array with the lowest values removed.
         """
-        if not 0 <= percentage <= 100:
-            raise ValueError("Percentage must be between 0 and 100.")
+        if not 0 < percentage <= 100:
+            return depth_array
 
         # Flatten the depth array for percentile calculation
         flattened = depth_array.flatten()
@@ -567,7 +581,7 @@ class DepthTo3D:
     def process_image(self, image_path, smoothing_method="anisotropic", target_size=(500, 500), dynamic_depth=False,
                       grayscale_enabled=False, edge_detection_enabled=False, invert_colors_enabled=False,
                       depth_amount=1.0, depth_drop_percentage=0, project_on_original=False, background_removal=False,
-                      background_tolerance=0):
+                      background_tolerance=0, background_color=None):
         """
         Process the input image to estimate depth, project into 3D space, and save as a PLY file.
         :param image_path: Path to the input image.
@@ -612,7 +626,8 @@ class DepthTo3D:
         return self.create_3d_mesh(image, depth, f"{image_path}", smoothing_method, target_size,
                                    dynamic_depth, grayscale_enabled, edge_detection_enabled,
                                    invert_colors_enabled, depth_amount, project_on_original,
-                                   background_removal, background_tolerance=background_tolerance)
+                                   background_removal, background_tolerance=background_tolerance,
+                                   color_to_remove=background_color)
 
 if __name__ == "__main__":
     # Command-line argument parsing

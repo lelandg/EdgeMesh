@@ -165,6 +165,11 @@ This application combines cutting-edge computer vision and 3D rendering techniqu
 
 
 Version history:
+* 0.5.10:
+    * Added "pick color" to let you pick the background color from the image. (Or from anything on your desktop!)
+    * After you pick it, the background will not be detected until you click "Clear Color"
+    * Improved UI layout. Saves a few settings I missed before.
+    * Fixes issues with windows size, position and state saving/loading.
 * 0.5.9:
     * Started reworking UI. Window now can be sized smaller and still access all widgets.
     * Saves/restores window size and position in config.ini.
