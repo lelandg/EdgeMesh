@@ -103,19 +103,26 @@ class DepthTo3D:
         Estimate depth from a single image.
         :param image: Input image (numpy array).
         :param target_size: Tuple defining the target size (width, height) for the output depth map.
+        :param flip: Whether to horizontally flip the image for processing.
         :return: Depth map (numpy array) of the limited size.
         """
         print(f"Estimating depth with target size: {target_size}...")
         img_h, img_w, _ = image.shape  # Use NumPy shape to get height and width
         depth = None
 
+        # Convert the image to grayscale for cv2.minMaxLoc
+        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        # Ensure grayscale image is passed to minMaxLoc
+        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(gray_image)
+        print(f"Max value in image has ranges from {min_val} - {max_val}, at {min_loc} and {max_loc}, respectively.")
+
         # Resize to ensure divisibility by 32
         new_h = (img_h + 31) // 32 * 32
         new_w = (img_w + 31) // 32 * 32
-        resized_image = cv2.resize(image, (new_w, new_h)) # Resize
+        resized_image = cv2.resize(image, (new_w, new_h))  # Resize to divisible by 32
         if flip:
-            resized_image = cv2.flip(resized_image, 1) # Flip horizontally
-
+            resized_image = cv2.flip(resized_image, 1)  # Flip horizontally
 
         # Convert to tensor
         img_input = Image.fromarray(cv2.cvtColor(resized_image, cv2.COLOR_BGR2RGB))
@@ -151,7 +158,7 @@ class DepthTo3D:
         depth = depth.squeeze().cpu().numpy()
         depth = cv2.resize(depth, (img_w, img_h))  # Match original input image size
 
-        if target_size and target_size != (0,0) and target_size != (img_w, img_h):
+        if target_size and target_size != (0, 0) and target_size != (img_w, img_h):
             # Limit the depth map size
             depth = cv2.resize(depth, target_size, interpolation=cv2.INTER_NEAREST)
 
@@ -206,6 +213,8 @@ class DepthTo3D:
     def solidify_mesh_with_flat_back(self, mesh, flat_back_depth=0):
         """
         Solidify the mesh by making the back side flat while preserving vertex colors.
+        All added faces will face backward (toward -z).
+
         :param mesh: Existing 3D trimesh object with vertex colors.
         :param flat_back_depth: The depth value for the flat back surface.
         :return: A new solidified trimesh object with vertex colors preserved.
@@ -229,9 +238,9 @@ class DepthTo3D:
         # Duplicate vertex colors for the flat back vertices
         combined_colors = np.vstack([original_colors, original_colors])
 
-        # Create faces for the flat back surface
+        # Create faces for the flat back surface, ensure reversed order for facing backward
         num_vertices = len(original_vertices)
-        flat_back_faces = original_faces + num_vertices  # Shift indices for the back faces
+        flat_back_faces = np.fliplr(original_faces + num_vertices)  # Reverse face winding
 
         # Create side faces to connect the front and flat back vertices
         side_faces = []
@@ -241,9 +250,11 @@ class DepthTo3D:
                 start = face[i]
                 end = face[(i + 1) % 3]
 
-                # Create two faces to cover each side
                 side_faces.append([start, end, end + num_vertices])
                 side_faces.append([start, end + num_vertices, start + num_vertices])
+                # Create two faces to cover each side, ensure they face backward
+                side_faces.append([start, end + num_vertices, end])
+                side_faces.append([start, start + num_vertices, end + num_vertices])
 
         side_faces = np.array(side_faces)
 
@@ -401,6 +412,8 @@ class DepthTo3D:
             Generated mesh (or related object).
         """
         print(f"Creating 3D mesh with depth amount: {depth_amount}...")
+        # Assume depth has been normalized so 0 is the minimum value
+
         depth_amount = max(0.0, min(depth_amount, 100.0))
 
         # Adjust the depth data based on the depth_amount
@@ -436,7 +449,7 @@ class DepthTo3D:
             else:
                 mask_resized = mask
             mask_resized = cv2.bitwise_not(mask_resized)
-            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
             mask_resized = cv2.dilate(mask_resized, kernel, iterations=2)
         else:
             mask_resized = np.ones(target_size, dtype=np.uint8) * 255
@@ -482,9 +495,7 @@ class DepthTo3D:
         mesh = self.flip_mesh(trimesh.Trimesh(vertices=valid_vertices, faces=faces, vertex_colors=valid_colors))
 
         if dynamic_depth:
-            flat_back_depth = z[z != 0].min()
-            print(f"Dynamic flat back depth = {flat_back_depth}")
-            solid_mesh = self.solidify_mesh_with_flat_back(mesh, flat_back_depth=float(flat_back_depth))
+            solid_mesh = self.solidify_mesh_with_flat_back(mesh, flat_back_depth=0.0)
         else:
             solid_mesh = self.add_mirror_mesh(mesh)
 
@@ -493,7 +504,7 @@ class DepthTo3D:
         if smoothing_method:
             file_suffix += f"_{smoothing_method}"
         if project_on_original:
-            file_suffix += "_projected"
+            file_suffix += "_proj"
         if background_removal:
             file_suffix += "_noBG"
         file_suffix += f"-{self.model_type}"
@@ -505,9 +516,9 @@ class DepthTo3D:
         if edge_detection_enabled:
             file_suffix += "_edge"
         if invert_colors_enabled:
-            file_suffix += "_invert"
+            file_suffix += "_inv"
         if dynamic_depth:
-            file_suffix += "_dynamic"
+            file_suffix += "_dyn"
 
         # For part of file name, format current date and time in format: YYYYMMDD_HHmmss
         now = datetime.now()
@@ -541,8 +552,12 @@ class DepthTo3D:
         # Calculate the threshold value based on the given percentage
         threshold = np.percentile(flattened, percentage)
 
+        print(f"Removed {percentage}% of the lowest depth values. Has {len(flattened)} values. Min depth value: {flattened.min()}. Max depth value: {flattened.max()}.")
         # Apply a mask to set values below the threshold to zero
         modified_depth = np.where(depth_array > threshold, depth_array, 0)
+        min = modified_depth.min()
+        print(f"Modified depth has {len(modified_depth)}.\nMin depth value: {min}")
+        modified_depth = modified_depth - min # Normalize the depth values
 
         return modified_depth
 
@@ -612,9 +627,15 @@ class DepthTo3D:
         if self.model_type == "depth_anything_v2":
             flip = True
         depth = self.estimate_depth(image, target_size, flip)
+        fname, ext = os.path.splitext(image_path)
+        cv2.imwrite(f"{os.path.join(fname)}_depth_map.png", depth)
         # Remove the lowest values. 0.05 = remove 5% of the lowest depth values.
         depth = self.modify_depth(depth, depth_drop_percentage)
         self.depth_values, self.depth_labels = self.create_text_values_from_depth(depth)
+
+        min = depth.min()
+        if min > 0:
+            depth = depth - min # Normalize the depth values
 
         # Apply depth smoothing
         try:

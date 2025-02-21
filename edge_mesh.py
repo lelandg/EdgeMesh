@@ -106,7 +106,7 @@ class MainWindow_ImageProcessing(QMainWindow):
             self.resolution = 700
             self.depth_amount = 1.0
             self.max_depth = 50.0
-            self.background_tolerance = 30  # Default value
+            self.background_tolerance = 10  # Default value
             self.grayscale_enabled = False
             self.use_processed_image_enabled = True
             self.project_on_original = True
@@ -115,6 +115,7 @@ class MainWindow_ImageProcessing(QMainWindow):
             self.dynamic_depth_enabled = False
             self.edge_detection_enabled = True
             self.depth_labels = None
+            self.depth_values = None
             self.depth_drop_percentage = 0.0  # Default percentage depth drop
             self.image_path = None  # To hold the currently loaded image path
             self.background_color = [0, 0, 0]  # Default background color = dark gray
@@ -241,11 +242,11 @@ class MainWindow_ImageProcessing(QMainWindow):
         # main_layout.addWidget(self.three_d_viewport)
 
         # Buttons for Load, Save, Depth Mesh, Mesh from 2D, and Export Mesh
-        self.load_button = QPushButton("Load Image")
+        self.load_button = QPushButton("&Load Image")
         self.load_button.clicked.connect(self.load_image)
         self.load_button.setToolTip("Load an image to process.")
 
-        self.save_button = QPushButton("Save Image")
+        self.save_button = QPushButton("&Save Image")
         self.save_button.clicked.connect(self.save_image)
         self.save_button.setToolTip("Save the processed image. What you see in the right hand image is what you get.")
 
@@ -351,22 +352,24 @@ class MainWindow_ImageProcessing(QMainWindow):
 
         # Initialize the variable to track the checkbox state
         # Add Depth Mesh Button
-        self.process_button = QPushButton("Depth Mesh")
+        self.process_button = QPushButton("&Depth Mesh")
+        self.process_button.setDefault(True)
+        self.process_button.setShortcut('Alt-D')
         self.process_button.setToolTip("Generate a 3D mesh from the original or processed image.")
         self.process_button.clicked.connect(self.process_image)
 
         #TODO: Fix Mesh from 2D
         # Add Mesh From 2D Button
-        self.generate_mesh_button = QPushButton("Mesh From Edges")
+        self.generate_mesh_button = QPushButton("&Mesh From Edges")
         self.generate_mesh_button.setToolTip("Use edge analysis to generate an approximated mesh from the processed image. (Currently broken.)")
         self.generate_mesh_button.clicked.connect(self.generate_mesh)
 
         # Additional "Export Mesh" button
-        self.export_mesh_button = QPushButton("Export Mesh")
+        self.export_mesh_button = QPushButton("&Export Mesh")
         self.export_mesh_button.setToolTip("Export the generated 3D mesh as a .PLY file.\n**NOTE** You do NOT need to use this because the mesh is automagically saved in the same folder as the source image.")
         self.export_mesh_button.clicked.connect(self.export_mesh)
 
-        self.reset_defaults_button = QPushButton("Reset Defaults")  # Button labeled "Reset Defaults"
+        self.reset_defaults_button = QPushButton("&Reset Defaults")  # Button labeled "Reset Defaults"
         self.reset_defaults_button.clicked.connect(self.reset_defaults)  # Connect button to reset_defaults method
 
         selected_color_label = QLabel("Selected Color")
@@ -380,10 +383,10 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.update_color_swatch(self.current_selected_color)  # Initialize swatch color
 
         # Add a "Pick Color" button
-        self.pick_color_button = QPushButton("Pick Color")
+        self.pick_color_button = QPushButton("&Pick Color")
         self.pick_color_button.clicked.connect(self.enable_color_picker_mode)
 
-        self.clear_color_button = QPushButton("Clear Color")
+        self.clear_color_button = QPushButton("&Clear Color")
         self.clear_color_button.clicked.connect(self.clear_color_picker)
 
         # Finally, add everything to the GUI:
@@ -544,7 +547,10 @@ class MainWindow_ImageProcessing(QMainWindow):
         print(f"Current selected color as RGB: {self.current_selected_color}")  # Output the selected color
         font_color = [255 - color.red(), 255 - color.green(), 255 - color.blue()]
         self.color_display.setStyleSheet("color: rgb({0}, {1}, {2});".format(*font_color))
-        self.color_display.setText(f"[{color.red()}, {color.green()}, {color.blue()}]")
+        if self.use_selected_color:
+            self.color_display.setText(f"[{color.red()}, {color.green()}, {color.blue()}]")
+        else:
+            self.color_display.setText(" <None> ")
 
     def update_background_tolerance(self, value):
         """
@@ -1002,7 +1008,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         if last_image_path and os.path.exists(last_image_path):
             self.load_image(last_image_path)
         else:
-            self.load_image()  # Open load image dialog on startup, or if the last_image_path doesn't exist.
+            self.load_image("./Images/example.png")  # 1232x928
 
     def _load_config(self):
         self.config.read(self.CONFIG_FILE_PATH)
@@ -1054,7 +1060,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.invert_checkbox.setChecked(False)
         self.grayscale_checkbox.setChecked(False)
         self.drop_background_checkbox.setChecked(True)
-        self.background_tolerance_input.setValue(30)
+        self.background_tolerance_input.setValue(10)
         self.resolution_input.setText("700")
         self.line_thickness_slider.setValue(1)  # Set the desired value
         self.edge_detection_checkbox.setChecked(True)
@@ -1077,15 +1083,11 @@ class MainWindow_ImageProcessing(QMainWindow):
             if self.config.has_section("UI_Settings"):
                 # Load settings
                 geometry = self.config.get("UI_Settings", "windowGeometry", fallback=None)
-                if geometry:
-                    # Decode the string to QByteArray
-                    self.restoreGeometry(QByteArray.fromHex(geometry.encode()))
-                if self.config.has_option("UI_Settings", "windowState"):
-                    # Convert the state string to bytes before passing to restoreState
-                    state = self.config.get("UI_Settings", "windowState", fallback=None)
-                    if state:
-                        self.restoreState(QByteArray.fromHex(state.encode()))
-
+                # Decode the string to QByteArray
+                self.restoreGeometry(QByteArray.fromHex(geometry.encode()))
+                # Convert the state string to bytes before passing to restoreState
+                state = self.config.get("UI_Settings", "windowState", fallback=None)
+                self.restoreState(QByteArray.fromHex(state.encode()))
                 self.invert_colors_enabled = self.config.getboolean("UI_Settings", "invert_colors", fallback=False)
                 self.grayscale_enabled = self.config.getboolean("UI_Settings", "grayscale", fallback=False)
                 self.drop_background_enabled = self.config.getboolean("UI_Settings", "drop_background", fallback=False)

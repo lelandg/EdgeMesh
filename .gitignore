@@ -145,6 +145,11 @@ venv.bak/
 
 # mkdocs documentation
 /site
+*-depth_combined.png
+*-depth_light.png
+*-depth_shading.png
+*-edges.png
+*-smooth_gaussian.png
 
 # mypy
 .mypy_cache/

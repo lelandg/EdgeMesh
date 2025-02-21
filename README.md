@@ -165,6 +165,11 @@ This application combines cutting-edge computer vision and 3D rendering techniqu
 
 
 Version history:
+* 0.5.12:
+    * Add hotkeys to buttons.
+    * Fix for direction of faces for flat back mesh.
+    * Add Images/example.png for testing. Set as default image if config.ini is missing.
+    * Add run.bat and run.sh to easily run the program from a command line. The .sh assumes python3 is in your path.
 * 0.5.11:
     * Much improved "flat back" functionality.
 * 0.5.10:

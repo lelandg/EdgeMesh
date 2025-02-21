@@ -86,8 +86,8 @@ class ImageProcessor:
 # Example usage
 if __name__ == "__main__":
     image_processor = ImageProcessor()
-    input_image_path = "path_to_input_image.jpg"
-    output_dir = "path_to_output_directory"
+    input_image_path = "./Images/example.png"
+    output_dir = "./Images"
 
     # List of processing methods
     methods = ["edges", "depth_light", "depth_shading", "depth_combined", "smooth_gaussian"]
