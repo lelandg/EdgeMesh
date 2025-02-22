@@ -247,16 +247,28 @@ class MainWindow_ImageProcessing(QMainWindow):
         # Create ComboBox
         self.depth_method_dropdown = QComboBox()
         self.depth_method_dropdown.addItems(["DepthAnythingV2", "DPT", "MiDaS"])  # Add items
+        self.depth_method_dropdown.setCurrentIndex(0)
+        self.depth_method_dropdown.setItemData(0, "DepthAnythingV2 is usually better, but DPT can be good for architecture.", Qt.ToolTipRole)
+        self.depth_method_dropdown.setItemData(1, "DPT is good for architecture.", Qt.ToolTipRole)
+        self.depth_method_dropdown.setItemData(2, "MiDaS is good for general depth. Results are very different, so experiment!", Qt.ToolTipRole)
         self.depth_method_dropdown.setToolTip("Depth estimation model to use.\r\n"
-                                       "DepthAnythingV2 is usually better, but DPT can be good for architecture.\r\n"
-                                       "MiDaS is good for general depth. Results are very different, so experiment!")
-        self.depth_method_dropdown.setToolTip("Select the depth estimation model to use.")
+                                              "DepthAnythingV2 is usually better, but "
+                                              "DPT is sometimes better for architecture or hard surfaces.\r\n"
+                                              "MiDaS is good for general depth.\r\n"
+                                              "Results are very different, so experiment!\r\n\r\n"
+                                              "Remember, this works with Smoothing Method. "
+                                              "So try different combinations!")
 
         depth_smoothing_label = QLabel("Depth Smoothing")
         depth_smoothing_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
         self.smoothing_dropdown = QComboBox()
         self.smoothing_dropdown.addItems(["anisotropic", "gaussian", "bilateral", "median", "(none)"])
+        self.smoothing_dropdown.setItemData(0, "Anisotropic diffusion (edge-aware smoothing). Usually best", Qt.ToolTipRole)
+        self.smoothing_dropdown.setItemData(1, "Gaussian smoothing. Can be better for some images.", Qt.ToolTipRole)
+        self.smoothing_dropdown.setItemData(2, "Bilateral smoothing.", Qt.ToolTipRole)
+        self.smoothing_dropdown.setItemData(3, "Median smoothing.", Qt.ToolTipRole)
+        self.smoothing_dropdown.setItemData(4, "No smoothing applied. Not recommended!! But you can try it! :-)", Qt.ToolTipRole)
         self.smoothing_dropdown.setToolTip("Select smoothing method for the depth map.")
 
         resolution_label = QLabel("Resolution")
@@ -500,8 +512,8 @@ class MainWindow_ImageProcessing(QMainWindow):
         main_layout.addWidget(image_processing_groupbox)
         main_layout.addWidget(depth_groupbox)
         main_layout.addLayout(button_layout)
-
         self.central_widget.setLayout(main_layout)
+        self.process_button.setFocus()
 
         self.initialized = True
         self.load_ui_settings()
@@ -769,7 +781,7 @@ class MainWindow_ImageProcessing(QMainWindow):
             print(f"3D model generated successfully with Depth Amount: {depth_amount}, Max Depth: {self.max_depth}")
             self.depth_values = self.depth_to_3d.depth_values
             self.depth_labels = self.depth_to_3d.depth_labels
-            print(f"Depth Range: {min(self.depth_values)}-{max(self.depth_values)}")
+            print(f"Depth Range: {self.depth_labels[0]} - {self.depth_labels[-1]}")
             # Update 3D viewport
             if max(self.background_color) > 0:
                 self.background_color = [c / 255.0 for c in self.background_color]

@@ -165,6 +165,10 @@ This application combines cutting-edge computer vision and 3D rendering techniqu
 
 
 Version history:
+* 0.5.14:
+    * Tweaks to depth map generation and uses. Now discards values < 0. I think this helped....
+    * Prints info about this as depth map is processed. (Just in some other model comes out all < 0, or something! Ha.)
+    * Added tooltips to combo box items.
 * 0.5.13:
     * Big UI update. Everything has tooltips now. Labels stick to associated widgets.
     * Fixed image scaling issues at startup.

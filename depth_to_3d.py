@@ -153,9 +153,11 @@ class DepthTo3D:
 
                 else:
                     depth = self.model(img_tensor)
-
+        print(f"Initial depth map shape: {depth.shape}, values: {depth.min()} - {depth.max()}.")
         # Resize depth back to original image dimensions
         depth = depth.squeeze().cpu().numpy()
+        print(f"Resized depth map shape: {depth.shape}, values: {depth.min()} - {depth.max()} {np.sum(depth < 0)} negative values.")
+        depth[depth < 0] = 0  # replace negative values with 0
         depth = cv2.resize(depth, (img_w, img_h))  # Match original input image size
 
         if target_size and target_size != (0, 0) and target_size != (img_w, img_h):
@@ -164,6 +166,7 @@ class DepthTo3D:
 
         # Normalize for visualization (optional)
         depth = cv2.normalize(depth, None, 0, 255, norm_type=cv2.NORM_MINMAX)
+        print(f"Final depth map shape: {depth.shape}, values: {depth.min()} - {depth.max()}")
         return depth
 
     def solidify_mesh(self, mesh, depth_offset=-1.0):
@@ -466,7 +469,7 @@ class DepthTo3D:
         y, x = np.meshgrid(np.linspace(0, h - 1, h), np.linspace(0, w - 1, w), indexing="ij")
         z = depth
         vertices = np.stack([x, y, z], axis=-1).reshape(-1, 3)
-        valid_mask = z.reshape(-1) != 0
+        valid_mask = z.reshape(-1) >= 0
         valid_vertices = vertices[valid_mask]
 
         # Step 3: Re-map faces
@@ -546,18 +549,19 @@ class DepthTo3D:
         if not 0 < percentage <= 100:
             return depth_array
 
+        original_length = len(depth_array)
         # Flatten the depth array for percentile calculation
         flattened = depth_array.flatten()
 
         # Calculate the threshold value based on the given percentage
         threshold = np.percentile(flattened, percentage)
 
-        print(f"Removed {percentage}% of the lowest depth values. Has {len(flattened)} values. Min depth value: {flattened.min()}. Max depth value: {flattened.max()}.")
+        print(f"Removed {percentage}% of the lowest depth values. Original had {original_length}. Has {len(flattened)} values. Min depth value: {flattened.min()}. Max depth value: {flattened.max()}.")
         # Apply a mask to set values below the threshold to zero
-        modified_depth = np.where(depth_array > threshold, depth_array, 0)
-        min = modified_depth.min()
-        print(f"Modified depth has {len(modified_depth)}.\nMin depth value: {min}")
-        modified_depth = modified_depth - min # Normalize the depth values
+        modified_depth = np.where(depth_array > threshold, depth_array, -1)
+        # min = modified_depth.min()
+        # print(f"Modified depth has {len(modified_depth)}.\nMin depth value: {min}")
+        # modified_depth = modified_depth - min # Normalize the depth values
 
         return modified_depth
 
