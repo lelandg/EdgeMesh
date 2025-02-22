@@ -13,6 +13,48 @@ class ImageProcessor:
         self.depth_estimator = DepthCueEstimator()
         self.smoothing_utils = SmoothingDepthMapUtils()
 
+    @staticmethod
+    def blend_images(image1, image2, percentage):
+        """
+        Merge two images with a specified fade percentage.
+
+        Args:
+            image1: First image (can be grayscale or color).
+            image2: Second image (can be grayscale or color).
+            percentage: A float (0 to 100) specifying the fade/mix ratio.
+                        - 0 means the first image is completely returned.
+                        - 100 means the second image is completely returned.
+                        - Values in between fade proportionally.
+
+        Returns:
+            Faded/merged image in the format of the first image.
+        """
+        # Ensure percentage is within bounds
+        percentage = max(0, min(percentage, 100))
+
+        # Convert the percentage to a scale factor (0.0 to 1.0)
+        alpha = percentage / 100.0
+
+        # Ensure both images have the same size
+        if image1.shape[:2] != image2.shape[:2]:
+            image2 = cv2.resize(image2, (image1.shape[1], image1.shape[0]))
+
+        # Check if the first image is color or grayscale
+        is_image1_color = len(image1.shape) == 3 and image1.shape[2] == 3
+
+        # Ensure the second image matches the format of the first image
+        if is_image1_color and len(image2.shape) != 3:
+            # Convert grayscale second image to BGR
+            image2 = cv2.cvtColor(image2, cv2.COLOR_GRAY2BGR)
+        elif not is_image1_color and len(image2.shape) == 3:
+            # Convert color second image to grayscale
+            image2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
+
+        # Perform the fade between the two images
+        blended_image = cv2.addWeighted(image1, 1 - alpha, image2, alpha, 0)
+
+        return blended_image
+
     def process_image(self, image_path, methods, output_directory=None):
         """
         Process an image using specified methods.

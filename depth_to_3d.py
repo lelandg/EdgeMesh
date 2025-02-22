@@ -356,8 +356,9 @@ class DepthTo3D:
             mv1, mv2 = v1 + num_original_vertices, v2 + num_original_vertices
             stitching_faces.append([v1, v2, mv1])
             stitching_faces.append([v2, mv2, mv1])
-            stitching_faces.append([mv2, v2, v1])
-            stitching_faces.append([mv1, mv2, v1])
+            if mv2 != v1 and mv1 != v2:
+                stitching_faces.append([mv2, v2, v1])
+                stitching_faces.append([mv1, mv2, v1])
 
         stitching_faces = np.array(stitching_faces)
 
@@ -376,19 +377,20 @@ class DepthTo3D:
         watertight_mesh = trimesh.Trimesh(
             vertices=combined_vertices,
             faces=watertight_faces,
-            vertex_colors=combined_colors
+            vertex_colors=combined_colors,
+            process=False
         )
 
-        # print("Removing duplicate faces...")
+        # print(f"Removing duplicate faces from {len(watertight_mesh.faces)} faces")
         # watertight_mesh.remove_duplicate_faces()
-        # print("Removing degenerate faces...")
-        # watertight_mesh.remove_degenerate_faces()
+        print(f"Removing degenerate faces from {len(watertight_mesh.faces)} faces")
+        watertight_mesh.remove_degenerate_faces()
         # print("Fixing normals...")
         # watertight_mesh.fix_normals()  # Ensure outward normals
-        # print("Filling holes...")
+        # print(f"Faces remaining = {len(watertight_mesh.faces)}\r\nFilling holes...")
         # watertight_mesh.fill_holes()  # Fix any remaining holes
 
-        print("Finished creating mesh.")
+        print(f"Finished creating mesh with {len(watertight_mesh.faces)} faces.")
         return watertight_mesh
 
     def create_3d_mesh(self, image, depth, filename, smoothing_method, target_size, dynamic_depth, grayscale_enabled,
@@ -597,7 +599,7 @@ class DepthTo3D:
 
         return depth_values, text_values
 
-    def process_image(self, image_path, smoothing_method="anisotropic", target_size=(500, 500), dynamic_depth=False,
+    def process_image(self, image_path, smoothing_method="anisotropic", target_size=(500, 500), flat_back=False,
                       grayscale_enabled=False, edge_detection_enabled=False, invert_colors_enabled=False,
                       depth_amount=1.0, depth_drop_percentage=0, project_on_original=False, background_removal=False,
                       background_tolerance=0, background_color=None):
@@ -606,14 +608,14 @@ class DepthTo3D:
         :param image_path: Path to the input image.
         :param smoothing_method: Depth map smoothing method.
         :param target_size: Target resolution of the depth map.
-        :param dynamic_depth: If True, adjusts the back of the mesh dynamically.
+        :param flat_back: If True, flattens the back of the mesh at 0 depth.
         :param grayscale_enabled: If True, indicates grayscale input was used.
         :param edge_detection_enabled: If True, indicates edge detection was used.
         """
         # Load the image
         print(f"Processing image: {image_path} \r\n\t\t\tWith: Depth map resolution = {target_size}, "
               f"Grayscale = {grayscale_enabled} Edge detection = {edge_detection_enabled}, "
-              f"Invert colors = {invert_colors_enabled}, Dynamic depth = {dynamic_depth}, Depth amount = {depth_amount}, "
+              f"Invert colors = {invert_colors_enabled}, Dynamic depth = {flat_back}, Depth amount = {depth_amount}, "
               f"Removing {depth_drop_percentage}% of the lowest depth values, Smoothing method = {smoothing_method}, "
               f"Project on original = {project_on_original}, Background removal = {background_removal}, "
               f"Background tolerance = {background_tolerance}")
@@ -649,7 +651,7 @@ class DepthTo3D:
 
         # Generate and save 3D mesh with updated file suffix
         return self.create_3d_mesh(image, depth, f"{image_path}", smoothing_method, target_size,
-                                   dynamic_depth, grayscale_enabled, edge_detection_enabled,
+                                   flat_back, grayscale_enabled, edge_detection_enabled,
                                    invert_colors_enabled, depth_amount, project_on_original,
                                    background_removal, background_tolerance=background_tolerance,
                                    color_to_remove=background_color)

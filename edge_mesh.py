@@ -2,6 +2,7 @@ __author__ = "Leland Green"
 
 from PyQt5 import QtWidgets
 
+import image_processor
 from _version import version
 __version__ = version
 __date_created__ = "2025-01-28"
@@ -12,6 +13,7 @@ __license__ = "Commercial. License Required." # License of this script is free f
 import traceback
 
 from flow_layout import FlowLayout
+from smoothing_depth_map_utils import SmoothingDepthMapUtils
 
 debug = True # Set False to disable debug messages. Yes. We do need this.
 verbose = True # Not used, yet. When I add logging, this will also print messages to console when enabled.
@@ -44,7 +46,7 @@ Requirements:
 - Modules in python_requirements.txt. Run "pip install -r python_requirements.txt" to install.
 
 How to Run:
-Run this script using the command `python MainWindow_ImageProcessing.py`.
+Run this script using the command `python edge_mesh.py`.
 
 License:
 {__license__}
@@ -61,7 +63,7 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QFileDialog, QLabel, QVBoxLayout, QSlider,
     QPushButton, QWidget, QHBoxLayout, QSizePolicy, QCheckBox, QComboBox, QLineEdit, QSpinBox
 )
-from PyQt5.QtCore import Qt, QSize, QEvent, QByteArray
+from PyQt5.QtCore import Qt, QSize, QEvent, QByteArray, QTimer
 import PyQt5.QtGui as QtGui
 from PyQt5.QtGui import QPixmap, QImage, QIntValidator, QIcon, QDoubleValidator, QResizeEvent
 
@@ -101,35 +103,41 @@ def process_preview_image(image, is_grayscale=False, invert_colors=False):
 
 class MainWindow_ImageProcessing(QMainWindow):
     def __init__(self):
+        super().__init__()
+        self._layout_references = []
+        self._checkbox_references = []
+        self.line_thickness = 2
+        self.sensitivity = 150
+        self.blend_amount = 100
+        self.initialized = False
+        self.resolution = 700
+        self.depth_amount = 1.0
+        self.max_depth = 50.0
+        self.background_tolerance = 10  # Default value
+        self.grayscale_enabled = False
+        self.use_processed_image_enabled = True
+        self.project_on_original = True
+        self.invert_colors_enabled = False
+        self.edge_thickness = 1  # Default line thickness
+        self.flat_back_enabled = False
+        self.edge_detection_enabled = True
+        self.depth_labels = None
+        self.depth_values = None
+        self.depth_drop_percentage = 0.0  # Default percentage depth drop
+        self.image_path = None  # To hold the currently loaded image path
+        self.background_color = [0, 0, 0]  # Default background color = dark gray
+        self.current_selected_color = (255, 255, 255)  # Default to white
+        self.use_selected_color = False
+        self.drop_background_enabled = False  # Initialize the variable
+        self.previous_background_enabled = False  # Store the previous state
+        self.three_d_viewport = None
+        self.original_pixmap = None
+        self.image = None
+        self.processed_image = None
+        self.extruded_edges = None
+        self.eyedropper_active = False
+
         try:
-            super().__init__()
-            self.initialized = False
-            self.resolution = 700
-            self.depth_amount = 1.0
-            self.max_depth = 50.0
-            self.background_tolerance = 10  # Default value
-            self.grayscale_enabled = False
-            self.use_processed_image_enabled = True
-            self.project_on_original = True
-            self.invert_colors_enabled = False
-            self.edge_thickness = 1  # Default line thickness
-            self.dynamic_depth_enabled = False
-            self.edge_detection_enabled = True
-            self.depth_labels = None
-            self.depth_values = None
-            self.depth_drop_percentage = 0.0  # Default percentage depth drop
-            self.image_path = None  # To hold the currently loaded image path
-            self.background_color = [0, 0, 0]  # Default background color = dark gray
-            self.current_selected_color = (255, 255, 255)  # Default to white
-            self.use_selected_color = False
-            self.drop_background_enabled = False  # Initialize the variable
-            self.previous_background_enabled = False  # Store the previous state
-            self.three_d_viewport = None
-            self.original_pixmap = None
-            self.image = None
-            self.processed_image = None
-            self.extruded_edges = None
-            self.eyedropper_active = False
 
             # Set the icon for the main window
             icon_path = os.path.join(os.getcwd(), "EdgeMesh.ico")
@@ -139,7 +147,7 @@ class MainWindow_ImageProcessing(QMainWindow):
             self.setWindowTitle(f"3D Mesh Generator v{__version__}")
             self.setGeometry(50, 50, 929, 560) # Weird size, just looks good on my screen (today)
 
-            os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'  # Enable OneDNN optimizations for TensorFlow
+            os.environ['TF_ENABLE_ONEDNN_OPTS'] = "0"  # Enable OneDNN optimizations for TensorFlow
             # Initialize configuration
             # Config file path
             self.CONFIG_FILE_PATH = "config.ini"
@@ -166,65 +174,84 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.default_color = palette.color(QtGui.QPalette.Window)
         # Original Image Preview
         self.original_label = QLabel("Original Image")
-        self.original_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.original_label.setAlignment(Qt.AlignRight | Qt.AlignBaseline)
         self.original_label.setStyleSheet(f"background-color: {self.default_color.name()};")
         self.original_label.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
-        self.original_label.setMinimumSize(100,100)
-        self.original_label.setToolTip("This is the original image. Load an image to start processing.")
+        self.original_label.setMinimumSize(150,100)
+        self.original_label.setToolTip("This is the original image. Load an image to start processing.\r\n"
+                                      'Click "Depth Mesh" with "Use Processed Image" DISABLED to generate a 3D mesh '
+                                      "from this image.")
         # self.original_label.setMaximumHeight(700)  # Limit height
 
         # Processed Image Preview
         self.preview_label = QLabel("Processed Image")
-        self.preview_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.preview_label.setAlignment(Qt.AlignRight | Qt.AlignBaseline)
         self.preview_label.setStyleSheet("background-color: default_color.name();")
         self.preview_label.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
-        self.preview_label.setMinimumSize(100,100)
-        self.preview_label.setToolTip("This is the processed image, based on your selections below. "
-                                      "Click 'Depth Mesh' to generate a 3D mesh.")
+        self.preview_label.setMinimumSize(150,100)
+        self.preview_label.setToolTip("This is the processed image, based on your selections below. \r\n"
+                                      'Click "Save Image" to save what you see here..\r\n'
+                                      'Click "Depth Mesh" with "Use Processed Image" enabled to generate a 3D mesh '
+                                      "from this image.")
 
         # Add "Edge Detection" Option
 
-        layout_edge, self.edge_detection_checkbox = self.create_label_and_checkbox_container("Edge Detection", self.toggle_edge_detection, True)
-        self.edge_detection_checkbox.setToolTip("Enable edge detection to highlight edges in the image.")
+        layout_edge, self.edge_detection_checkbox = self.create_label_and_checkbox_container(
+            "Edge Detection", "Enable edge detection to highlight edges in the image.",
+            self.toggle_edge_detection, True)
 
         # Add the "Project on Original" checkbox
-        layout_project, self.project_on_original_checkbox = self.create_label_and_checkbox_container("Project on Original", self.toggle_project_on_original)
-        self.project_on_original_checkbox.setToolTip("Project the processed image on the original image. "
-                                                    "This can create interesting effects.")
+        tooltip = "Project the processed image on the original image. This can create interesting effects."
+        layout_project, self.project_on_original_checkbox = self.create_label_and_checkbox_container(
+            "Project on Original", tooltip, self.toggle_project_on_original)
 
         # Add "Grayscale" Option
-        layout_grayscale, self.grayscale_checkbox = self.create_label_and_checkbox_container("GrayScale",
-                                                                                        self.toggle_grayscale)
-        self.grayscale_checkbox.setToolTip("Enable grayscale mode for the processed image.")
+        tooltip = "Convert the image to grayscale before processing. This can help with edge detection."
+        layout_grayscale, self.grayscale_checkbox = self.create_label_and_checkbox_container(
+            "GrayScale", tooltip, self.toggle_grayscale)
+
 
 
         # Slider for Sensitivity
-        slider_label = QLabel("Edge Detection Sensitivity")
-        slider_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        label_sensitivity = QLabel("Edge Detection Sensitivity")
+        label_sensitivity.setAlignment(Qt.AlignRight | Qt.AlignBaseline)
 
         self.sensitivity_slider = QSlider(Qt.Horizontal)
         self.sensitivity_slider.setMinimum(1)
         self.sensitivity_slider.setMaximum(200)
-        self.sensitivity_slider.setValue(50)
-        self.sensitivity_slider.setMinimumSize(200, 0)
+        self.sensitivity_slider.setValue(self.sensitivity)
+        self.sensitivity_slider.setMinimumSize(100, 0)
         self.sensitivity_slider.setToolTip("Adjust the edge detection sensitivity. Higher values detect more edges.")
-        self.sensitivity_slider.valueChanged.connect(self.update_preview)
+        self.sensitivity_slider.valueChanged.connect(self.update_sensitivity)
 
         # Slider for Line Thickness
         line_thickness_label = QLabel("Line Thickness")
-        line_thickness_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        line_thickness_label.setAlignment(Qt.AlignRight | Qt.AlignBaseline)
 
         self.line_thickness_slider = QSlider(Qt.Horizontal)
         self.line_thickness_slider.setMinimum(1)
         self.line_thickness_slider.setMaximum(10)
         self.line_thickness_slider.setValue(self.edge_thickness)
-        self.line_thickness_slider.setMinimumSize(200, 0)
+        self.line_thickness_slider.setMinimumSize(100, 0)
         self.line_thickness_slider.setToolTip("Adjust the thickness of the lines drawn for detected edges.")
         self.line_thickness_slider.valueChanged.connect(self.update_line_thickness)
 
+        blend_label = QLabel("Blend Amount")
+        self.blend_slider = QSlider(Qt.Horizontal)
+        self.blend_slider.setMinimum(0)
+        self.blend_slider.setMaximum(100)
+        self.blend_slider.setValue(self.blend_amount)
+        self.blend_slider.setMinimumSize(100, 0)
+        self.blend_slider.setToolTip("Blend between the original and processed images. 0 = original, 100 = processed.\r\n"
+                                     "Be sure \"Use Processed Image\" is enabled to see the effect in 3D meshes.\r\n"
+                                     "\"Save Image\" always saves the processed image, as you see it on the right.")
+
+        self.blend_slider.valueChanged.connect(self.update_blend)
+
         # Add "Invert Colors" Option
-        layout_invert, self.invert_checkbox = self.create_label_and_checkbox_container("Invert Colors", self.toggle_invert_colors, self.invert_colors_enabled)
-        self.invert_checkbox.setToolTip("Invert the colors of the image. Useful with edge detection, but can be fun.")
+        tooltip = "Invert the colors of the processed image. Useful for edge detection and creates interesting effects."
+        layout_invert, self.invert_checkbox = self.create_label_and_checkbox_container(
+            "Invert Colors", tooltip, self.toggle_invert_colors, self.invert_colors_enabled)
 
         # 3D Viewport (Fill most of the window) - Moved below. Now created/updated when a new mesh is ready.
         # self.three_d_viewport = ThreeDViewport()
@@ -242,25 +269,25 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.save_button.setToolTip("Save the processed image. What you see in the right hand image is what you get.")
 
         depth_method_label = QLabel("Depth Method")
-        depth_method_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        depth_method_label.setAlignment(Qt.AlignRight | Qt.AlignBaseline)
 
         # Create ComboBox
         self.depth_method_dropdown = QComboBox()
         self.depth_method_dropdown.addItems(["DepthAnythingV2", "DPT", "MiDaS"])  # Add items
         self.depth_method_dropdown.setCurrentIndex(0)
-        self.depth_method_dropdown.setItemData(0, "DepthAnythingV2 is usually better, but DPT can be good for architecture.", Qt.ToolTipRole)
-        self.depth_method_dropdown.setItemData(1, "DPT is good for architecture.", Qt.ToolTipRole)
-        self.depth_method_dropdown.setItemData(2, "MiDaS is good for general depth. Results are very different, so experiment!", Qt.ToolTipRole)
+        self.depth_method_dropdown.setItemData(0, "DepthAnythingV2 is usually better for most images.", Qt.ToolTipRole)
+        self.depth_method_dropdown.setItemData(1, "DPT can be good for architecture and hard surfaces.", Qt.ToolTipRole)
+        self.depth_method_dropdown.setItemData(2, "MiDaS is sometimes good for general depth.", Qt.ToolTipRole)
         self.depth_method_dropdown.setToolTip("Depth estimation model to use.\r\n"
                                               "DepthAnythingV2 is usually better, but "
                                               "DPT is sometimes better for architecture or hard surfaces.\r\n"
                                               "MiDaS is good for general depth.\r\n"
-                                              "Results are very different, so experiment!\r\n\r\n"
+                                              "Results are very different, so experiment!\r\n"
                                               "Remember, this works with Smoothing Method. "
                                               "So try different combinations!")
 
         depth_smoothing_label = QLabel("Depth Smoothing")
-        depth_smoothing_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        depth_smoothing_label.setAlignment(Qt.AlignRight | Qt.AlignBaseline)
 
         self.smoothing_dropdown = QComboBox()
         self.smoothing_dropdown.addItems(["anisotropic", "gaussian", "bilateral", "median", "(none)"])
@@ -272,7 +299,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.smoothing_dropdown.setToolTip("Select smoothing method for the depth map.")
 
         resolution_label = QLabel("Resolution")
-        resolution_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        resolution_label.setAlignment(Qt.AlignRight | Qt.AlignBaseline)
 
         # Add the numeric input box for resolution
         self.resolution_input = QLineEdit()
@@ -285,44 +312,47 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.resolution_input.textChanged.connect(self.update_resolution)
 
         depth_amount_label = QLabel("Depth Amount")
-        depth_amount_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        depth_amount_label.setAlignment(Qt.AlignRight | Qt.AlignBaseline)
 
         # Add an input field for Depth Amount, with validation
         self.depth_amount_input = QLineEdit()
-        self.depth_amount_input.setValidator(QDoubleValidator(1.0, 10000.0, 5, self))
+        self.depth_amount_input.setValidator(QDoubleValidator(0.0, 100.0, 5, self))
         self.depth_amount_input.setFixedWidth(100)
         self.depth_amount_input.setText("1.0")  # Default depth = 1.0 (current depth)
-        self.depth_amount_input.setToolTip("Depth Amount. Higher values increase the depth as a multiplier.\n"
-                                           "So 0.5 = half size, 2.0 = double size. Default: 1.0 = \"normal\" depth")
+        self.depth_amount_input.setToolTip("Depth Amount multiplier.\nHigher values increase the depth.\n"
+                                           "0.5 = half size. 2.0 = double size.\n"
+                                           "0.0 = flat, generates a plane with image.\n"
+                                           'Default: 1.0 = "normal" depth')
 
-        max_depth_label = QLabel("Max Depth")
-        max_depth_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        max_depth_label.setEnabled(False)  # Disable for now
+        min_depth_label = QLabel("Minimum Depth")
+        min_depth_label.setAlignment(Qt.AlignRight | Qt.AlignBaseline)
+        min_depth_label.setEnabled(False)  # Disable for now
 
         # Add an input field for Max Depth, validate from 0.0 to 1.0 (floating-point)
-        self.max_depth_input = QLineEdit()
-        double_validator = QDoubleValidator(1.0, 10000.0, 5, self)  # Ranges from 0.0 to 10000.0, accuracy up to 5 decimals
-        self.max_depth_input.setValidator(double_validator)
-        self.max_depth_input.setFixedWidth(100)
-        self.max_depth_input.setText("100.0")  # Default max depth = 1.0 (full range)
-        self.max_depth_input.setToolTip("Maximum Depth. Min = 1.0 (basically flat), Max = 10000, which is crazy deep.\n"
-                                        "Try 500-1000, or less for bas-relief. Default: 50.0")
-        self.max_depth_input.setEnabled(False)  # Disable for now
+        self.min_depth_input = QLineEdit()
+        double_validator = QDoubleValidator(1.0, 10000.0, 5, self)  # Ranges from 0.0 to 1000
+        double_validator.setNotation(QDoubleValidator.StandardNotation)  # Use standard notation (no scientific)
+        self.min_depth_input.setValidator(double_validator)
+        self.min_depth_input.setFixedWidth(100)
+        self.min_depth_input.setText("0.0")  # Default max depth = 1.0 (full range)
+        self.min_depth_input.setToolTip("Minimum Depth. Min = 0.0 (unmodified), Max = 10000.0, which is crazy deep.\n"
+                                        "Default: 0.0")
+        self.min_depth_input.setEnabled(False)  # Disable for now
 
         percentage_label = QLabel(" Depth Drop (%):")
-        percentage_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        percentage_label.setAlignment(Qt.AlignRight | Qt.AlignBaseline)
         self.percentage_input = QLineEdit(self)
         self.percentage_input.setFixedWidth(100)
         self.percentage_input.setToolTip("Set the percentage depth drop for the mesh. The farthest points will be dropped by this percentage")
         self.percentage_input.setText("0.0")  # Default percentage depth drop
-        validator = QtGui.QDoubleValidator(0.0, 100.0, 2)  # Limits input to 0.00–100.00
-        validator.setNotation(QtGui.QDoubleValidator.StandardNotation)
+        validator = QtGui.QIntValidator(0, 100)  # Limits input to 0 - 100
         self.percentage_input.setValidator(validator)
         self.percentage_input.editingFinished.connect(self.update_percentage_depth_drop)
 
-        layout_remove_background, self.drop_background_checkbox = self.create_label_and_checkbox_container("Remove Background", self.toggle_drop_background)
-        self.drop_background_checkbox.setToolTip("Enable this option to remove the background color from the image.\n"
-                                                 "This only works when all four corners are the same color.")
+        tooltip = "Enable this option to remove the background color from the image.\n"\
+                  "This only works when all four corners are the same color."
+        layout_remove_background, self.drop_background_checkbox = self.create_label_and_checkbox_container(
+            "Remove Background", tooltip, self.toggle_drop_background)
 
         # Background tolerance input
         self.background_tolerance_label = QLabel("Background Tolerance:")
@@ -337,18 +367,16 @@ class MainWindow_ImageProcessing(QMainWindow):
         # Connect the value change to the handler
         self.background_tolerance_input.valueChanged.connect(self.update_background_tolerance)
 
-        layout_flat, self.dynamic_depth_checkbox = self.create_label_and_checkbox_container("Flat Back", self.toggle_dynamic_depth)
-        self.dynamic_depth_checkbox.setToolTip(
-            "Enable this option to create a model with a flat back.\n"
-            "This option is usually better for 3D printing.\n"
-            "When disabled, the back will be shaped to match the front."
-        )
+        tooltip = "Enable this option to create a model with a flat back.\n"\
+                  "This option is usually better for 3D printing.\n"\
+                  "When disabled, the back will be shaped to match the front."
 
-        layout_use_processed, self.use_processed_image_checkbox = self.create_label_and_checkbox_container("Use Processed Image", self.toggle_use_processed_image)
-        self.use_processed_image_checkbox.setToolTip(
-            "Enable this to save and use the image on the right (the processed image) to generate the depth map. You can get crazy results with edge detection overlayed on original.\n"
-            "When not enabled, the original image is always used, no matter what options you have set."
-        )
+        layout_flat, self.flat_back_checkbox = self.create_label_and_checkbox_container(
+            "Flat Back", tooltip, self.toggle_flat_back)
+
+        tooltip = "Enable this to save and use the image on the right (the processed image) to generate the depth map. You can get crazy results with edge detection overlayed on original.\n"\
+                  "When not enabled, the original image is always used, no matter what options you have set."
+        layout_use_processed, self.use_processed_image_checkbox = self.create_label_and_checkbox_container("Use Processed Image", tooltip, self.toggle_use_processed_image)
 
         # Add Depth Mesh Button
         self.process_button = QPushButton("&Depth Mesh")
@@ -376,7 +404,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.reset_defaults_button.clicked.connect(self.reset_defaults)  # Connect button to reset_defaults method
 
         selected_color_label = QLabel("Selected Color")
-        selected_color_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        selected_color_label.setAlignment(Qt.AlignRight | Qt.AlignBaseline)
         # Add a color picker display (readonly text box with the color value)
         self.color_display = QLabel(self)
         self.color_display.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
@@ -418,7 +446,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         image_processing_layout.addWidget(self.layout_to_container(layout_project))
         image_processing_layout.addWidget(self.layout_to_container(layout_edge))
         sensitivity_hbox = FlowLayout()
-        sensitivity_hbox.addWidget(slider_label)
+        sensitivity_hbox.addWidget(label_sensitivity)
         sensitivity_hbox.addWidget(self.sensitivity_slider)
         image_processing_layout.addWidget(self.layout_to_container(sensitivity_hbox))
 
@@ -429,8 +457,11 @@ class MainWindow_ImageProcessing(QMainWindow):
         line_thickness_hbox.addWidget(self.line_thickness_slider)
         image_processing_layout.addWidget(self.layout_to_container(line_thickness_hbox))
 
-        # image_processing_layout.addWidget(self.use_processed_image_checkbox)
-        image_processing_layout.addWidget(self.layout_to_container(layout_use_processed))
+        blend_hbox =  FlowLayout()
+        blend_hbox.addWidget(blend_label)
+        blend_hbox.addWidget(self.blend_slider)
+        image_processing_layout.addWidget(self.layout_to_container(blend_hbox))
+
         image_processing_groupbox.setLayout(image_processing_layout)
         image_processing_groupbox.setContentsMargins(5, 15, 5, 5)
 
@@ -441,13 +472,13 @@ class MainWindow_ImageProcessing(QMainWindow):
         depth_layout.setContentsMargins(5, 5, 5, 5)
         hlayout_method = QtWidgets.QHBoxLayout()
         hlayout_method.addWidget(depth_method_label)
-        hlayout_method.addWidget(self.depth_method_dropdown)
+        hlayout_method.addWidget(self.depth_method_dropdown, alignment=Qt.AlignBaseline)
         depth_layout.addWidget(self.layout_to_container(hlayout_method))
 
         # Add depth smoothing method dropdown
         hlayout_smoothing = QtWidgets.QHBoxLayout()
         hlayout_smoothing.addWidget(depth_smoothing_label)
-        hlayout_smoothing.addWidget(self.smoothing_dropdown)
+        hlayout_smoothing.addWidget(self.smoothing_dropdown, alignment=Qt.AlignBaseline)
         depth_layout.addWidget(self.layout_to_container(hlayout_smoothing))
 
         # Add resolution input
@@ -463,8 +494,8 @@ class MainWindow_ImageProcessing(QMainWindow):
         depth_layout.addWidget(self.layout_to_container(hlayout_depth_amount))
 
         hlayout_max_depth = QtWidgets.QHBoxLayout()
-        hlayout_max_depth.addWidget(max_depth_label)
-        hlayout_max_depth.addWidget(self.max_depth_input)
+        hlayout_max_depth.addWidget(min_depth_label)
+        hlayout_max_depth.addWidget(self.min_depth_input)
         depth_layout.addWidget(self.layout_to_container(hlayout_max_depth))
 
         # Add percentage depth drop input
@@ -474,7 +505,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         depth_layout.addWidget(self.layout_to_container(hlayout_percentage))
 
         # Add background removal options
-        # depth_layout.addWidget(self.dynamic_depth_checkbox)
+        # depth_layout.addWidget(self.flat_back_checkbox)
         depth_layout.addWidget(self.layout_to_container(layout_flat))
         # depth_layout.addWidget(self.drop_background_checkbox)
         depth_layout.addWidget(self.layout_to_container(layout_remove_background))
@@ -491,6 +522,8 @@ class MainWindow_ImageProcessing(QMainWindow):
         hlayout_color.addWidget(self.pick_color_button)
         hlayout_color.addWidget(self.clear_color_button)
         depth_layout.addWidget(self.layout_to_container(hlayout_color))
+
+        depth_layout.addWidget(self.layout_to_container(layout_use_processed))
 
         depth_groupbox.setLayout(depth_layout)
         depth_groupbox.setContentsMargins(5, 15, 5, 5)
@@ -520,14 +553,18 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.load_last_used_image()
         self.central_widget.setMinimumSize(525, 475)
         self.setMinimumSize(525, 475)
-        # self.update_preview()
+        QTimer.singleShot(500, self.display_processed_image)  # Load last used image after 1 second
+        QTimer.singleShot(500, self.display_original_image)  # Load last used image after 1 second
 
-    def create_label_and_checkbox_container(self, label_text: str, state_changed=None, checked=False) -> (QVBoxLayout, QCheckBox):
+
+    def create_label_and_checkbox_container(self, label_text: str, tooltip: str = "", state_changed: callable = None,
+                                            checked: bool = False) -> (QVBoxLayout, QCheckBox):
         """
         Creates a QWidget containing a QVBoxLayout with a label and a checkbox.
 
         Args:
             label_text (str): The text to display in the QLabel.
+            tooltip (str): The tooltip text to display when hovering over the label.
             state_changed (callable): A callable function to be called when the checkbox state changes.
             checked (bool): The initial state of the QCheckBox.
 
@@ -539,12 +576,12 @@ class MainWindow_ImageProcessing(QMainWindow):
 
         # Create a QVBoxLayout and set it for the container
         layout = QVBoxLayout(container)
-        if not hasattr(self, "_layout_references"):
-            self._layout_references = []
         self._layout_references.append(layout)
 
         # Create the label and set its text
         label = QLabel(label_text, container)  # Explicitly assign the parent for the label
+        if tooltip:
+            label.setToolTip(tooltip)
         layout.addWidget(label)  # Add the label to the layout
 
         # Create the checkbox
@@ -552,11 +589,11 @@ class MainWindow_ImageProcessing(QMainWindow):
         checkbox.setChecked(checked)  # Set the initial state
         if state_changed:
             checkbox.stateChanged.connect(state_changed)
+        if tooltip:
+            checkbox.setToolTip(tooltip)
         layout.addWidget(checkbox)  # Add the checkbox to the layout
 
         # Save a reference to the checkbox within the class to avoid garbage collection
-        if not hasattr(self, '_checkbox_references'):
-            self._checkbox_references = []
         self._checkbox_references.append(checkbox)
 
         # Return the container (the checkbox is now part of this container and has a parent)
@@ -661,6 +698,12 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.drop_background_enabled = state == Qt.Checked
         print(f"Background removal enabled: {self.drop_background_enabled}")
 
+    def update_sensitivity(self):
+        """Update the edge detection sensitivity based on the slider value."""
+        self.sensitivity = self.sensitivity_slider.value()
+        print(f"Edge Detection Sensitivity: {self.sensitivity}")
+        self.update_preview()
+
     def update_percentage_depth_drop(self):
         """
         Callback to update the depth_drop_percentage value when the input changes.
@@ -712,10 +755,10 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.use_processed_image_enabled = state == Qt.Checked
         print(f"Use Processed Image Enabled: {self.use_processed_image_enabled}")
 
-    def toggle_dynamic_depth(self, state):
+    def toggle_flat_back(self, state):
         """Enable or disable Dynamic Depth based on the checkbox state."""
-        self.dynamic_depth_enabled = state == Qt.Checked
-        print(f"Dynamic Depth Enabled: {self.dynamic_depth_enabled}")
+        self.flat_back_enabled = state == Qt.Checked
+        print(f"Flat back Enabled: {self.flat_back_enabled}")
 
     def process_image(self):
         if not self.image_path:
@@ -725,7 +768,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         try:
             self.resolution = int(self.resolution_input.text())
             self.depth_amount = float(self.depth_amount_input.text())
-            self.max_depth = float(self.max_depth_input.text())
+            self.max_depth = float(self.min_depth_input.text())
 
             # Validate depth_amount > 0 (no flat meshes)
             if self.depth_amount <= 0:
@@ -766,7 +809,7 @@ class MainWindow_ImageProcessing(QMainWindow):
                 image_to_use,
                 smoothing_method=smoothing_method,
                 target_size=(self.resolution, self.resolution),
-                dynamic_depth=self.dynamic_depth_enabled,
+                flat_back=self.flat_back_enabled,
                 grayscale_enabled=self.grayscale_enabled,
                 edge_detection_enabled=self.edge_detection_enabled,
                 invert_colors_enabled=self.invert_colors_enabled,
@@ -960,7 +1003,8 @@ class MainWindow_ImageProcessing(QMainWindow):
                 cv2.imwrite(fname, grayscale)
             if self.edge_detection_enabled:
                 # Perform edge detection if enabled
-                low_threshold = self.sensitivity_slider.value()
+                low_threshold = 200 - self.sensitivity
+
                 if self.grayscale_enabled and self.project_on_original:
                     grayscale = cv2.imread(self.image_path, cv2.IMREAD_GRAYSCALE)
                     basename, ext = os.path.splitext(self.image_path)
@@ -976,6 +1020,8 @@ class MainWindow_ImageProcessing(QMainWindow):
             if self.invert_colors_enabled:
                 self.invert_colors()
 
+            if self.blend_amount < 100:
+                self.processed_image = image_processor.ImageProcessor.blend_images (self.image, self.processed_image, self.blend_amount)
             self.display_processed_image()
         except Exception as e:
             s = f"Error in update_preview(): {traceback.format_exc()}"
@@ -986,6 +1032,9 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.edge_thickness = self.line_thickness_slider.value()
         self.update_preview()
 
+    def update_blend(self):
+        self.blend_amount = self.blend_slider.value()
+        self.update_preview()
 
     ### Drag-and-Drop Handling ###
     def drag_enter_event(self, event):
@@ -1112,8 +1161,9 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.config.set("UI_Settings", "project_on_original", str(self.project_on_original))
         self.config.set("UI_Settings", "use_processed_image", str(self.use_processed_image_enabled))
         self.config.set("UI_Settings", "depth_amount", str(self.depth_amount_input.text()))
-        self.config.set("UI_Settings", "dynamic_depth", str(self.dynamic_depth_enabled))
+        self.config.set("UI_Settings", "flat_back", str(self.flat_back_enabled))
         self.config.set("UI_Settings", "depth_drop_percentage", str(self.depth_drop_percentage))
+        self.config.set("UI_Settings", "blend_amount", str(self.blend_amount))
 
         # Add more settings as needed...
 
@@ -1131,11 +1181,13 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.edge_detection_checkbox.setChecked(True)
         self.project_on_original_checkbox.setChecked(True)
         self.use_processed_image_checkbox.setChecked(True)
-        self.dynamic_depth_checkbox.setChecked(False)
+        self.flat_back_checkbox.setChecked(False)
         self.percentage_input.setText("0")
-        self.sensitivity_slider.setValue(50)
-        self.percentage_input.setText("0.0")
+        self.sensitivity_slider.setValue(150)
+        self.percentage_input.setText("0")
         self.depth_amount_input.setText("1.0")
+        self.min_depth_input.setText("100.0")
+        self.blend_slider.setValue(100)
         self.update_preview()
 
     def load_ui_settings(self):
@@ -1160,12 +1212,13 @@ class MainWindow_ImageProcessing(QMainWindow):
                 self.depth_amount_input.setText(self.config.get("UI_Settings", "depth_amount", fallback="1.0"))
                 self.resolution = self.config.getint("UI_Settings", "resolution", fallback=700)
                 self.edge_detection_enabled = self.config.getboolean("UI_Settings", "edge_detection", fallback=False)
-                self.sensitivity_slider.setValue(self.config.getint("UI_Settings", "sensitivity", fallback=50))
-                self.line_thickness_slider.setValue(self.config.getint("UI_Settings", "line_thickness", fallback=2))
+                self.sensitivity = self.config.getint("UI_Settings", "sensitivity", fallback=150)
+                self.line_thickness = self.config.getint("UI_Settings", "line_thickness", fallback=2)
                 self.project_on_original = self.config.getboolean("UI_Settings", "project_on_original", fallback=False)
                 self.use_processed_image_enabled = self.config.getboolean("UI_Settings", "use_processed_image", fallback=False)
-                self.dynamic_depth_enabled = self.config.getboolean("UI_Settings", "dynamic_depth", fallback=False)
+                self.flat_back_enabled = self.config.getboolean("UI_Settings", "flat_back", fallback=False)
                 self.depth_drop_percentage = self.config.getfloat("UI_Settings", "depth_drop_percentage", fallback=0.0)
+                self.blend_amount = self.config.getint("UI_Settings", "blend_amount", fallback=100)
 
                 # Apply loaded values to the UI components
                 self.invert_checkbox.setChecked(self.invert_colors_enabled)
@@ -1176,8 +1229,11 @@ class MainWindow_ImageProcessing(QMainWindow):
                 self.edge_detection_checkbox.setChecked(self.edge_detection_enabled)
                 self.project_on_original_checkbox.setChecked(self.project_on_original)
                 self.use_processed_image_checkbox.setChecked(self.use_processed_image_enabled)
-                self.dynamic_depth_checkbox.setChecked(self.dynamic_depth_enabled)
+                self.flat_back_checkbox.setChecked(self.flat_back_enabled)
                 self.percentage_input.setText(str(self.depth_drop_percentage))
+                self.sensitivity_slider.setValue(self.sensitivity)
+                self.line_thickness_slider.setValue(self.line_thickness)
+
 
     SETTINGS = [
         ("invert_colors_enabled", "invert_checkbox"),
@@ -1186,12 +1242,16 @@ class MainWindow_ImageProcessing(QMainWindow):
         ("background_tolerance", "background_tolerance_input"),
         ("resolution", "resolution_input"),
         ("edge_detection_enabled", "edge_detection_checkbox"),
-        ("sensitivity_slider", "sensitivity_slider"),
-        ("line_thickness_slider", "line_thickness_slider"),
+        ("sensitivity", "sensitivity_slider"),
+        ("line_thickness", "line_thickness_slider"),
         ("project_on_original", "project_on_original_checkbox"),
         ("use_processed_image_enabled", "use_processed_image_checkbox"),
-        ("dynamic_depth_enabled", "dynamic_depth_checkbox"),
+        ("flat_back_enabled", "flat_back_checkbox"),
         ("depth_drop_percentage", "percentage_input"),
+        ("depth_amount", "depth_amount_input"),
+        ("max_depth", "min_depth_input"),
+        ("background_tolerance", "background_tolerance_input"),
+        ("blend_amount", "blend_slider"),
     ]
 
     # Ensure configuration file exists with default settings

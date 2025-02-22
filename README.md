@@ -165,6 +165,10 @@ This application combines cutting-edge computer vision and 3D rendering techniqu
 
 
 Version history:
+* 0.5.15:
+    * Added blend amount slider option to blend between original and processed image.
+    * Updated image processing to blend two images by a given percentage. Images can be mixed formats. (Grayscale, color, etc.)
+    * Tweaks for UI layout.
 * 0.5.14:
     * Tweaks to depth map generation and uses. Now discards values < 0. I think this helped....
     * Prints info about this as depth map is processed. (Just in some other model comes out all < 0, or something! Ha.)
