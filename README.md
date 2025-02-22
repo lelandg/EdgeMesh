@@ -165,6 +165,9 @@ This application combines cutting-edge computer vision and 3D rendering techniqu
 
 
 Version history:
+* 0.5.13:
+    * Big UI update. Everything has tooltips now. Labels stick to associated widgets.
+    * Fixed image scaling issues at startup.
 * 0.5.12:
     * Add hotkeys to buttons.
     * Fix for direction of faces for flat back mesh.
