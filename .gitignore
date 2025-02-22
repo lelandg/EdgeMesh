@@ -151,6 +151,8 @@ venv.bak/
 *-edges.png
 *-smooth_gaussian.png
 
+.idea/
+
 # mypy
 .mypy_cache/
 .dmypy.json
