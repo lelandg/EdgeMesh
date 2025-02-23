@@ -165,6 +165,16 @@ This application combines cutting-edge computer vision and 3D rendering techniqu
 
 
 Version history:
+* 0.5.16:
+    * Restored functionality to Generate Mesh button. (It was broken in 0.5.15 and earlier.)
+    * Added automatic saving of this file. Right now it's very flat. (I've had it better, so can probably fix it.)
+    * It's a little buggy right now, too. Need to eliminate "mostly horizontal" lines?
+    * Updates to viewport_3d.py: 
+      * Refactored to use open3d.geometry.TriangleMesh() instead of trimesh.TriangleMesh().
+      * Fixes for multiple file loading. (One at a time.)
+      * If custom labels are not provided, they are generated using mesh depth values. These are displayed at the ends of the grid lines, after 'G' and 'D' keystrokes.
+    * Fixes for spinner.py.
+    * Minor refactorings and fixings. :-)
 * 0.5.15:
     * Added blend amount slider option to blend between original and processed image.
     * Updated image processing to blend two images by a given percentage. Images can be mixed formats. (Grayscale, color, etc.)

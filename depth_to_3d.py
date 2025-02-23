@@ -316,6 +316,13 @@ class DepthTo3D:
         """
         print("Adding mirrored backside to the mesh...")
 
+        # Optionally combine vertex colors if provided
+        if hasattr(mesh.visual, 'vertex_colors') and mesh.visual.vertex_colors is not None:
+            original_colors = mesh.visual.vertex_colors
+            combined_colors = np.vstack([original_colors, original_colors])
+        else:
+            combined_colors = None
+
         # Original mesh vertices and faces
         original_vertices = mesh.vertices
         original_faces = mesh.faces
@@ -352,10 +359,17 @@ class DepthTo3D:
         print("Stitching boundary edges...")
         stitching_faces = []
         for edge in boundary_edges:
+            # Validate that the edge has exactly two elements
+            if len(edge) != 2:
+                raise ValueError(f"Edge must contain exactly 2 vertices, but found {len(edge)}: {edge}")
+
             v1, v2 = edge
             mv1, mv2 = v1 + num_original_vertices, v2 + num_original_vertices
+
             stitching_faces.append([v1, v2, mv1])
             stitching_faces.append([v2, mv2, mv1])
+
+            # Ensure proper vertex relationships before adding additional faces
             if mv2 != v1 and mv1 != v2:
                 stitching_faces.append([mv2, v2, v1])
                 stitching_faces.append([mv1, mv2, v1])
@@ -365,13 +379,6 @@ class DepthTo3D:
         print("Combining faces, applying colors, creating watertight mesh...")
         # Combine stitching faces with others
         watertight_faces = np.vstack([combined_faces, stitching_faces])
-
-        # Optionally combine vertex colors if provided
-        if hasattr(mesh.visual, 'vertex_colors') and mesh.visual.vertex_colors is not None:
-            original_colors = mesh.visual.vertex_colors
-            combined_colors = np.vstack([original_colors, original_colors])
-        else:
-            combined_colors = None
 
         # Create the watertight Trimesh object
         watertight_mesh = trimesh.Trimesh(
@@ -383,8 +390,8 @@ class DepthTo3D:
 
         # print(f"Removing duplicate faces from {len(watertight_mesh.faces)} faces")
         # watertight_mesh.remove_duplicate_faces()
-        print(f"Removing degenerate faces from {len(watertight_mesh.faces)} faces")
-        watertight_mesh.remove_degenerate_faces()
+        # print(f"Removing degenerate faces from {len(watertight_mesh.faces)} faces")
+        # watertight_mesh.remove_degenerate_faces()
         # print("Fixing normals...")
         # watertight_mesh.fix_normals()  # Ensure outward normals
         # print(f"Faces remaining = {len(watertight_mesh.faces)}\r\nFilling holes...")
@@ -393,7 +400,75 @@ class DepthTo3D:
         print(f"Finished creating mesh with {len(watertight_mesh.faces)} faces.")
         return watertight_mesh
 
-    def create_3d_mesh(self, image, depth, filename, smoothing_method, target_size, dynamic_depth, grayscale_enabled,
+    def create_background_mask(self, image, target_size=None, color_to_remove=None, background_removal=False,
+                               background_tolerance=0):
+        """
+        Create a background mask for an image by removing the specified background color.
+        Smooth the edges by eroding and blending edges.
+        This method modifies the mask to remove regions instead of adding to it.
+
+        :param image: Input image (numpy array).
+        :param target_size: Desired size of the output mask (tuple of height, width). None to keep original size.
+        :param color_to_remove: Specific color to remove from the background.
+        :param background_removal: Whether background removal is enabled.
+        :param background_tolerance: Tolerance for background color matching.
+        :return: Smoothed mask.
+        """
+        # Step 1: Background processing
+        if (color_to_remove is not None) and background_removal:
+            print(f"Removing background color based on average color {color_to_remove}")
+        h, w, _ = image.shape
+
+        if color_to_remove is not None:
+            # If a color to remove is provided, use it as the background color.
+            if isinstance(color_to_remove, QtGui.QColor):
+                # Convert QColor to a list of RGB values
+                color_to_remove = list(color_to_remove.getRgb()[:3])  # Discard the alpha channel
+            # Convert to uint8 numpy array
+            background_color = np.array(color_to_remove, dtype=np.uint8)
+        else:
+            # Otherwise, calculate the background color from image corners
+            corners = [image[0, 0], image[0, w - 1], image[h - 1, 0], image[h - 1, w - 1]]
+            avg_color = np.mean(corners, axis=0)
+
+            if background_removal and all(
+                    np.all(np.abs(corner - avg_color) < background_tolerance) for corner in corners):
+                background_color = avg_color.astype(np.uint8)
+            else:
+                background_color = None
+
+        # Step 2: Create the background mask
+        if background_color is not None:
+            print(f"Masking background color = {background_color.tolist()}")
+            mask = cv2.inRange(image, background_color - background_tolerance, background_color + background_tolerance)
+        else:
+            # If no background color is available, create a default mask.
+            mask = np.zeros((h, w), dtype=np.uint8)  # Default to all zeros (no mask)
+
+        # Step 3: Resize the mask if a target size is specified
+        if target_size and target_size != (0, 0) and target_size != (w, h):
+            mask_resized = cv2.resize(mask, (target_size[1], target_size[0]), interpolation=cv2.INTER_NEAREST)
+        else:
+            mask_resized = mask
+
+        # Step 4: Smooth the edges of the mask
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))  # Larger kernel for smoothing
+        mask_dilate1 = cv2.dilate(mask_resized, kernel, iterations=3)
+        mask_dilate2 = cv2.addWeighted(mask_resized, 0.7, mask_dilate1, 0.3, 0)
+
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))  # Smaller kernel for edge adjustment
+        mask_eroded = cv2.erode(mask_resized, kernel, iterations=2)  # Erode to remove background regions
+
+        smooth_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
+        mask_smoothed = cv2.dilate(mask_eroded, smooth_kernel, iterations=1)  # Soft dilation for edge adjustment
+        # # Step 5: Blend the smoothed mask with the original
+        smoothed_mask = cv2.addWeighted(mask_dilate2, 0.8, mask_smoothed, 0.2, 0)
+
+        # Return the finalized mask (foreground is marked as white)
+        return smoothed_mask
+
+
+    def create_3d_mesh(self, image, depth, filename, smoothing_method, target_size, flat_back, grayscale_enabled,
                        edge_detection_enabled, invert_colors_enabled=False, depth_amount=1.0, project_on_original=False,
                        background_removal=False, background_tolerance=10, color_to_remove=None):
         """
@@ -403,7 +478,7 @@ class DepthTo3D:
             filename: The path to save the generated 3D mesh.
             smoothing_method: (Optional) Method used for smoothing depth data.
             target_size: (Optional) Desired output size.
-            dynamic_depth: (Optional) Adjust depth dynamically based on the data.
+            flat_back: (Optional) Adjust depth dynamically based on the data.
             grayscale_enabled: (Optional) Whether to enable grayscale processing.
             edge_detection_enabled: (Optional) Whether to enable edge detection.
             invert_colors_enabled: (Optional) Whether to invert colors for depth data.
@@ -447,8 +522,10 @@ class DepthTo3D:
                 background_color = None
 
         if background_color is not None:
-            print(f"Masking background color = {background_color.tolist()}")
-            mask = cv2.inRange(image, background_color - background_tolerance, background_color + background_tolerance)
+            # print(f"Masking background color = {background_color.tolist()}")
+            # mask = cv2.inRange(image, background_color - background_tolerance, background_color + background_tolerance)
+            mask = self.create_background_mask(image, target_size=target_size, color_to_remove=color_to_remove,
+                                               background_removal=background_removal, background_tolerance=background_tolerance)
             if target_size and target_size != (0, 0) and target_size != (w, h):
                 mask_resized = cv2.resize(mask, (target_size[1], target_size[0]), interpolation=cv2.INTER_NEAREST)
             else:
@@ -499,7 +576,7 @@ class DepthTo3D:
         # Create the mesh
         mesh = self.flip_mesh(trimesh.Trimesh(vertices=valid_vertices, faces=faces, vertex_colors=valid_colors))
 
-        if dynamic_depth:
+        if flat_back:
             solid_mesh = self.solidify_mesh_with_flat_back(mesh, flat_back_depth=0.0)
         else:
             solid_mesh = self.add_mirror_mesh(mesh)
@@ -522,7 +599,7 @@ class DepthTo3D:
             file_suffix += "_edge"
         if invert_colors_enabled:
             file_suffix += "_inv"
-        if dynamic_depth:
+        if flat_back:
             file_suffix += "_dyn"
 
         # For part of file name, format current date and time in format: YYYYMMDD_HHmmss

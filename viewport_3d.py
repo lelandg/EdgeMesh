@@ -1,13 +1,17 @@
-import ctypes
 import glob
 import sys
+import traceback
+import os
 
-import open3d as o3d
+import keyboard
+import numpy as np
+import open3d
 
 import mesh_manipulation
 from color_transition_gradient_generator import ColorTransition
 from measurement_grid_visualizer import MeasurementGrid
 from mesh_gradient_colorizer import MeshColorizer
+from spinner import Spinner
 
 
 class ThreeDViewport:
@@ -21,15 +25,16 @@ class ThreeDViewport:
         :param background_color: Background color for the viewport as a list [R, G, B].
                                  Uses dark gray [0.2, 0.2, 0.2] if None.
         """
+        self.mesh_file = None
         self.custom_labels = None
         self.prev_show_depth_values = True
         self.show_depth_values = False
-        self.viewer = o3d.visualization.VisualizerWithKeyCallback()
+        self.viewer = open3d.visualization.VisualizerWithKeyCallback()
         if initial_mesh_file:
             fname = os.path.split(initial_mesh_file)[-1]
         else:
             fname = ""
-        title = f"3D Viewport - Open3D v{o3d.__version__} - Press 'H' for help - {fname}"
+        title = f"3D Viewport - Open3D v{open3d.__version__} - Press 'H' for help - {fname}"
         print (f"Creating window with title: {title}")
         self.viewer.create_window(window_name=title, width=1024, height=768, left=800, top=50)
 
@@ -141,23 +146,26 @@ class ThreeDViewport:
         """
         Show or hide the measurement grid in the viewport based on the display_grid flag.
         """
-        self.show_mesh()
-        if self.display_grid:
-            if self.show_depth_values != self.prev_show_depth_values or self.measurement_grid is None:
-                self.prev_show_depth_values = self.show_depth_values
-                if self.show_depth_values:
-                    self.measurement_grid = MeasurementGrid(self.mesh).create_measurement_grid(labels=self.custom_labels)
-                else:
-                    self.measurement_grid = MeasurementGrid(self.mesh).create_measurement_grid()
+        try:
+            self.show_mesh()
+            if self.display_grid:
+                if self.show_depth_values != self.prev_show_depth_values or self.measurement_grid is None:
+                    self.prev_show_depth_values = self.show_depth_values
+                    if self.show_depth_values and self.custom_labels:
+                        self.measurement_grid = MeasurementGrid(self.mesh).create_measurement_grid(labels=self.custom_labels)
+                    else:
+                        self.measurement_grid = MeasurementGrid(self.mesh).create_measurement_grid()
 
-            # Add each grid component separately to the viewer
-            for geometry in self.measurement_grid:
-                self.viewer.add_geometry(geometry)
-        else:
-            # Remove each grid component separately from the viewer
-            if self.measurement_grid:
+                # Add each grid component separately to the viewer
                 for geometry in self.measurement_grid:
-                    self.viewer.remove_geometry(geometry)
+                    self.viewer.add_geometry(geometry)
+            else:
+                # Remove each grid component separately from the viewer
+                if self.measurement_grid:
+                    for geometry in self.measurement_grid:
+                        self.viewer.remove_geometry(geometry)
+        except Exception as e:
+            print(f"Error showing grid: {traceback.format_exc()}")
 
     def clear_geometries(self):
         """
@@ -167,22 +175,57 @@ class ThreeDViewport:
         self.viewer.clear_geometries()
         print("Existing geometries cleared from the viewport.")
 
-    def load_mesh(self, mesh_file, depth_labels=None):
+    def update_custom_labels_from_mesh(self, mesh_instance):
+        """
+        Updates self.custom_labels with 21 values based on the range of z values in a given
+        open3d.geometry.TriangleMesh instance.
+
+        Args:
+            mesh_instance (open3d.geometry.TriangleMesh): An Open3D TriangleMesh instance to extract the z-range from.
+        """
+        if not isinstance(mesh_instance, open3d.geometry.TriangleMesh):
+            raise ValueError(f"The provided mesh_instance is not a valid open3d.geometry.TriangleMesh instance. Got {type(mesh_instance)}.")
+
+        # Extract vertex positions (numpy array)
+        vertices = np.asarray(mesh_instance.vertices)
+
+        if vertices.size == 0:
+            raise ValueError("The provided mesh_instance does not contain any vertices.")
+
+        # Extract z-values from the vertex positions
+        z_values = vertices[:, 2]
+
+        # Compute the minimum and maximum z-values
+        z_min, z_max = np.min(z_values), np.max(z_values)
+
+        # Generate 21 equally spaced values within the range
+        self.custom_labels = np.linspace(z_min, z_max, num=21).tolist()
+
+    def load_mesh(self, mesh: open3d.geometry.TriangleMesh, depth_labels: [str] = None) -> None:
         """
         Load a new 3D triangular mesh file into the viewport.
         Clears any existing geometry to ensure no duplicates.
 
-        :param mesh_file: Path to the new mesh file (.obj, .stl, .ply, etc.).
+        :param mesh: Path to the new mesh file (.obj, .stl, .ply, etc.).
+        :param depth_labels: Optional custom depth labels for the measurement grid.
         """
         try:
             self.custom_labels = depth_labels
             # Clear existing geometry before loading a new mesh
             self.clear_geometries()
 
-            self.mesh_file = mesh_file
-            self.mesh = o3d.io.read_triangle_mesh(mesh_file)
-            if self.mesh.is_empty():
-                raise ValueError(f"Could not load mesh from {mesh_file}.")
+            if (isinstance(mesh, str)):
+                self.mesh_file = mesh
+                self.mesh = open3d.io.read_triangle_mesh(mesh)
+                if self.mesh.is_empty():
+                    raise ValueError(f"Could not load mesh from {mesh}.")
+            elif (isinstance(mesh, open3d.geometry.TriangleMesh)):
+                self.mesh = mesh
+                self.mesh_file = "(Trimesh)"
+            else:
+                print(f"Unsupported mesh type: {type(mesh)}")
+
+            self.update_custom_labels_from_mesh(self.mesh)
 
             self.mesh.compute_vertex_normals()
 
@@ -192,9 +235,9 @@ class ThreeDViewport:
             self.viewer.get_render_option().background_color = self.background_color
 
             self.measurement_grid = MeasurementGrid(self.mesh).create_measurement_grid()
-            print(f"Mesh loaded: {mesh_file}")
+            print(f"Mesh loaded: {mesh}")
         except Exception as e:
-            print(f"Error loading mesh: {e}")
+            print(f"Error loading mesh: {traceback.format_exc()}")
 
     def create_measurement_grid(self, custom_labels=None):
         """
@@ -202,10 +245,14 @@ class ThreeDViewport:
 
         :return: An Open3D LineSet object representing the measurement grid.
         """
-        self.custom_labels = custom_labels
         if self.mesh is None:
             print("No mesh loaded to create a measurement grid.")
             return None
+
+        if self.custom_labels is not None:
+            self.custom_labels = custom_labels
+        else:
+            self.update_custom_labels_from_mesh(self.mesh)
 
         # Create a measurement grid based on the bounding box of the mesh
         grid = MeasurementGrid(self.mesh).create_measurement_grid(custom_labels)
@@ -242,7 +289,8 @@ class ThreeDViewport:
         """
         Start the Open3D visualization window.
         """
-        print(f"3D viewport is running for {self.mesh_file}")
+        if isinstance(self.mesh, str):
+            print(f"3D viewport is running for {self.mesh_file}")
         self.viewer.run()
         self.viewer.destroy_window()
 
@@ -256,10 +304,10 @@ class ThreeDViewport:
             print("No mesh loaded to export.")
             return
         try:
-            o3d.io.write_triangle_mesh(output_file, self.mesh)
+            open3d.io.write_triangle_mesh(output_file, self.mesh)
             print(f"Successfully exported the mesh to {output_file}")
         except Exception as e:
-            print(f"Error exporting mesh to OBJ: {e}")
+            print(f"Error exporting mesh to OBJ: {traceback.format_exc()}")
 
     def export_mesh_as_stl(self, output_file):
         """
@@ -271,22 +319,27 @@ class ThreeDViewport:
             print("No mesh loaded to export.")
             return
         try:
-            o3d.io.write_triangle_mesh(output_file, self.mesh, write_ascii=True)
+            open3d.io.write_triangle_mesh(output_file, self.mesh, write_ascii=True)
             print(f"Successfully exported the mesh to {output_file}")
         except Exception as e:
-            print(f"Error exporting mesh to STL: {e}")
+            print(f"Error exporting mesh to STL: {traceback.format_exc()}")
 
 
 def find_newest_file_in_directory(directory_path):
     # Define the list of allowed file extensions
     allowed_extensions = [".obj", ".ply", ".stl", ".off", ".gltf", ".glb"]
 
+    spinner = Spinner("{time} Scanning files...")
     # Scan the directory and collect files with allowed extensions
     files_with_timestamps = []
     for root, dirs, files in os.walk(directory_path):
+        if root.startswith(".") or len(files) == 0:
+            continue  # Skip hidden directories
+        spinner.spin(f"Scanning {len(files)} files in {root}...")
         for file in files:
             # Check file extension
             if any(file.lower().endswith(ext) for ext in allowed_extensions):
+                spinner.spin()
                 file_path = os.path.join(root, file)
                 modified_time = os.path.getmtime(file_path)  # Get the last modified timestamp
                 files_with_timestamps.append((file_path, modified_time))
@@ -295,6 +348,7 @@ def find_newest_file_in_directory(directory_path):
     if not files_with_timestamps:
         return None  # Return None if no valid files are found
 
+    spinner.spin(f"Found {len(files_with_timestamps)} matching files.")
     # Find the newest file
     newest_file = max(files_with_timestamps, key=lambda x: x[1])
     return newest_file[0]  # Return the file name of the newest file
@@ -309,18 +363,34 @@ def find_newest_file_in_directory(directory_path):
     #     print("No valid files found in the directory.")
 
 
+def print_help():
+    print("Press 'C' to toggle the rainbow-colored mesh.")
+    print("Press 'G' to toggle the measurement grid.")
+    print("Press 'D' to toggle the grid between percentage and depth values.")
+    print("Use mouse to navigate the viewport.")
+    print("Press 'Esc' to exit the current viewport.")
+    print("Press and hold 'Esc' to exit the program.")
+
+
 if __name__ == "__main__":
     # Supported mesh formats
     SUPPORTED_EXTENSIONS = [".obj", ".ply", ".stl", ".off", ".gltf", ".glb"]
 
     def get_matching_files(patterns, supported_extensions):
         """Expand wildcard patterns and return a list of matching files with supported extensions."""
+
         matched_files = []
         for pattern in patterns:
+            print()
+            spinner = Spinner(f"Matching files for: {pattern}. Searching...")
+            spinner.spin()
             # Resolve wildcard patterns
             for file in glob.glob(pattern, recursive=True):
                 if os.path.isfile(file) and os.path.splitext(file)[1].lower() in supported_extensions:
                     matched_files.append(file)
+                    spinner.spin("{time} Matched: " + file)
+
+        spinner.spin(f"Found {len(matched_files)} matching files.")
         return matched_files
 
 
@@ -333,38 +403,48 @@ if __name__ == "__main__":
         if not valid_files:
             print("No valid mesh files were provided.")
         else:
+            if len(valid_files) > 1:
+                print(f"Opening viewports for {len(valid_files)} valid files... \r\n"
+                      "Press Ctrl-C in the terminal to terminate when you close current the viewport.")
+                print_help()
             # Open a separate viewport for each valid file
             for mesh_file in valid_files:
+                # Check if Esc is pressed
+                if keyboard.is_pressed('esc'):
+                    key = keyboard.read_event()
+                    if keyboard.is_pressed('esc'):
+                        print("Esc key held down. Exiting...")
+                        break  # Exit the loop and quit the program
                 print(f"Opening viewport for: {mesh_file}")
                 try:
                     viewport = ThreeDViewport(initial_mesh_file=mesh_file)
                     viewport.run()
                 except Exception as e:
-                    print(f"Error while loading or visualizing {mesh_file}: {e}")
+                    print(f"Error while loading or visualizing {mesh_file}: {traceback.format_exc()}")
     else:
         # E.g. fname = "g:/Downloads/lelandgreen_Technical_perspective_Illustration_of_many_rectan_e4408041-480c-40bb-96b6-f415b199dc70_0*2025*.ply"
-        import os
         import platform
 
         os_name = os.name
         platform_system = platform.system()
         fname = ""
+        os_str = "Operating System: "
         if os_name == 'nt':
-            print("Operating System: Windows")
+            os_str += "Windows"
             fname = find_newest_file_in_directory("G:/Downloads/")
         elif os_name == 'posix':
-            fname = find_newest_file_in_directory("~/Downloads/")
             if platform_system == 'Darwin':
-                print("Operating System: macOS")
+                os_str += "macOS"
             elif platform_system == 'Linux':
-                print("Operating System: Linux")
+                os_str += "Linux"
             else:
-                print("Operating System: POSIX-compliant system (Unknown)")
-        else:
+                os_str += "POSIX-compliant system (Unknown)"
             fname = find_newest_file_in_directory("~/Downloads/")
+        else:
             print(f"Operating System: Unknown ({os_name})")
+            fname = find_newest_file_in_directory("~/Downloads/")
 
-        print(f"Detailed Information: {platform.platform()}")
+        print(f"{os_str}\r\nDetailed Information: {platform.platform()}")
 
         print(f"Usage: python {os.path.basename(__file__)} [path_to_mesh1] [path_to_mesh2] ...")
         print(f"If [path_to_mesh1] is is a folder name, the newest mesh file in the folder will be used.")
@@ -375,5 +455,6 @@ if __name__ == "__main__":
                 "Supported mesh formats: ", ", ".join(SUPPORTED_EXTENSIONS))
         print(f"Example: python {os.path.basename(__file__)} *.obj *.ply sample.stl")
         print(f"Using newest matching file in Downloads for demonstration: {fname}")
+        print_help()
         viewport = ThreeDViewport(initial_mesh_file=fname)
         viewport.run()

@@ -27,6 +27,7 @@ class Spinner:
             Note you'd only need 60-120 updates per second for very specific applications, like real-time data
             visualization or high-speed data processing.
         """
+        self.max_len = 0
         self.last_update = time.time()
         self.spinner_states = ['|', '/', '—', '\\']  # Classic spinner characters
         self.current_state = 0
@@ -85,6 +86,9 @@ class Spinner:
         if not message.endswith(" "):
             message += " "  # Ensure we have a space at the end. For spinner appearance. ;-)
         self.current_state = (self.current_state + 1) % len(self.spinner_states)  # Cycle through states
+        if len(message) < self.max_len:
+            message += " " * (self.max_len - len(message))  # Clear any previous spinner
+        self.max_len = len(message)
         print(f"{message}{self.spinner_states[self.current_state]}", end=end, flush=True)
 
 import sys

@@ -104,6 +104,8 @@ def process_preview_image(image, is_grayscale=False, invert_colors=False):
 class MainWindow_ImageProcessing(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.mesh_3d = None
+        self.mesh_from_2d = None
         self._layout_references = []
         self._checkbox_references = []
         self.line_thickness = 2
@@ -134,7 +136,6 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.original_pixmap = None
         self.image = None
         self.processed_image = None
-        self.extruded_edges = None
         self.eyedropper_active = False
 
         try:
@@ -147,7 +148,9 @@ class MainWindow_ImageProcessing(QMainWindow):
             self.setWindowTitle(f"3D Mesh Generator v{__version__}")
             self.setGeometry(50, 50, 929, 560) # Weird size, just looks good on my screen (today)
 
-            os.environ['TF_ENABLE_ONEDNN_OPTS'] = "0"  # Enable OneDNN optimizations for TensorFlow
+            # The following doesn't work. Why not?
+            # os.environ['TF_ENABLE_ONEDNN_OPTS'] = "1"  # Enable OneDNN optimizations for TensorFlow
+
             # Initialize configuration
             # Config file path
             self.CONFIG_FILE_PATH = "config.ini"
@@ -805,7 +808,7 @@ class MainWindow_ImageProcessing(QMainWindow):
             else:
                 background_color = None
             # Pass depth_amount and max_depth into depth_to_3d processing
-            self.output_mesh_obj, self.background_color = self.depth_to_3d.process_image(
+            self.mesh_3d, self.background_color = self.depth_to_3d.process_image(
                 image_to_use,
                 smoothing_method=smoothing_method,
                 target_size=(self.resolution, self.resolution),
@@ -821,6 +824,7 @@ class MainWindow_ImageProcessing(QMainWindow):
                 background_color=background_color,
                 # max_depth=max_depth,  # Pass max_depth
             )
+            self.mesh_from_2d = None
             print(f"3D model generated successfully with Depth Amount: {depth_amount}, Max Depth: {self.max_depth}")
             self.depth_values = self.depth_to_3d.depth_values
             self.depth_labels = self.depth_to_3d.depth_labels
@@ -892,7 +896,7 @@ class MainWindow_ImageProcessing(QMainWindow):
     # In MainWindow_ImageProcessing Class, replace generate_mesh()
 
     def generate_mesh(self):
-        """ Generate a 3D mesh from the processed image. Actually called when "Generate 2D" is clicked. """
+        """ Generate a 3D mesh from the processed image edges. Actually called when "Generate 2D" is clicked. """
         if self.processed_image is None:
             self.show_error("No processed image available.")
             return
@@ -909,13 +913,13 @@ class MainWindow_ImageProcessing(QMainWindow):
             }
 
             mesh_generator = MeshGenerator(visualizations)
-            self.extruded_edges = mesh_generator.generate(self.processed_image)
-
+            self.mesh_from_2d = mesh_generator.generate(self.processed_image, self.image_path)
+            self.mesh = None
             # Update the 3D viewport with the new mesh
             self.update_3d_viewport(self.background_color)
 
         except Exception as e:
-            self.show_error(f"Error while generating mesh: {str(e)}")
+            self.show_error(f"Error while generating mesh: {str(e)}\r\n{traceback.format_exc()}")
 
     def toggle_invert_colors(self, state):
         """Toggle invert colors based on checkbox state."""
@@ -943,8 +947,8 @@ class MainWindow_ImageProcessing(QMainWindow):
             self.display_processed_image()
 
     def update_3d_viewport(self, background_color=None):
-        if self.output_mesh_obj is None:
-            print("Must set output_mesh_obj before calling update_3d_viewport.")
+        if self.mesh_3d is None and self.mesh_from_2d is None:
+            print("Must set mesh_3d or mesh_from_2d before calling update_3d_viewport.")
             return
 
         if self.three_d_viewport is None or not self.three_d_viewport.viewer.poll_events():
@@ -953,13 +957,19 @@ class MainWindow_ImageProcessing(QMainWindow):
 
         print(f"update_3d_viewport: Background color: {background_color}")
 
-        if background_color is not None:
-            self.three_d_viewport.viewer.get_render_option().background_color = background_color
+        try:
+            if background_color is not None:
+                self.three_d_viewport.viewer.get_render_option().background_color = background_color
 
-        self.three_d_viewport.clear_geometries()
-        self.three_d_viewport.load_mesh(self.output_mesh_obj, self.depth_labels)
-        self.three_d_viewport.run()
-        # self.three_d_viewport.show()
+            self.three_d_viewport.clear_geometries()
+            if self.mesh_from_2d is not None:
+                self.three_d_viewport.load_mesh(self.mesh_from_2d)
+            else:
+                self.three_d_viewport.load_mesh(self.mesh_3d, self.depth_labels)
+            self.three_d_viewport.run()
+        except Exception as e:
+            s = f"Error in update_3d_viewport: {str(e)}"
+            self.show_error(s)
 
     def export_mesh(self):
         if not self.three_d_viewport.edges:
@@ -1025,7 +1035,6 @@ class MainWindow_ImageProcessing(QMainWindow):
             self.display_processed_image()
         except Exception as e:
             s = f"Error in update_preview(): {traceback.format_exc()}"
-            print (s)
             self.show_error(s)
 
     def update_line_thickness(self):

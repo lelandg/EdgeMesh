@@ -107,15 +107,19 @@ class SurfacePartitioning:
     def _region_growing(self, image, seed_point, threshold=10):
         """
         Perform region-growing segmentation starting from a seed point.
-        
+
         Args:
-            image (numpy.ndarray): Input grayscale image.
+            image (numpy.ndarray): Input image (grayscale or color).
             seed_point (tuple): Starting point for region growing.
             threshold (int): Intensity difference threshold for acceptance.
-        
+
         Returns:
             numpy.ndarray: Binary mask of the grown region.
         """
+        # Convert the image to grayscale if it is not already
+        if len(image.shape) == 3:  # Check for a color image (3 dimensions)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
         height, width = image.shape
         visited = np.zeros_like(image, dtype=bool)
         region = np.zeros_like(image, dtype=np.uint8)

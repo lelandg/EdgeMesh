@@ -1,5 +1,8 @@
+import traceback
+
 import numpy as np
 import open3d as o3d
+
 import text_3d
 
 from color_transition_gradient_generator import ColorTransition
@@ -30,65 +33,74 @@ class MeasurementGrid:
             print("No mesh loaded to create a measurement grid.")
             return None
 
-        # Get the bounding box of the mesh
-        bounding_box = self.mesh.get_axis_aligned_bounding_box()
-        min_bound = bounding_box.get_min_bound()
-        max_bound = bounding_box.get_max_bound()
+        try:
+            # Get the bounding box of the mesh
+            bounding_box = self.mesh.get_axis_aligned_bounding_box()
+            min_bound = bounding_box.get_min_bound()
+            max_bound = bounding_box.get_max_bound()
 
-        # Dimensions of the mesh
-        width = max_bound[0] - min_bound[0]  # x-axis
-        height = max_bound[1] - min_bound[1]  # y-axis
-        depth = max_bound[2] - min_bound[2]  # z-axis
+            # Dimensions of the mesh
+            width = max_bound[0] - min_bound[0]  # x-axis
+            height = max_bound[1] - min_bound[1]  # y-axis
+            depth = max_bound[2] - min_bound[2]  # z-axis
 
-        # Define grid spacing (step size)
-        spacing = depth * 0.05  # 5% of the depth
+            # Define grid spacing (step size)
+            spacing = depth * 0.05  # 5% of the depth
 
-        # Grid vertices, edges, line colors, and labels container
-        vertices = []
-        edges = []
-        line_colors = []  # To store colors for each line
-        labels = []  # Store label geometries (text objects)
+            # Grid vertices, edges, line colors, and labels container
+            vertices = []
+            edges = []
+            line_colors = []  # To store colors for each line
+            labels = []  # Store label geometries (text objects)
 
-        # Use custom labels if provided, otherwise generate default percentage labels
-        if custom_labels:
-            if len(custom_labels) != 21:
-                raise ValueError("custom_labels must be a list of exactly 21 elements.")
-            label_texts = custom_labels
-        else:
-            label_texts = [f"{i * 5}%" for i in range(21)]  # Default labels (0, 5, 10, ..., 100)
+            # Use custom labels if provided, otherwise generate default percentage labels
+            if custom_labels:
+                if len(custom_labels) != 21:
+                    raise ValueError("custom_labels must be a list of exactly 21 elements.")
+                if not isinstance(custom_labels[0], str):
+                    if type(custom_labels[0]) in [int, float]:
+                        custom_labels = [f"{int(label)}" for label in custom_labels]
+                    else:
+                        raise ValueError("custom_labels must be a list of strings or numbers. Got list of: ", type(custom_labels[0]))
+                label_texts = custom_labels
+            else:
+                label_texts = [f"{i * 5}%" for i in range(21)]  # Default labels (0, 5, 10, ..., 100)
 
-        # Generate grid lines and labels
-        num_intervals = 21  # 21 intervals for 5% steps (0 to 100%)
-        for i, label_text in enumerate(label_texts):
-            z = min_bound[2] + i * spacing  # Calculate z-level
+            # Generate grid lines and labels
+            num_intervals = 21  # 21 intervals for 5% steps (0 to 100%)
+            for i, label_text in enumerate(label_texts):
+                z = min_bound[2] + i * spacing  # Calculate z-level
 
-            # Horizontal line along the x-axis, at fixed y and z
-            start_x = [min_bound[0], min_bound[1], z]
-            end_x = [max_bound[0], min_bound[1], z]
-            vertices.extend([start_x, end_x])
-            edges.append([len(vertices) - 2, len(vertices) - 1])  # Connect start and end
-            line_colors.append(self.colors[i])  # Assign corresponding color
+                # Horizontal line along the x-axis, at fixed y and z
+                start_x = [min_bound[0], min_bound[1], z]
+                end_x = [max_bound[0], min_bound[1], z]
+                vertices.extend([start_x, end_x])
+                edges.append([len(vertices) - 2, len(vertices) - 1])  # Connect start and end
+                line_colors.append(self.colors[i])  # Assign corresponding color
 
-            # Add text label at the end of the horizontal line
-            text_label_x = text_3d.create_text_3d(label_text, position=end_x, color=self.colors[i], height=20, depth=2)
-            labels.append(text_label_x)
+                # Add text label at the end of the horizontal line
+                text_label_x = text_3d.create_text_3d(label_text, position=end_x, color=self.colors[i], height=20, depth=2)
+                labels.append(text_label_x)
 
-            # Vertical line along the y-axis, at fixed x and z
-            start_y = [min_bound[0], min_bound[1], z]
-            end_y = [min_bound[0], max_bound[1], z]
-            vertices.extend([start_y, end_y])
-            edges.append([len(vertices) - 2, len(vertices) - 1])  # Connect start and end
-            line_colors.append(self.colors[i])  # Assign corresponding color
+                # Vertical line along the y-axis, at fixed x and z
+                start_y = [min_bound[0], min_bound[1], z]
+                end_y = [min_bound[0], max_bound[1], z]
+                vertices.extend([start_y, end_y])
+                edges.append([len(vertices) - 2, len(vertices) - 1])  # Connect start and end
+                line_colors.append(self.colors[i])  # Assign corresponding color
 
-            # Add text label at the end of the vertical line
-            text_label_y = text_3d.create_text_3d(label_text, position=end_y, color=self.colors[i], height=20, depth=2)
-            labels.append(text_label_y)
+                # Add text label at the end of the vertical line
+                text_label_y = text_3d.create_text_3d(label_text, position=end_y, color=self.colors[i], height=20, depth=2)
+                labels.append(text_label_y)
 
-        # Convert vertices and edges to numpy arrays
-        vertices = np.array(vertices, dtype=np.float64)
-        edges = np.array(edges, dtype=np.int32)
+            # Convert vertices and edges to numpy arrays
+            vertices = np.array(vertices, dtype=np.float64)
+            edges = np.array(edges, dtype=np.int32)
 
-        return vertices, edges, line_colors, labels
+            return vertices, edges, line_colors, labels
+        except Exception as e:
+            print(f"Error in creating the measurement grid: {traceback.format_exc()}")
+            return None
 
     def create_measurement_grid(self, labels=None):
         """
