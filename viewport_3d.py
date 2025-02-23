@@ -12,7 +12,7 @@ from color_transition_gradient_generator import ColorTransition
 from measurement_grid_visualizer import MeasurementGrid
 from mesh_gradient_colorizer import MeshColorizer
 from spinner import Spinner
-
+from space_mouse_controller import SpaceMouseController
 
 class ThreeDViewport:
     custom_labels: object
@@ -68,6 +68,46 @@ class ThreeDViewport:
             self.load_mesh(initial_mesh_file)
             self.show_grid()
         self.mesh_manipulator = mesh_manipulation.MeshManipulation(self.viewer, self.mesh)
+        self.space_mouse_controller = SpaceMouseController()
+        if self.space_mouse_controller.sm_device is not None:
+            self.viewer.register_animation_callback(self.poll_space_mouse)
+
+    def poll_space_mouse(self, frame):
+        """
+        Poll the SpaceMouse for input and process the data for 3D manipulation.
+        """
+        try:
+            data = self.space_mouse_controller.read_data()
+            if data is not None:
+                if data["t"] == self.space_mouse_controller.SMP_MOVE_CHANNEL:
+                    flip = data["f"] == 255
+                    pan_x = data["x"]
+                    pan_y = data["y"]
+                    if flip:
+                        pan_x = -pan_x
+                        pan_y = -pan_y
+                    depth_movement = data["z"]
+
+                    if pan_x != 0 or pan_y != 0 or depth_movement != 1.0:
+                        self.mesh_manipulator.move_object(pan_x, pan_y, 0)
+
+                    rot_amount = data["rot"] / 255 * 10
+                    counter_clockwise = data["cc"] == 255
+                    if rot_amount != 0:
+                        self.mesh_manipulator.rotate_object(rot_amount, counter_clockwise)
+                elif data["t"] == self.space_mouse_controller.SMP_BUTTON_CHANNEL:
+                    # Handle button press events if necessary
+                    pass
+                elif data["t"] == self.space_mouse_controller.SMP_ROTATE_CHANNEL:
+                    # Handle rotation channel events if necessary
+                    pass
+
+        except KeyboardInterrupt:
+            print("Polling interrupted by user. Cleaning up...")
+        # finally:
+        #     print("SpaceMouse controller disconnected.")
+        #     self.space_mouse_controller = SpaceMouseController()
+
 
     def _setup_key_callbacks(self):
         """
