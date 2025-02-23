@@ -30,7 +30,7 @@ class DepthTo3D:
         self.spinner = Spinner(f"{{time}} ")
 
     model_names = {"DenseDepth": "dense_depth", "MiDaS": "midas", "DPT": "dpt", "LeReS": "leres",
-                   "DepthAnythingV2": "depth_anything_v2"}
+                   "DepthAnythingV2": "depth_anything_v2", "Depth Pro": "depth_pro"}
 
     # model_lookup = {k: v for k, v in model_names.items()}
     # print (f"model_lookup = {self.model_lookup}")
@@ -43,7 +43,7 @@ class DepthTo3D:
         if self.model_type == "midas":
             # MiDaS model (Microsoft)
             from torch.hub import load
-            model = load("intel-isl/MiDaS", "MiDaS_small", pretrained=True).to(self.device).eval()
+            model = load("intel-isl/MiDaS", "MiDaS_large", pretrained=True).to(self.device).eval()
             transform = Compose([
                 ToTensor(),
                 Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -86,13 +86,18 @@ class DepthTo3D:
             # url = "http://images.cocodataset.org/val2017/000000039769.jpg"
             # image = Image.open(requests.get(url, stream=True).raw)
             #
-            image_processor = AutoImageProcessor.from_pretrained("depth-anything/Depth-Anything-V2-Large-hf")
             model = AutoModelForDepthEstimation.from_pretrained("depth-anything/Depth-Anything-V2-Large-hf")
             transform = Compose([
                 ToTensor(),
                 Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
             ])
-
+        elif self.model_type == "depth_pro":
+            # Depth Pro (local weights)
+            model = AutoModelForDepthEstimation.from_pretrained("apple/DepthPro-hf")
+            transform = Compose([
+                ToTensor(),
+                Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+            ])
         else:
             raise ValueError(
                 f"Unsupported model type. Use one of:\n{', '.join(self.model_names.keys())}.")
@@ -131,7 +136,8 @@ class DepthTo3D:
         # Predict depth
         with torch.no_grad():
             if self.model_type == "dense_depth" or self.model_type == "leres":
-                depth = self.model(img_input)[0]  # Replace with respective model's output logic
+                # depth = self.model(img_input)[0]  # Replace with respective model's output logic
+                depth = self.model(img_tensor)[0]  # Replace with respective model's output logic
             else:
                 if self.model_type == "depth_anything_v2":
                     # Depth Anything V2 (local weights)
@@ -150,7 +156,23 @@ class DepthTo3D:
                         mode="bicubic",
                         align_corners=False,
                     )
+                elif self.model_type == "depth_pro":
+                    # Depth Pro (local weights)
+                    # Prepare image for the model
+                    image_processor = AutoImageProcessor.from_pretrained("apple/DepthPro-hf")
+                    inputs = image_processor(images=image, return_tensors="pt")
 
+                    with torch.no_grad():
+                        outputs = self.model(**inputs)
+                        predicted_depth = outputs.predicted_depth
+
+                    # Interpolate to original size
+                    depth = torch.nn.functional.interpolate(
+                        predicted_depth.unsqueeze(1),
+                        size=(img_h, img_w),  # Match original image dimensions here
+                        mode="bicubic",
+                        align_corners=False,
+                    )
                 else:
                     depth = self.model(img_tensor)
         print(f"Initial depth map shape: {depth.shape}, values: {depth.min()} - {depth.max()}.")

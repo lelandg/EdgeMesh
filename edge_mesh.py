@@ -276,13 +276,15 @@ class MainWindow_ImageProcessing(QMainWindow):
 
         # Create ComboBox
         self.depth_method_dropdown = QComboBox()
-        self.depth_method_dropdown.addItems(["DepthAnythingV2", "DPT", "MiDaS"])  # Add items
+        self.depth_method_dropdown.addItems(["DepthAnythingV2", "Depth Pro", "DPT", "MiDaS"])  # Add items
         self.depth_method_dropdown.setCurrentIndex(0)
         self.depth_method_dropdown.setItemData(0, "DepthAnythingV2 is usually better for most images.", Qt.ToolTipRole)
-        self.depth_method_dropdown.setItemData(1, "DPT can be good for architecture and hard surfaces.", Qt.ToolTipRole)
-        self.depth_method_dropdown.setItemData(2, "MiDaS is sometimes good for general depth.", Qt.ToolTipRole)
+        self.depth_method_dropdown.setItemData(1, "Depth Pro is good for general depth.", Qt.ToolTipRole)
+        self.depth_method_dropdown.setItemData(2, "DPT can be good for architecture and hard surfaces.", Qt.ToolTipRole)
+        self.depth_method_dropdown.setItemData(3, "MiDaS is sometimes good for general depth.", Qt.ToolTipRole)
         self.depth_method_dropdown.setToolTip("Depth estimation model to use.\r\n"
-                                              "DepthAnythingV2 is usually better, but "
+                                              "DepthAnythingV2 is usually better for most images.\r\n"
+                                              "Depth Pro is not bad. It may be better suited for organic shapes?\r\n"
                                               "DPT is sometimes better for architecture or hard surfaces.\r\n"
                                               "MiDaS is good for general depth.\r\n"
                                               "Results are very different, so experiment!\r\n"
@@ -1173,6 +1175,8 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.config.set("UI_Settings", "flat_back", str(self.flat_back_enabled))
         self.config.set("UI_Settings", "depth_drop_percentage", str(self.depth_drop_percentage))
         self.config.set("UI_Settings", "blend_amount", str(self.blend_amount))
+        self.config.set("UI_Settings", "model", self.depth_method_dropdown.currentText())
+        self.config.set("UI_Settings", "smoothing_method", self.smoothing_dropdown.currentText())
 
         # Add more settings as needed...
 
@@ -1197,6 +1201,8 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.depth_amount_input.setText("1.0")
         self.min_depth_input.setText("100.0")
         self.blend_slider.setValue(100)
+        self.smoothing_dropdown.setCurrentIndex(0)
+        self.depth_method_dropdown.setCurrentIndex(0)
         self.update_preview()
 
     def load_ui_settings(self):
@@ -1228,6 +1234,8 @@ class MainWindow_ImageProcessing(QMainWindow):
                 self.flat_back_enabled = self.config.getboolean("UI_Settings", "flat_back", fallback=False)
                 self.depth_drop_percentage = self.config.getfloat("UI_Settings", "depth_drop_percentage", fallback=0.0)
                 self.blend_amount = self.config.getint("UI_Settings", "blend_amount", fallback=100)
+                self.model = self.config.get("UI_Settings", "model", fallback="DepthAnythingV2")
+                self.smoothing_method = self.config.get("UI_Settings", "smoothing_method", fallback="anisotropic")
 
                 # Apply loaded values to the UI components
                 self.invert_checkbox.setChecked(self.invert_colors_enabled)
@@ -1242,7 +1250,12 @@ class MainWindow_ImageProcessing(QMainWindow):
                 self.percentage_input.setText(str(self.depth_drop_percentage))
                 self.sensitivity_slider.setValue(self.sensitivity)
                 self.line_thickness_slider.setValue(self.line_thickness)
-
+                index = self.depth_method_dropdown.findText(self.model, Qt.MatchFixedString)
+                if index >= 0:
+                    self.depth_method_dropdown.setCurrentIndex(index)
+                index = self.smoothing_dropdown.findText(self.smoothing_method, Qt.MatchFixedString)
+                if index >= 0:
+                    self.smoothing_dropdown.setCurrentIndex(index)
 
     SETTINGS = [
         ("invert_colors_enabled", "invert_checkbox"),
@@ -1261,6 +1274,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         ("max_depth", "min_depth_input"),
         ("background_tolerance", "background_tolerance_input"),
         ("blend_amount", "blend_slider"),
+        ("model", "depth_method_dropdown"),
     ]
 
     # Ensure configuration file exists with default settings

@@ -165,6 +165,9 @@ This application combines cutting-edge computer vision and 3D rendering techniqu
 
 
 Version history:
+* 0.5.18:
+  * I just heard about "Depth Pro" during lunch. I got it implemented before 13:00. (I'll have to play with it.)
+  * Combo box settings are now saved and restored. (Depth and smoothing methods.)
 * 0.5.17:
   * Added SpaceMouse support. It's slow, but that's because it removes and re-adds the mesh each time. But it works. :-) 
 * 0.5.16:
