@@ -151,7 +151,7 @@ venv.bak/
 *-edges.png
 *-smooth_gaussian.png
 
-./Depth Models/
+Depth Models/
 .idea/
 
 # mypy
@@ -186,3 +186,4 @@ config.ini
 Notes.txt
 Notes_uniq.txt
 grep.py
+available_models.txt
