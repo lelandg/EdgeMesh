@@ -151,6 +151,7 @@ venv.bak/
 *-edges.png
 *-smooth_gaussian.png
 
+./Depth Models/
 .idea/
 
 # mypy
