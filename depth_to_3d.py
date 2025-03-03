@@ -5,21 +5,31 @@ from datetime import datetime
 import numpy as np
 import torch
 import trimesh
+from trimesh import Trimesh
+
 from PIL import Image
-from torchvision.transforms import Compose, ToTensor, Normalize
+from torchvision.transforms import Compose, ToTensor, Normalize, Resize
 from transformers import AutoImageProcessor, AutoModelForDepthEstimation
+from MeshTools.mesh_tools import MeshTools
 
 import smoothing_depth_map_utils
 from spinner import Spinner
 
-import PyQt5.QtGui as QtGui
+import PyQt6.QtGui as QtGui
+
+"""!@brief DepthTo3D modelnames supported by the DepthTo3D class."""
+model_names = {"DenseDepth": "dense_depth", "MiDaS": "midas", "DPT": "dpt", "LeReS": "leres",
+               "DepthAnythingV2": "depth_anything_v2", "Depth Pro": "depth_pro"}
+
 
 class DepthTo3D:
-    def __init__(self, model_type="dpt"):
+    def __init__(self, model_type="dpt", verbose = True):
         """
         Initialize the depth estimation and mesh generation pipeline.
         :param model_type: "midas" (default) or "dense_depth". Specifies the depth estimation model.
         """
+        self.verbose = verbose
+        self.mesh_tools = None
         self.depth_map = None
         self.depth_values = None
         self.depth_labels = None
@@ -29,45 +39,38 @@ class DepthTo3D:
         self.model, self.transform = self.load_model()
         self.spinner = Spinner(f"{{time}} ")
 
-    model_names = {"DenseDepth": "dense_depth", "MiDaS": "midas", "DPT": "dpt", "LeReS": "leres",
-                   "DepthAnythingV2": "depth_anything_v2", "Depth Pro": "depth_pro"}
-
-    # model_lookup = {k: v for k, v in model_names.items()}
-    # print (f"model_lookup = {self.model_lookup}")
 
     def load_model(self):
         """
         Load the depth estimation model.
         :return: model and corresponding transform pipeline
         """
+        print(f"Loading depth estimation model: {self.model_type}...")
+        from torch.hub import load
         if self.model_type == "midas":
             # MiDaS model (Microsoft)
-            from torch.hub import load
-            model = load("intel-isl/MiDaS", "MiDaS_large", pretrained=True).to(self.device).eval()
-            transform = Compose([
-                ToTensor(),
-                Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-            ])
+            model = load("intel-isl/MiDaS", "MiDaS", pretrained=True).to(self.device).eval()
+            transforms = load("intel-isl/MiDaS", "transforms")
+            transform = transforms.dpt_transform
 
         elif self.model_type == "dense_depth":
             # DenseDepth model
             from dense_depth_model import DenseDepth
             model = DenseDepth().to(self.device).eval()
-            transform = None  # Replace with DenseDepth-specific preprocessing logic if required
+            transform = DenseDepth.transform
 
         elif self.model_type == "dpt":
             # Dense Prediction Transformer (DPT)
             from torch.hub import load
             model = load("intel-isl/MiDaS", "DPT_Large", pretrained=True).to(self.device).eval()
-            transform = Compose([
-                ToTensor(),
-                Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
-            ])
+            transforms = load("intel-isl/MiDaS", "transforms")
+            transform = transforms.dpt_transform
 
         elif self.model_type == "leres":
             # LeReS (Lightweight Estimation)
             from leres_model import LeReS  # Custom import
             model = LeReS().to(self.device).eval()
+            transform = LeReS.transform  # Replace with LeReS-specific preprocessing logic if necessary
             transform = None  # Replace with LeReS-specific preprocessing logic if necessary
 
         elif self.model_type == "depth_anything_v2":
@@ -100,8 +103,42 @@ class DepthTo3D:
             ])
         else:
             raise ValueError(
-                f"Unsupported model type. Use one of:\n{', '.join(self.model_names.keys())}.")
+                f"Unsupported model type. Use one of:\n{', '.join(model_names.keys())}.")
         return model, transform
+
+    def process_depth_map(depth_map, percentage_attenuate, percent_reduce):
+        """
+        Processes a depth map by attenuating values below a computed median_value and smoothing them.
+
+        Args:
+            depth_map (numpy array): A 2D array representing the depth map.
+            percentage_attenuate (float): The percentile (0-100) used to compute the median_value.
+            percent_reduce (float): The percentage (0-100) that determines the lower bound for smoothing.
+
+        Returns:
+            numpy array: The processed depth map.
+        """
+        # Flatten the depth map to find percentile
+        depth_values = depth_map.flatten()
+
+        # Calculate the value at percentage_attenuate percentile
+        median_value = np.percentile(depth_values, percentage_attenuate)
+        print(f"Median value at {percentage_attenuate}%: {median_value}")
+
+        # Calculate the reduced value based on percent_reduce
+        reduce_value = (percent_reduce / 100) * median_value
+
+        # Create a mask for values below the median_value
+        mask = depth_map < median_value
+
+        # Spread the values evenly between reduce_value and median_value
+        depth_map[mask] = np.interp(
+            depth_map[mask],  # Original values below the median
+            (depth_map[mask].min(), median_value),  # Original scale
+            (reduce_value, median_value)  # New scale
+        )
+
+        return depth_map
 
     def estimate_depth(self, image, target_size=(500, 500), flip=False):
         """
@@ -126,20 +163,23 @@ class DepthTo3D:
         new_h = (img_h + 31) // 32 * 32
         new_w = (img_w + 31) // 32 * 32
         resized_image = cv2.resize(image, (new_w, new_h))  # Resize to divisible by 32
+
         if flip:
             resized_image = cv2.flip(resized_image, 1)  # Flip horizontally
 
         # Convert to tensor
-        img_input = Image.fromarray(cv2.cvtColor(resized_image, cv2.COLOR_BGR2RGB))
-        img_tensor = self.transform(img_input).unsqueeze(0).to(self.device) if self.transform else None
 
         # Predict depth
         with torch.no_grad():
             if self.model_type == "dense_depth" or self.model_type == "leres":
+                img_input = Image.fromarray(cv2.cvtColor(resized_image, cv2.COLOR_BGR2RGB))
+                img_tensor = self.transform(img_input).unsqueeze(0).to(self.device) if self.transform else None
                 # depth = self.model(img_input)[0]  # Replace with respective model's output logic
                 depth = self.model(img_tensor)[0]  # Replace with respective model's output logic
             else:
                 if self.model_type == "depth_anything_v2":
+                    img_input = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+                    img_tensor = self.transform(img_input).unsqueeze(0).to(self.device) if self.transform else None
                     # Depth Anything V2 (local weights)
                     # Prepare image for the model
                     image_processor = AutoImageProcessor.from_pretrained("depth-anything/Depth-Anything-V2-Large-hf")
@@ -149,14 +189,28 @@ class DepthTo3D:
                         outputs = self.model(**inputs)
                         predicted_depth = outputs.predicted_depth
 
-                    # Interpolate to original size
-                    depth = torch.nn.functional.interpolate(
-                        predicted_depth.unsqueeze(1),
-                        size=(img_h, img_w),  # Match original image dimensions here
-                        mode="bicubic",
-                        align_corners=False,
-                    )
+                    if target_size and target_size != (0, 0) and target_size != (img_w, img_h):
+                        print("Target size specified, resizing to match.")
+                        # Interpolate to original size
+                        depth = torch.nn.functional.interpolate(
+                            predicted_depth.unsqueeze(1),
+                            size=target_size,  # Match original image dimensions here
+                            mode="bicubic",
+                            align_corners=False,
+                        )
+                    else:
+                        print ("No target size specified, using original size.")
+                        # Interpolate to original size
+                        depth = torch.nn.functional.interpolate(
+                            predicted_depth.unsqueeze(1),
+                            scale_factor=1.0,
+                            # size=(img_h, img_w),  # Match original image dimensions here
+                            mode="bicubic",
+                            align_corners=False,
+                        )
                 elif self.model_type == "depth_pro":
+                    img_input = Image.fromarray(cv2.cvtColor(resized_image, cv2.COLOR_BGR2RGB))
+                    img_tensor = self.transform(img_input).unsqueeze(0).to(self.device) if self.transform else None
                     # Depth Pro (local weights)
                     # Prepare image for the model
                     image_processor = AutoImageProcessor.from_pretrained("apple/DepthPro-hf")
@@ -173,254 +227,70 @@ class DepthTo3D:
                         mode="bicubic",
                         align_corners=False,
                     )
+                elif self.model_type == "midas":
+                    img_input = cv2.cvtColor(resized_image, cv2.COLOR_BGR2RGB)
+                    img_tensor = self.transform(img_input).to(self.device)
+                    depth = self.model(img_tensor)
                 else:
                     depth = self.model(img_tensor)
         print(f"Initial depth map shape: {depth.shape}, values: {depth.min()} - {depth.max()}.")
         # Resize depth back to original image dimensions
         depth = depth.squeeze().cpu().numpy()
         print(f"Resized depth map shape: {depth.shape}, values: {depth.min()} - {depth.max()} {np.sum(depth < 0)} negative values.")
-        depth[depth < 0] = 0  # replace negative values with 0
-        depth = cv2.resize(depth, (img_w, img_h))  # Match original input image size
-
+        # depth[depth < 0] = 0  # replace negative values with 0
         if target_size and target_size != (0, 0) and target_size != (img_w, img_h):
             # Limit the depth map size
-            depth = cv2.resize(depth, target_size, interpolation=cv2.INTER_NEAREST)
+            depth = cv2.resize(depth, target_size)  # Match original input image size
 
         # Normalize for visualization (optional)
         depth = cv2.normalize(depth, None, 0, 255, norm_type=cv2.NORM_MINMAX)
         print(f"Final depth map shape: {depth.shape}, values: {depth.min()} - {depth.max()}")
         return depth
 
-    def solidify_mesh(self, mesh, depth_offset=-1.0):
-        """
-        Extend the hollow mesh backwards along the depth axis to make it solid.
-        :param mesh: Existing 3D trimesh object.
-        :param depth_offset: The offset applied to create the "back" face of the solid model (negative for backward extension).
-        :return: A new solidified trimesh object.
-        """
-        # Extract the original vertices and faces
-        original_vertices = mesh.vertices
-        original_faces = mesh.faces
+    # def solidify_mesh(self, mesh, depth_offset=-1.0):
+    #     """
+    #     Extend the hollow mesh backwards along the depth axis to make it solid.
+    #     :param mesh: Existing 3D trimesh object.
+    #     :param depth_offset: The offset applied to create the "back" face of the solid model (negative for backward extension).
+    #     :return: A new solidified trimesh object.
+    #     """
+    #     # Extract the original vertices and faces
+    #     original_vertices = mesh.vertices
+    #     original_faces = mesh.faces
+    #
+    #     # Create the "back" face vertices by shifting along the z-axis
+    #     back_vertices = original_vertices.copy()
+    #     back_vertices[:, 2] += depth_offset  # Adjust depth axis (z-axis)
+    #
+    #     # Combine original vertices and back vertices
+    #     combined_vertices = np.vstack([original_vertices, back_vertices])
+    #
+    #     # Create faces for the back surface
+    #     num_vertices = len(original_vertices)
+    #     back_faces = original_faces + num_vertices  # Shift indices for the back faces
+    #
+    #     # Create side faces to connect the front and back vertices
+    #     side_faces = []
+    #     for face in original_faces:
+    #         for i in range(3):
+    #             # Get the current edge (start, end)
+    #             start = face[i]
+    #             end = face[(i + 1) % 3]
+    #
+    #             # Create two faces to cover the side
+    #             side_faces.append([start, end, end + num_vertices])
+    #             side_faces.append([start, end + num_vertices, start + num_vertices])
+    #
+    #     side_faces = np.array(side_faces)
+    #
+    #     # Combine all faces: front, back, and side
+    #     combined_faces = np.vstack([original_faces, back_faces, side_faces])
+    #
+    #     # Create a new mesh with the combined vertices and faces
+    #     solid_mesh = trimesh.Trimesh(vertices=combined_vertices, faces=combined_faces)
+    #
+    #     return solid_mesh
 
-        # Create the "back" face vertices by shifting along the z-axis
-        back_vertices = original_vertices.copy()
-        back_vertices[:, 2] += depth_offset  # Adjust depth axis (z-axis)
-
-        # Combine original vertices and back vertices
-        combined_vertices = np.vstack([original_vertices, back_vertices])
-
-        # Create faces for the back surface
-        num_vertices = len(original_vertices)
-        back_faces = original_faces + num_vertices  # Shift indices for the back faces
-
-        # Create side faces to connect the front and back vertices
-        side_faces = []
-        for face in original_faces:
-            for i in range(3):
-                # Get the current edge (start, end)
-                start = face[i]
-                end = face[(i + 1) % 3]
-
-                # Create two faces to cover the side
-                side_faces.append([start, end, end + num_vertices])
-                side_faces.append([start, end + num_vertices, start + num_vertices])
-
-        side_faces = np.array(side_faces)
-
-        # Combine all faces: front, back, and side
-        combined_faces = np.vstack([original_faces, back_faces, side_faces])
-
-        # Create a new mesh with the combined vertices and faces
-        solid_mesh = trimesh.Trimesh(vertices=combined_vertices, faces=combined_faces)
-
-        return solid_mesh
-
-    def solidify_mesh_with_flat_back(self, mesh, flat_back_depth=0):
-        """
-        Solidify the mesh by making the back side flat while preserving vertex colors.
-        All added faces will face backward (toward -z).
-
-        :param mesh: Existing 3D trimesh object with vertex colors.
-        :param flat_back_depth: The depth value for the flat back surface.
-        :return: A new solidified trimesh object with vertex colors preserved.
-        """
-        # Extract the original vertices, faces, and vertex colors
-        original_vertices = mesh.vertices
-        original_faces = mesh.faces
-        original_colors = mesh.visual.vertex_colors if hasattr(mesh.visual, 'vertex_colors') else None
-
-        # Assign default colors if none exist
-        if original_colors is None:
-            original_colors = np.ones((len(original_vertices), 3))  # Default white color
-
-        # Create the "flat back" vertices by setting all z values to flat_back_depth
-        flat_back_vertices = original_vertices.copy()
-        flat_back_vertices[:, 2] = flat_back_depth
-
-        # Combine original vertices and flat back vertices
-        combined_vertices = np.vstack([original_vertices, flat_back_vertices])
-
-        # Duplicate vertex colors for the flat back vertices
-        combined_colors = np.vstack([original_colors, original_colors])
-
-        # Create faces for the flat back surface, ensure reversed order for facing backward
-        num_vertices = len(original_vertices)
-        flat_back_faces = np.fliplr(original_faces + num_vertices)  # Reverse face winding
-
-        # Create side faces to connect the front and flat back vertices
-        side_faces = []
-        for face in original_faces:
-            for i in range(3):
-                # Get the current edge (start, end)
-                start = face[i]
-                end = face[(i + 1) % 3]
-
-                side_faces.append([start, end, end + num_vertices])
-                side_faces.append([start, end + num_vertices, start + num_vertices])
-                # Create two faces to cover each side, ensure they face backward
-                side_faces.append([start, end + num_vertices, end])
-                side_faces.append([start, start + num_vertices, end + num_vertices])
-
-        side_faces = np.array(side_faces)
-
-        # Combine all faces: front, flat back, and side
-        combined_faces = np.vstack([original_faces, flat_back_faces, side_faces])
-
-        # Create a new mesh with the combined vertices, faces, and preserved colors
-        solid_mesh = trimesh.Trimesh(
-            vertices=combined_vertices,
-            faces=combined_faces,
-            vertex_colors=combined_colors
-        )
-
-        return solid_mesh
-
-    # Assuming 'mesh' is your created Trimesh object
-    def flip_mesh(self, mesh):
-        """
-        Flip the mesh geometry horizontally (flipping the y-axis).
-        Adjust the vertex colors accordingly if vertex colors are present.
-
-        :param mesh: Trimesh object to be flipped.
-        :return: Transformed Trimesh object with flipped geometry and adjusted colors.
-        """
-        # Define the transformation matrix for flipping along the y-axis
-        flip_matrix = np.array([
-            [1, 0, 0, 0],  # No change to x-axis
-            [0, -1, 0, 0],  # Flip y-axis
-            [0, 0, 1, 0],  # No change to z-axis
-            [0, 0, 0, 1],  # Homogeneous coordinate
-        ])
-
-        # Apply the transformation to the mesh
-        mesh.apply_transform(flip_matrix)
-
-        # # Check if the mesh has vertex colors
-        # if hasattr(mesh.visual, 'vertex_colors') and mesh.visual.vertex_colors is not None:
-        #     # Optionally adjust the vertex colors during flipping
-        #     # Example: If flipping affects orientation-dependent effects, handle it here
-        #     # For instance, flipping colors (if mirrored) can be implemented, but often the color remains unchanged
-        #     flipped_colors = mesh.visual.vertex_colors.copy()  # Currently colors are unchanged
-        #
-        #     # Update flipped colors (if needed) - placeholder for any operation on colors.
-        #     mesh.visual.vertex_colors = flipped_colors
-
-        return mesh
-
-    def add_mirror_mesh(self, mesh):
-        """
-        Add a mirrored backside to the provided 3D mesh and stitch the halves together.
-        This creates a water-tight mesh by connecting the edges of the original
-        mesh and the mirrored counterpart.
-
-        :param mesh: A Trimesh object representing the front-facing mesh.
-        :return: A new Trimesh object with a water-tight mirrored back side.
-        """
-        print("Adding mirrored backside to the mesh...")
-
-        # Optionally combine vertex colors if provided
-        if hasattr(mesh.visual, 'vertex_colors') and mesh.visual.vertex_colors is not None:
-            original_colors = mesh.visual.vertex_colors
-            combined_colors = np.vstack([original_colors, original_colors])
-        else:
-            combined_colors = None
-
-        # Original mesh vertices and faces
-        original_vertices = mesh.vertices
-        original_faces = mesh.faces
-
-        # Create mirrored vertices by negating the z-axis
-        mirrored_vertices = original_vertices.copy()
-        mirrored_vertices[:, 2] = -mirrored_vertices[:, 2]
-
-        # Adjust face indices for mirrored vertices
-        num_original_vertices = len(original_vertices)
-        mirrored_faces = original_faces.copy() + num_original_vertices
-
-        # Reverse the face winding for the mirrored side
-        mirrored_faces = mirrored_faces[:, ::-1]
-
-        # Combine original and mirrored vertices and faces
-        combined_vertices = np.vstack([original_vertices, mirrored_vertices])
-        combined_faces = np.vstack([original_faces, mirrored_faces])
-
-        print("Finding boundary edges...")
-        original_edges = mesh.edges_sorted
-        mirrored_edges = np.roll(original_edges, shift=1, axis=1) + num_original_vertices
-
-        original_edges_set = set(map(tuple, original_edges))
-        mirrored_edges_set = set(map(tuple, mirrored_edges))
-
-        # shared_edges = original_edges_set.intersection(mirrored_edges_set)
-        # boundary_edges = original_edges_set.symmetric_difference(shared_edges)
-        boundary_edges = original_edges_set - mirrored_edges_set
-
-        if len(boundary_edges) == 0:
-            print("Warning: No boundary edges detected! Mesh may already be watertight.")
-
-        print("Stitching boundary edges...")
-        stitching_faces = []
-        for edge in boundary_edges:
-            # Validate that the edge has exactly two elements
-            if len(edge) != 2:
-                raise ValueError(f"Edge must contain exactly 2 vertices, but found {len(edge)}: {edge}")
-
-            v1, v2 = edge
-            mv1, mv2 = v1 + num_original_vertices, v2 + num_original_vertices
-
-            stitching_faces.append([v1, v2, mv1])
-            stitching_faces.append([v2, mv2, mv1])
-
-            # Ensure proper vertex relationships before adding additional faces
-            if mv2 != v1 and mv1 != v2:
-                stitching_faces.append([mv2, v2, v1])
-                stitching_faces.append([mv1, mv2, v1])
-
-        stitching_faces = np.array(stitching_faces)
-
-        print("Combining faces, applying colors, creating watertight mesh...")
-        # Combine stitching faces with others
-        watertight_faces = np.vstack([combined_faces, stitching_faces])
-
-        # Create the watertight Trimesh object
-        watertight_mesh = trimesh.Trimesh(
-            vertices=combined_vertices,
-            faces=watertight_faces,
-            vertex_colors=combined_colors,
-            process=False
-        )
-
-        # print(f"Removing duplicate faces from {len(watertight_mesh.faces)} faces")
-        # watertight_mesh.remove_duplicate_faces()
-        # print(f"Removing degenerate faces from {len(watertight_mesh.faces)} faces")
-        # watertight_mesh.remove_degenerate_faces()
-        # print("Fixing normals...")
-        # watertight_mesh.fix_normals()  # Ensure outward normals
-        # print(f"Faces remaining = {len(watertight_mesh.faces)}\r\nFilling holes...")
-        # watertight_mesh.fill_holes()  # Fix any remaining holes
-
-        print(f"Finished creating mesh with {len(watertight_mesh.faces)} faces.")
-        return watertight_mesh
 
     def create_background_mask(self, image, target_size=None, color_to_remove=None, background_removal=False,
                                background_tolerance=0):
@@ -474,15 +344,15 @@ class DepthTo3D:
             mask_resized = mask
 
         # Step 4: Smooth the edges of the mask
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))  # Larger kernel for smoothing
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (4, 4))  # Larger kernel for smoothing
         mask_dilate1 = cv2.dilate(mask_resized, kernel, iterations=3)
         mask_dilate2 = cv2.addWeighted(mask_resized, 0.7, mask_dilate1, 0.3, 0)
 
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))  # Smaller kernel for edge adjustment
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))  # Smaller kernel for edge adjustment
         mask_eroded = cv2.erode(mask_resized, kernel, iterations=2)  # Erode to remove background regions
 
         smooth_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
-        mask_smoothed = cv2.dilate(mask_eroded, smooth_kernel, iterations=1)  # Soft dilation for edge adjustment
+        mask_smoothed = cv2.dilate(mask_eroded, smooth_kernel, iterations=2)  # Soft dilation for edge adjustment
         # # Step 5: Blend the smoothed mask with the original
         smoothed_mask = cv2.addWeighted(mask_dilate2, 0.8, mask_smoothed, 0.2, 0)
 
@@ -523,7 +393,7 @@ class DepthTo3D:
 
         # Step 1: Background processing
         h, w, _ = image.shape
-
+        print(f"Image size: {w}x{h}, target_size: {target_size}")
         # If color_to_remove is provided, use it as the background color.
         if color_to_remove is not None:
             # Handle QColor if it is passed
@@ -596,12 +466,14 @@ class DepthTo3D:
         valid_colors = colors[valid_mask]
 
         # Create the mesh
-        mesh = self.flip_mesh(trimesh.Trimesh(vertices=valid_vertices, faces=faces, vertex_colors=valid_colors))
+        mesh = trimesh.Trimesh(vertices=valid_vertices, faces=faces, vertex_colors=valid_colors)
+        self.mesh_tools = MeshTools(mesh, verbose=self.verbose)
+        mesh = self.mesh_tools.flip_mesh(mesh)
 
         if flat_back:
-            solid_mesh = self.solidify_mesh_with_flat_back(mesh, flat_back_depth=0.0)
+            solid_mesh = self.mesh_tools.solidify_mesh_with_flat_back(mesh, flat_back_depth=0.0)
         else:
-            solid_mesh = self.add_mirror_mesh(mesh)
+            solid_mesh = self.mesh_tools.add_mirror_mesh(mesh)
 
         # Construct file name suffix based on enabled options
         file_suffix = f"_D{depth_amount}".replace(".", "_")
@@ -698,6 +570,66 @@ class DepthTo3D:
 
         return depth_values, text_values
 
+    def pad_to_square(self, image):
+        """!
+        Pads a given cv2 image to make it square.
+        - If the two corners being padded have the same color, uses that color for padding.
+        - Otherwise, uses black for padding.
+
+        @param image (numpy.ndarray) The input cv2 image.
+
+        @Return (numpy.ndarray) The square-padded image.
+        """
+        if image is None or len(image.shape) < 2:
+            raise ValueError("Input image is invalid or None")
+
+        height, width = image.shape[:2]
+        channels = 1 if len(image.shape) == 2 else image.shape[2]
+
+        # Default padding color is black
+        padding_color = [0, 0, 0] if channels == 3 else 0
+
+        # Check corner colors to determine padding color
+        top_right_color = image[0, -1].tolist() if channels == 3 else image[0, -1]
+        bottom_right_color = image[-1, -1].tolist() if channels == 3 else image[-1, -1]
+        bottom_left_color = image[-1, 0].tolist() if channels == 3 else image[-1, 0]
+
+        # Determine padding dimensions
+        if height > width:
+            diff = height - width
+            pad_left = 0 # diff // 2
+            pad_right = diff # - pad_left
+            pad_top, pad_bottom = 0, 0
+            if top_right_color == bottom_right_color:
+                padding_color = top_right_color
+        elif width > height:
+            diff = width - height
+            pad_top = 0 # diff // 2
+            pad_bottom = diff # - pad_top
+            pad_left, pad_right = 0, 0
+            if bottom_right_color == bottom_left_color:
+                padding_color = bottom_right_color
+        else:
+            # Already square
+            return image
+
+        # # Ensure padding_color format matches cv2 requirements
+        # if channels == 3 and isinstance(padding_color, list):
+        #     padding_color = [int(c) for c in padding_color]
+        # elif channels == 1 and isinstance(padding_color, (list, np.ndarray)):
+        #     padding_color = int(padding_color[0])
+
+        # Add padding using cv2.copyMakeBorder
+        square_image = cv2.copyMakeBorder(
+            image,
+            pad_top, pad_bottom, pad_left, pad_right,
+            borderType=cv2.BORDER_CONSTANT,
+            value=padding_color
+        )
+
+        return square_image
+
+
     def process_image(self, image_path, smoothing_method="anisotropic", target_size=(500, 500), flat_back=False,
                       grayscale_enabled=False, edge_detection_enabled=False, invert_colors_enabled=False,
                       depth_amount=1.0, depth_drop_percentage=0, project_on_original=False, background_removal=False,
@@ -719,9 +651,13 @@ class DepthTo3D:
               f"Project on original = {project_on_original}, Background removal = {background_removal}, "
               f"Background tolerance = {background_tolerance}")
         image = cv2.imread(image_path)
+        # image = self.pad_to_square(image)
+        # dname = os.path.dirname(image_path)
+        # fname = os.path.join(dname, f"{os.path.basename(image_path)}_padded.png")
+        # cv2.imwrite(fname, image)
         img_h, img_w, _ = image.shape
         if target_size == (0,0):
-            size = max(img_h, img_w)
+            size = img_h if img_h < img_w else img_w
             target_size = (size, size)
 
         if image is None:
@@ -733,9 +669,9 @@ class DepthTo3D:
             flip = True
         depth = self.estimate_depth(image, target_size, flip)
         fname, ext = os.path.splitext(image_path)
-        cv2.imwrite(f"{os.path.join(fname)}_depth_map.png", depth)
+        cv2.imwrite(f"{fname}{self.model_type}_depth_map.png", depth)
         # Remove the lowest values. 0.05 = remove 5% of the lowest depth values.
-        depth = self.modify_depth(depth, depth_drop_percentage)
+        # depth = self.modify_depth(depth, depth_drop_percentage)
         self.depth_values, self.depth_labels = self.create_text_values_from_depth(depth)
 
         min = depth.min()

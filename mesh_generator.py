@@ -69,10 +69,10 @@ class MeshGenerator:
 
         # Resize image if necessary
         image_height, image_width = processed_image.shape[:2]
-        if image_width > 1000:
-            scale_factor = 1000 / image_width
-            new_height = int(image_height * scale_factor)
-            processed_image = cv2.resize(processed_image, (1000, new_height), interpolation=cv2.INTER_AREA)
+        # if image_width > 1000:
+        #     scale_factor = 1000 / image_width
+        #     new_height = int(image_height * scale_factor)
+        #     processed_image = cv2.resize(processed_image, (1000, new_height), interpolation=cv2.INTER_AREA)
 
         # Sharpen the image
         processed_image = self.sharpen_image(processed_image)

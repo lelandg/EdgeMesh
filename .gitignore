@@ -1,3 +1,9 @@
+Images/*
+Depth Models/*
+checkpoints/*
+.idea/*
+Morgue/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

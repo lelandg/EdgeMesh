@@ -1,18 +1,21 @@
+# Preferred package
+#torch @ https://download.pytorch.org/whl/cu118/torch-2.0.1+cu118-cp39-cp39-linux_x86_64.whl
 torch
+#torchvision @ https://download.pytorch.org/whl/cu118/torchvision-0.15.2+cu118-cp39-cp39-linux_x86_64.whl
 torchvision
+#torchaudio @ https://download.pytorch.org/whl/cu118/torchaudio-2.0.2+cu118-cp39-cp39-linux_x86_64.whl
+torchaudio
 shapely
 scikit-learn
 opencv-python
 numpy
 matplotlib
-PyQt5
+PyQt6
 transformers
 trimesh
 pillow
 scipy
 open3d
-
-
 PyYAML
 tensorflow
 timm
@@ -52,3 +55,17 @@ keras
 keyboard
 pygame
 hidapi
+torch
+torchvision
+distributed
+tabulate
+multipledispatch
+numba
+pytest
+psutil
+opt-einsum
+defusedxml
+nltk
+torchaudio
+msgpack-python
+pygetwindow

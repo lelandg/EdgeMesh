@@ -3,6 +3,7 @@
 ## Introduction
 This application provides advanced functionality for processing images, performing edge detection, generating 3D meshes from depth maps, and rendering them in a 3D viewport. Primarily designed for professionals working in computer vision, 3D modeling, and similar fields, the application offers an interactive GUI to manipulate features like edge detection, smoothing methods, dynamic depth adjustments, and more.
 
+To install, you need pip.
 ---
 
 ## Features
@@ -165,6 +166,12 @@ This application combines cutting-edge computer vision and 3D rendering techniqu
 
 
 Version history:
+* 0.6.1:
+  * Major upgrade to PyQt6 for UI elements. This is mostly so we can build with nuitka.
+  * Updated support of image types to everything OpenCV handles, which are:
+    .BMP .DIB .JPEG .JPG .JPE .JP2 .PNG .WEBP .PBM .PGM .PPM .PXM .PNM .SR .RAS .TIFF .TIF .EXR .HDR .PIC ... 
+    Cool. :-)
+  * Tweaks for background removal. Still not perfect. Most things work great if it's a solid background, but details close to that color can cause jaggies along the edges. 
 * 0.5.18:
   * I just heard about "Depth Pro" during lunch. I got it implemented before 13:00. (I'll have to play with it.)
   * Combo box settings are now saved and restored. (Depth and smoothing methods.)
