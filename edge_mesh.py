@@ -1,4 +1,7 @@
 __author__ = "Leland Green"
+
+import ast
+
 from _version import version
 __version__ = version
 __date_created__ = "2025-01-28"
@@ -132,7 +135,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.depth_drop_percentage = 0.0  # Default percentage depth drop
         self.image_path = None  # To hold the currently loaded image path
         self.background_color = [0, 0, 0]  # Default background color = dark gray
-        self.current_selected_color = (255, 255, 255)  # Default to white
+        self.current_selected_color = None  # Default to white
         self.use_selected_color = False
         self.drop_background_enabled = False  # Initialize the variable
         self.previous_background_enabled = False  # Store the previous state
@@ -716,6 +719,7 @@ class MainWindow_ImageProcessing(QMainWindow):
                 if color:
                     # self.update_color_picker(color)
                     self.use_selected_color = True
+                    self.current_selected_color = [color.red(), color.green(), color.blue()]
                     self.update_color_swatch(color)
                 return True  # Event was handled
             return super(QMainWindow, self).eventFilter(source, event)
@@ -765,8 +769,12 @@ class MainWindow_ImageProcessing(QMainWindow):
         Updates the color picker display and stores the detected color.
         """
         if not isinstance(color, QColor):
-            print(f"Invalid QColor passed: {color}")
-            return  # Exit early to ensure only valid QColor objects are processed
+            try:
+                r, g, b = color
+                color = QColor(r, g, b)
+            except Exception as e:
+                print(f"Invalid color format passed: {color}. Error: {e}")
+                return  # Stop further execution for invalid inputs
 
         # Store the RGB color components in a readable format
         self.current_selected_color = [color.red(), color.green(), color.blue()]
@@ -1348,6 +1356,8 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.config.set("UI_Settings", "blend_amount", str(self.blend_amount))
         self.config.set("UI_Settings", "model", self.depth_method_dropdown.currentText())
         self.config.set("UI_Settings", "smoothing_method", self.smoothing_dropdown.currentText())
+        self.config.set("UI_Settings", "use_selected_color", str(self.use_selected_color))
+        self.config.set("UI_Settings", "selected_color", str(self.current_selected_color))
         # self.config.set("UI_Settings", "local_depth_folder", self.local_depth_folder)
 
         # Add more settings as needed...
@@ -1375,6 +1385,10 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.blend_slider.setValue(100)
         self.smoothing_dropdown.setCurrentIndex(0)
         self.depth_method_dropdown.setCurrentIndex(0)
+        self.current_selected_color = None
+        self.color_display.clear()
+        self.update_color_swatch(self.default_color)  # Reset to white
+        self.color_display.setText("<None>")
         # self.local_folder_input.setText(os.path.join(os.path.split(__file__)[0], "Depth Models"))
         # if not os.path.exists(self.local_depth_folder):
         #     os.makedirs(self.local_depth_folder)
@@ -1415,6 +1429,8 @@ class MainWindow_ImageProcessing(QMainWindow):
                 self.blend_amount = self.config.getint("UI_Settings", "blend_amount", fallback=100)
                 self.model = self.config.get("UI_Settings", "model", fallback="DepthAnythingV2")
                 self.smoothing_method = self.config.get("UI_Settings", "smoothing_method", fallback="anisotropic")
+                self.use_selected_color = self.config.getboolean("UI_Settings", "use_selected_color", fallback=False)
+                list_string = self.config.get("UI_Settings", "selected_color", fallback="<None>")
 
                 # Apply loaded values to the UI components
                 self.invert_checkbox.setChecked(self.invert_colors_enabled)
@@ -1429,6 +1445,15 @@ class MainWindow_ImageProcessing(QMainWindow):
                 self.percentage_input.setText(str(self.depth_drop_percentage))
                 self.sensitivity_slider.setValue(self.sensitivity)
                 self.line_thickness_slider.setValue(self.line_thickness)
+                if self.use_selected_color:
+                    self.current_selected_color = ast.literal_eval(list_string)
+                    self.update_color_swatch(self.current_selected_color)
+                else:
+                    self.current_selected_color = None
+                    self.color_display.clear()
+                    self.use_selected_color = False
+                    self.update_color_swatch(self.default_color)  # Reset to white
+                    self.color_display.setText("<None>")
 
                 # Fix for AttributeError: MatchFixedString
                 index = self.depth_method_dropdown.findText(self.model, Qt.MatchFlag.MatchExactly)
@@ -1457,6 +1482,8 @@ class MainWindow_ImageProcessing(QMainWindow):
         ("blend_amount", "blend_slider"),
         ("model", "depth_method_dropdown"),
         ("smoothing_method", "smoothing_dropdown"),
+        ("use_selected_color", "use_selected_color_checkbox"),
+        ("current_color", "color_swatch"),
         # ("local_depth_folder", "local_folder_input"),
         # ("local_depth_method", "depth_method_local_dropdown"),
     ]
