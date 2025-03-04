@@ -291,35 +291,58 @@ class DepthTo3D:
     #
     #     return solid_mesh
 
+    def remove_masked_islands(self, mask):
+        """
+        Remove all masked regions (white areas) from the mask that are not contiguous with the edge of the image.
 
-    def create_background_mask(self, image, target_size=None, color_to_remove=None, background_removal=False,
-                               background_tolerance=0):
+        :param mask: Input binary mask (numpy array, 0 for unmasked and 255 for masked areas).
+        :return: Cleaned mask where only regions connected to the image edges remain.
+        """
+        # Step 1: Create a blank mask to store the cleaned output
+        cleaned_mask = np.zeros_like(mask, dtype=np.uint8)
+
+        # Step 2: Find contours of the mask
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+        # Step 3: Check each contour to see if it touches the edges of the image
+        h, w = mask.shape
+        for contour in contours:
+            # Check if the contour connects with the edge of the image
+            is_connected_to_edge = False
+            for point in contour:
+                x, y = point[0]  # Contour points are stored as [[x, y]]
+                if x == 0 or y == 0 or x == w - 1 or y == h - 1:
+                    is_connected_to_edge = True
+                    break
+
+            # If the region is connected to the edge, keep it
+            if is_connected_to_edge:
+                cv2.drawContours(cleaned_mask, [contour], -1, 255, thickness=cv2.FILLED)
+
+        return cleaned_mask
+
+    def create_background_mask(self, image, target_size=None, color_to_remove=None,
+                               background_removal=False, background_tolerance=0):
         """
         Create a background mask for an image by removing the specified background color.
-        Smooth the edges by eroding and blending edges.
-        This method modifies the mask to remove regions instead of adding to it.
+        Smooth the edges by eroding and blending edges. After that, remove masks surrounded by unmasked areas.
 
         :param image: Input image (numpy array).
         :param target_size: Desired size of the output mask (tuple of height, width). None to keep original size.
         :param color_to_remove: Specific color to remove from the background.
         :param background_removal: Whether background removal is enabled.
         :param background_tolerance: Tolerance for background color matching.
-        :return: Smoothed mask.
+        :return: Final processed mask.
         """
         # Step 1: Background processing
-        if (color_to_remove is not None) and background_removal:
-            print(f"Removing background color based on average color {color_to_remove}")
         h, w, _ = image.shape
 
         if color_to_remove is not None:
-            # If a color to remove is provided, use it as the background color.
             if isinstance(color_to_remove, QtGui.QColor):
                 # Convert QColor to a list of RGB values
                 color_to_remove = list(color_to_remove.getRgb()[:3])  # Discard the alpha channel
-            # Convert to uint8 numpy array
             background_color = np.array(color_to_remove, dtype=np.uint8)
         else:
-            # Otherwise, calculate the background color from image corners
             corners = [image[0, 0], image[0, w - 1], image[h - 1, 0], image[h - 1, w - 1]]
             avg_color = np.mean(corners, axis=0)
 
@@ -334,31 +357,37 @@ class DepthTo3D:
             print(f"Masking background color = {background_color.tolist()}")
             mask = cv2.inRange(image, background_color - background_tolerance, background_color + background_tolerance)
         else:
-            # If no background color is available, create a default mask.
             mask = np.zeros((h, w), dtype=np.uint8)  # Default to all zeros (no mask)
 
-        # Step 3: Resize the mask if a target size is specified
-        if target_size and target_size != (0, 0) and target_size != (w, h):
-            mask_resized = cv2.resize(mask, (target_size[1], target_size[0]), interpolation=cv2.INTER_NEAREST)
-        else:
-            mask_resized = mask
+        # # Step 3: Resize the mask if a target size is specified
+        # if target_size and target_size != (0, 0) and target_size != (w, h):
+        #     mask = cv2.resize(mask, (target_size[1], target_size[0]), interpolation=cv2.INTER_NEAREST)
+        #
+        # # Step 4: Smooth the edges of the mask
+        # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (4, 4))  # Larger kernel for smoothing
+        # mask_dilate1 = cv2.dilate(mask, kernel, iterations=3)
+        # mask_dilate2 = cv2.addWeighted(mask, 0.7, mask_dilate1, 0.3, 0)
+        #
+        # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))  # Smaller kernel for edge adjustment
+        # mask_eroded = cv2.erode(mask, kernel, iterations=2)
+        #
+        # smooth_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
+        # mask_smoothed = cv2.dilate(mask_eroded, smooth_kernel, iterations=2)
+        # smoothed_mask = cv2.addWeighted(mask_dilate2, 0.8, mask_smoothed, 0.2, 0)
 
-        # Step 4: Smooth the edges of the mask
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (4, 4))  # Larger kernel for smoothing
-        mask_dilate1 = cv2.dilate(mask_resized, kernel, iterations=3)
-        mask_dilate2 = cv2.addWeighted(mask_resized, 0.7, mask_dilate1, 0.3, 0)
+        # Step 5: Remove masked regions surrounded by unmasked areas
+        # contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        cleaned_mask = np.zeros_like(mask)  # Start with a blank mask
 
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))  # Smaller kernel for edge adjustment
-        mask_eroded = cv2.erode(mask_resized, kernel, iterations=2)  # Erode to remove background regions
+        for contour in contours:
+            # Filter contours based on their area
+            if cv2.contourArea(contour) > 0:  # Keep significant contours
+                cv2.drawContours(cleaned_mask, [contour], -1, (255), thickness=cv2.FILLED)
 
-        smooth_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
-        mask_smoothed = cv2.dilate(mask_eroded, smooth_kernel, iterations=2)  # Soft dilation for edge adjustment
-        # # Step 5: Blend the smoothed mask with the original
-        smoothed_mask = cv2.addWeighted(mask_dilate2, 0.8, mask_smoothed, 0.2, 0)
-
+        cleaned_mask = self.remove_masked_islands(cleaned_mask)
         # Return the finalized mask (foreground is marked as white)
-        return smoothed_mask
-
+        return cleaned_mask
 
     def create_3d_mesh(self, image, depth, filename, smoothing_method, target_size, flat_back, grayscale_enabled,
                        edge_detection_enabled, invert_colors_enabled=False, depth_amount=1.0, project_on_original=False,
