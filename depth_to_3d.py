@@ -150,7 +150,7 @@ class DepthTo3D:
         """
         print(f"Estimating depth with target size: {target_size}...")
         img_h, img_w, _ = image.shape  # Use NumPy shape to get height and width
-        depth = None
+        print(f"Input image size: {img_h}x{img_w}")
 
         # Convert the image to grayscale for cv2.minMaxLoc
         gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -166,9 +166,9 @@ class DepthTo3D:
 
         if flip:
             resized_image = cv2.flip(resized_image, 1)  # Flip horizontally
-
+            print(f"Flipped image size = {resized_image.shape}")
         # Convert to tensor
-
+        
         # Predict depth
         with torch.no_grad():
             if self.model_type == "dense_depth" or self.model_type == "leres":
@@ -189,7 +189,7 @@ class DepthTo3D:
                         outputs = self.model(**inputs)
                         predicted_depth = outputs.predicted_depth
 
-                    if target_size and target_size != (0, 0) and target_size != (img_w, img_h):
+                    if target_size and target_size != (0, 0) and target_size != (img_h, img_w):
                         print("Target size specified, resizing to match.")
                         # Interpolate to original size
                         depth = torch.nn.functional.interpolate(
@@ -236,11 +236,13 @@ class DepthTo3D:
         print(f"Initial depth map shape: {depth.shape}, values: {depth.min()} - {depth.max()}.")
         # Resize depth back to original image dimensions
         depth = depth.squeeze().cpu().numpy()
-        print(f"Resized depth map shape: {depth.shape}, values: {depth.min()} - {depth.max()} {np.sum(depth < 0)} negative values.")
+        print(f"Squeezed depth map shape: {depth.shape}, values: {depth.min()} - {depth.max()} {np.sum(depth < 0)} negative values.")
         # depth[depth < 0] = 0  # replace negative values with 0
-        if target_size and target_size != (0, 0) and target_size != (img_w, img_h):
+        if target_size and target_size != (0, 0) and target_size != (img_h, img_w):
+            print(f"Target size specified: {target_size} Resizing to match.")
             # Limit the depth map size
-            depth = cv2.resize(depth, target_size)  # Match original input image size
+            depth = cv2.resize(depth, (target_size[1], target_size[0]), interpolation=cv2.INTER_NEAREST_EXACT)  # Match original input image size
+            print(f"Resized depth map shape: {depth.shape}, values: {depth.min()} - {depth.max()} {np.sum(depth < 0)} negative values.")
 
         # Normalize for visualization (optional)
         depth = cv2.normalize(depth, None, 0, 255, norm_type=cv2.NORM_MINMAX)
@@ -321,14 +323,13 @@ class DepthTo3D:
 
         return cleaned_mask
 
-    def create_background_mask(self, image, target_size=None, color_to_remove=None,
+    def create_background_mask(self, image, color_to_remove=None,
                                background_removal=False, background_tolerance=0):
         """
         Create a background mask for an image by removing the specified background color.
         Smooth the edges by eroding and blending edges. After that, remove masks surrounded by unmasked areas.
 
         :param image: Input image (numpy array).
-        :param target_size: Desired size of the output mask (tuple of height, width). None to keep original size.
         :param color_to_remove: Specific color to remove from the background.
         :param background_removal: Whether background removal is enabled.
         :param background_tolerance: Tolerance for background color matching.
@@ -359,25 +360,21 @@ class DepthTo3D:
         else:
             mask = np.zeros((h, w), dtype=np.uint8)  # Default to all zeros (no mask)
 
-        # # Step 3: Resize the mask if a target size is specified
-        # if target_size and target_size != (0, 0) and target_size != (w, h):
-        #     mask = cv2.resize(mask, (target_size[1], target_size[0]), interpolation=cv2.INTER_NEAREST)
-        #
-        # # Step 4: Smooth the edges of the mask
-        # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (4, 4))  # Larger kernel for smoothing
+        # # Step 3: Smooth the edges of the mask
+        # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))  # Larger kernel for smoothing
         # mask_dilate1 = cv2.dilate(mask, kernel, iterations=3)
-        # mask_dilate2 = cv2.addWeighted(mask, 0.7, mask_dilate1, 0.3, 0)
+        # # mask_dilate2 = cv2.addWeighted(mask, 0.7, mask_dilate1, 0.3, 0)
         #
-        # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))  # Smaller kernel for edge adjustment
-        # mask_eroded = cv2.erode(mask, kernel, iterations=2)
+        # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))  # Smaller kernel for edge adjustment
+        # mask_eroded = cv2.erode(mask, kernel, iterations=1)
         #
-        # smooth_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
-        # mask_smoothed = cv2.dilate(mask_eroded, smooth_kernel, iterations=2)
-        # smoothed_mask = cv2.addWeighted(mask_dilate2, 0.8, mask_smoothed, 0.2, 0)
+        # mask_smoothed = cv2.dilate(mask_eroded, kernel, iterations=1)
+        # smoothed_mask = cv2.addWeighted(mask_smoothed, 0.8, mask_smoothed, 0.2, 0)
+        # contours, _ = cv2.findContours(smoothed_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        # cleaned_mask = np.zeros_like(smoothed_mask)  # Start with a blank mask
 
-        # Step 5: Remove masked regions surrounded by unmasked areas
-        # contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        # Step 4: Remove masked regions surrounded by unmasked areas
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         cleaned_mask = np.zeros_like(mask)  # Start with a blank mask
 
         for contour in contours:
@@ -422,7 +419,8 @@ class DepthTo3D:
 
         # Step 1: Background processing
         h, w, _ = image.shape
-        print(f"Image size: {w}x{h}, target_size: {target_size}")
+        print(f"Image size: {h}x{w}, target_size: {target_size}")
+        image = cv2.resize(image, (target_size[1], target_size[0]), interpolation=cv2.INTER_LINEAR)
         # If color_to_remove is provided, use it as the background color.
         if color_to_remove is not None:
             # Handle QColor if it is passed
@@ -445,24 +443,22 @@ class DepthTo3D:
         if background_color is not None:
             # print(f"Masking background color = {background_color.tolist()}")
             # mask = cv2.inRange(image, background_color - background_tolerance, background_color + background_tolerance)
-            mask = self.create_background_mask(image, target_size=target_size, color_to_remove=color_to_remove,
-                                               background_removal=background_removal, background_tolerance=background_tolerance)
-            if target_size and target_size != (0, 0) and target_size != (w, h):
-                mask_resized = cv2.resize(mask, (target_size[1], target_size[0]), interpolation=cv2.INTER_NEAREST)
-            else:
-                mask_resized = mask
-            mask_resized = cv2.bitwise_not(mask_resized)
-            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-            mask_resized = cv2.dilate(mask_resized, kernel, iterations=2)
+            mask = self.create_background_mask(image,
+                                               color_to_remove=color_to_remove,
+                                               background_removal=background_removal,
+                                               background_tolerance=background_tolerance)
+            mask = cv2.bitwise_not(mask)
+            # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+            # mask = cv2.dilate(mask, kernel, iterations=2)
         else:
-            mask_resized = np.ones(target_size, dtype=np.uint8) * 255
+            mask = np.ones(target_size, dtype=np.uint8) * 255
 
-        depth[mask_resized == 0] = 0
-        image = cv2.resize(image, (target_size[1], target_size[0]), interpolation=cv2.INTER_LINEAR)
+        print(f"Image size: {image.shape}, depth size: {depth.shape}, mask size: {mask.shape}")
+        depth[mask == 0] = 0
         # Ensure consistent RGB color conversion
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-        image[mask_resized == 0] = 0
+        image[mask == 0] = 0
 
         # Step 2: Create 3D vertices
         h, w = target_size
@@ -686,8 +682,7 @@ class DepthTo3D:
         # cv2.imwrite(fname, image)
         img_h, img_w, _ = image.shape
         if target_size == (0,0):
-            size = img_h if img_h < img_w else img_w
-            target_size = (size, size)
+            target_size = (img_h, img_w)
 
         if image is None:
             raise ValueError(f"Image not found: {image_path}")

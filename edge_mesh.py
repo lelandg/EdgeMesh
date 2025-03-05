@@ -911,6 +911,27 @@ class MainWindow_ImageProcessing(QMainWindow):
         else:
             return new_smaller, new_larger  # new_width, new_height
 
+    def scale_proportionally(self, image, new_width):
+        """
+        Scales the given OpenCV image proportionally to a specified width.
+
+        :param image: The input OpenCV image to be scaled.
+        :param new_width: The desired new width of the image.
+        :return: Width, Height
+        """
+        # Ensure the input image is valid
+        if image is None or new_width <= 0:
+            raise ValueError("Invalid image or new width.")
+
+        # Get original image dimensions
+        original_height, original_width = image.shape[:2]
+
+        # Calculate the scaling factor and new height
+        scaling_factor = new_width / original_width
+        new_height = int(original_height * scaling_factor)
+
+        return new_height, new_width
+
     def process_image(self):
         if not self.image_path:
             self.show_error("Please load an image first!")
@@ -965,11 +986,11 @@ class MainWindow_ImageProcessing(QMainWindow):
             else:
                 background_color = None
 
-            width, height = self.image.shape[:2]
+            # width, height = self.image.shape[:2]
             if self.resolution == 0:
                 target_size = (0,0)
             else:
-                target_size = (self.resolution, self.resolution)
+                target_size = self.scale_proportionally(self.image, self.resolution)
             if self.verbose: print(f"Target Size: {target_size}")
             # Pass depth_amount and max_depth into depth_to_3d processing
             self.mesh_3d, self.background_color = self.depth_to_3d.process_image(

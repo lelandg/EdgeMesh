@@ -166,6 +166,8 @@ This application combines cutting-edge computer vision and 3D rendering techniqu
 
 
 Version history:
+* 0.6.3:
+  * Fixed the "square image" issue. 
 * 0.6.2:
   * Fixed: background removal is only done from the edges. Even when you use a large tolerance! Finally! :) 
 * 0.6.1:
