@@ -15,7 +15,7 @@ import traceback
 from qt_extensions import FlowLayout, ExpandableLineEdit, state_to_bool
 from smoothing_depth_map_utils import SmoothingDepthMapUtils
 
-debug = True # Set False to disable debug messages. Yes. We do need this.
+debug = False # Set False to disable debug messages. Yes. We do need this.
 verbose = True # Not used, yet. When I add logging, this will also print messages to console when enabled.
 visualize_images = False # Set to True to visualize images in a GUI window. Requires OpenCV.
 
@@ -1448,6 +1448,7 @@ class MainWindow_ImageProcessing(QMainWindow):
                 self.flat_back_enabled = self.config.getboolean("UI_Settings", "flat_back", fallback=False)
                 self.depth_drop_percentage = self.config.getfloat("UI_Settings", "depth_drop_percentage", fallback=0.0)
                 self.blend_amount = self.config.getint("UI_Settings", "blend_amount", fallback=100)
+                self.blend_slider.setValue(self.blend_amount)
                 self.model = self.config.get("UI_Settings", "model", fallback="DepthAnythingV2")
                 self.smoothing_method = self.config.get("UI_Settings", "smoothing_method", fallback="anisotropic")
                 self.use_selected_color = self.config.getboolean("UI_Settings", "use_selected_color", fallback=False)

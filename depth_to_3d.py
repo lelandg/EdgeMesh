@@ -178,7 +178,7 @@ class DepthTo3D:
                 depth = self.model(img_tensor)[0]  # Replace with respective model's output logic
             else:
                 if self.model_type == "depth_anything_v2":
-                    img_input = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+                    img_input = Image.fromarray(cv2.cvtColor(resized_image, cv2.COLOR_BGR2RGB))
                     img_tensor = self.transform(img_input).unsqueeze(0).to(self.device) if self.transform else None
                     # Depth Anything V2 (local weights)
                     # Prepare image for the model
@@ -203,8 +203,8 @@ class DepthTo3D:
                         # Interpolate to original size
                         depth = torch.nn.functional.interpolate(
                             predicted_depth.unsqueeze(1),
-                            scale_factor=1.0,
-                            # size=(img_h, img_w),  # Match original image dimensions here
+                            # scale_factor=1.0,
+                            size=(img_h, img_w),  # Match original image dimensions here
                             mode="bicubic",
                             align_corners=False,
                         )
@@ -237,7 +237,7 @@ class DepthTo3D:
         # Resize depth back to original image dimensions
         depth = depth.squeeze().cpu().numpy()
         print(f"Squeezed depth map shape: {depth.shape}, values: {depth.min()} - {depth.max()} {np.sum(depth < 0)} negative values.")
-        # depth[depth < 0] = 0  # replace negative values with 0
+        depth[depth < 0] = 0  # replace negative values with 0
         if target_size and target_size != (0, 0) and target_size != (img_h, img_w):
             print(f"Target size specified: {target_size} Resizing to match.")
             # Limit the depth map size
@@ -557,9 +557,10 @@ class DepthTo3D:
         print(f"Removed {percentage}% of the lowest depth values. Original had {original_length}. Has {len(flattened)} values. Min depth value: {flattened.min()}. Max depth value: {flattened.max()}.")
         # Apply a mask to set values below the threshold to zero
         modified_depth = np.where(depth_array > threshold, depth_array, -1)
-        # min = modified_depth.min()
-        # print(f"Modified depth has {len(modified_depth)}.\nMin depth value: {min}")
-        # modified_depth = modified_depth - min # Normalize the depth values
+        min = modified_depth.min()
+        print(f"Modified depth is {modified_depth.shape}.\nMin depth value: {min}")
+        if min > 0:
+            modified_depth = modified_depth - min # Normalize the depth values
 
         return modified_depth
 
@@ -695,7 +696,7 @@ class DepthTo3D:
         fname, ext = os.path.splitext(image_path)
         cv2.imwrite(f"{fname}{self.model_type}_depth_map.png", depth)
         # Remove the lowest values. 0.05 = remove 5% of the lowest depth values.
-        # depth = self.modify_depth(depth, depth_drop_percentage)
+        depth = self.modify_depth(depth, depth_drop_percentage)
         self.depth_values, self.depth_labels = self.create_text_values_from_depth(depth)
 
         min = depth.min()

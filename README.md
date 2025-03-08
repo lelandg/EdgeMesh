@@ -3,7 +3,9 @@
 ## Introduction
 This application provides advanced functionality for processing images, performing edge detection, generating 3D meshes from depth maps, and rendering them in a 3D viewport. Primarily designed for professionals working in computer vision, 3D modeling, and similar fields, the application offers an interactive GUI to manipulate features like edge detection, smoothing methods, dynamic depth adjustments, and more.
 
-To install, you need pip.
+To install, you need pip. Use:
+`pip install -r requirements.txt`
+
 ---
 
 ## Features
@@ -166,6 +168,10 @@ This application combines cutting-edge computer vision and 3D rendering techniqu
 
 
 Version history:
+* 0.6.5:
+  * Fixed image resizing issue. Images are no longer made square before creating a 3D mesh.
+* 0.6.4:
+  * Remove depth values < 0 seems to help. 
 * 0.6.3:
   * Fixed the "square image" issue. 
 * 0.6.2:
