@@ -1,6 +1,7 @@
 __author__ = "Leland Green"
 
-import ast
+import os
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
 from _version import version
 __version__ = version
@@ -10,10 +11,6 @@ __email__ = "lelandgreenproductions@gmail.com"
 __license__ = "Commercial. License Required." # License of this script is free for all purposes.
 
 import image_processor
-import traceback
-
-from qt_extensions import FlowLayout, ExpandableLineEdit, state_to_bool
-from smoothing_depth_map_utils import SmoothingDepthMapUtils
 
 debug = False # Set False to disable debug messages. Yes. We do need this.
 verbose = True # Not used, yet. When I add logging, this will also print messages to console when enabled.
@@ -54,10 +51,14 @@ License:
 ** Moved Version History to ReadMe.md
 """
 
+import ast
+import traceback
+from qt_extensions import FlowLayout, state_to_bool
 import configparser
-import os
 import sys
-import threading
+import cv2
+import numpy as np
+import open3d as o3d
 
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QFileDialog, QLabel, QVBoxLayout, QSlider,
@@ -65,16 +66,9 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QSize, QEvent, QByteArray, QTimer
 import PyQt6.QtGui as QtGui
-from PyQt6.QtGui import QPixmap, QImage, QIntValidator, QIcon, QDoubleValidator, QResizeEvent
+from PyQt6.QtGui import QPixmap, QImage, QIntValidator, QIcon, QDoubleValidator
 from PyQt6 import QtWidgets
 from PyQt6.QtGui import QColor, QPalette
-
-
-import cv2
-import numpy as np
-import open3d as o3d
-
-
 
 def process_preview_image(image, is_grayscale=False, invert_colors=False):
     """
@@ -124,7 +118,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.max_depth = 50.0
         self.background_tolerance = 10  # Default value
         self.grayscale_enabled = False
-        self.use_processed_image_enabled = True
+        self.use_processed_image_enabled = False
         self.project_on_original = True
         self.invert_colors_enabled = False
         self.edge_thickness = 1  # Default line thickness
@@ -1410,13 +1404,12 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.color_display.clear()
         self.update_color_swatch(self.default_color)  # Reset to white
         self.color_display.setText("<None>")
+        self.use_processed_image_enabled = False
         # self.local_folder_input.setText(os.path.join(os.path.split(__file__)[0], "Depth Models"))
         # if not os.path.exists(self.local_depth_folder):
         #     os.makedirs(self.local_depth_folder)
         # self.populate_depth_method_local()
         self.update_preview()
-
-    from PyQt5.QtCore import Qt  # Ensure proper importing
 
     def load_ui_settings(self):
         """Load UI settings from the config.ini file."""
@@ -1531,8 +1524,9 @@ class MainWindow_ImageProcessing(QMainWindow):
             print(f"Error during close event: {traceback.format_exc()}")
 
 def main(arg, argv):
+    print(f"Running EdgeMesh v{__version__} by {__author__}. Run with '-h' to see help.")
     import argparse
-    parser = argparse.ArgumentParser(description="Your program description here.")
+    parser = argparse.ArgumentParser(description="EdgeMesh. Create 3D meshes from 2D photos using edge technology.")
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Enable verbose mode for more detailed output'
     )

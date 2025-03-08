@@ -168,6 +168,9 @@ This application combines cutting-edge computer vision and 3D rendering techniqu
 
 
 Version history:
+* 0.6.6:
+  * Disable "TF_ENABLE_ONEDNN_OPTS" to get precise results from tensorflow.
+  * Update main in `edge_mesh.py` to print version, author, and show '-h for help'. Not much there right now, just 'verbose'.
 * 0.6.5:
   * Fixed image resizing issue. Images are no longer made square before creating a 3D mesh.
 * 0.6.4:
