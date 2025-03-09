@@ -1405,6 +1405,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.update_color_swatch(self.default_color)  # Reset to white
         self.color_display.setText("<None>")
         self.use_processed_image_enabled = False
+        self.use_processed_image_checkbox.setChecked(False)
         # self.local_folder_input.setText(os.path.join(os.path.split(__file__)[0], "Depth Models"))
         # if not os.path.exists(self.local_depth_folder):
         #     os.makedirs(self.local_depth_folder)

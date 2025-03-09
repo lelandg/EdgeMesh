@@ -46,7 +46,7 @@ Note that some of these features are not exposed in the GUI, but are available i
 - Toggle between processed and unprocessed outputs for real-time comparisons.
 
 ### 5. **3D Viewport**
-- **Interactive Viewport**: Display generated 3D meshes in an OpenGL-based environment.
+- **Interactive Viewport**: Display generated 3D meshes in an open3d-based environment.
 - **Mesh Manipulation**:
   - Zooming and panning to adjust the view.
   - Center meshes within the viewport.
@@ -146,7 +146,7 @@ The application comprises multiple modular scripts. Key components include:
    - Depth processing and 3D mesh reconstruction are implemented within the `depth_to_3d.py`.
 
 3. **Custom Rendering**:
-   - OpenGL-based viewport handling is defined in `viewport_3d.py`.
+   - Open3D-based viewport handling is defined in `viewport_3d.py`.
 
 4. **Mesh Generation**:
    - High-level processing and mesh generation logic are encapsulated in `mesh_generator.py`.
@@ -165,6 +165,12 @@ This application combines cutting-edge computer vision and 3D rendering techniqu
 - Large files take a few seconds to minutes to load, depending on your system specs.
 - *Or* pass it file names with full path and/or liberal wildcards. (I tested multiple asterisks, for example.)
 - *Or* use it from your code to display a mesh.
+
+Notes: "Invert Colors" is intended for edge detection. (Should it just be automatic?) IDK, because it's fun
+          to have the option. It's like a filter. If you enable it, colors become their opposite, or complementary
+          color. This may be useful sometimes for a grayscale image. Or, if you have a picture of a negative! 
+          So I think it's fun _and_ useful.
+        **Warning** Use your new inverted colors with care.  
 
 
 Version history:
@@ -318,12 +324,6 @@ Version history:
 * 0.2.0 adds depth map generation from shading and light cues.
 * 0.1.0 adds edge detection and 3D mesh generation from edges.
 
-
-    Notes: "Invert Colors" is intended for edge detection. Should it just be automatic? IDK, because it's fun
-              to have the option. It's like a filter. If you enable it, colors become their opposite, or complementary
-              color. This may be useful sometimes for a grayscale image. Or, if you have a picture of a negative! 
-              So I think it's fun _and_ useful.
-            **Warning** Use your new inverted colors with care.  
 
 *   **WIP 20250213** *Leland Green, Springfield, MO, USA*   
 *   *This is a work in progress.*
