@@ -109,35 +109,15 @@ class MainWindow_ImageProcessing(QMainWindow):
         self.mesh_from_2d = None
         self._layout_references = []
         self._checkbox_references = []
-        self.line_thickness = 2
-        self.sensitivity = 150
-        self.blend_amount = 100
         self.initialized = False
-        self.resolution = 700
-        self.depth_amount = 1.0
-        self.max_depth = 50.0
-        self.background_tolerance = 10  # Default value
-        self.grayscale_enabled = False
-        self.use_processed_image_enabled = False
-        self.project_on_original = True
-        self.invert_colors_enabled = False
-        self.edge_thickness = 1  # Default line thickness
-        self.flat_back_enabled = False
-        self.edge_detection_enabled = True
         self.depth_labels = None
         self.depth_values = None
-        self.depth_drop_percentage = 0.0  # Default percentage depth drop
-        self.image_path = None  # To hold the currently loaded image path
-        self.background_color = [0, 0, 0]  # Default background color = dark gray
-        self.current_selected_color = None  # Default to white
-        self.use_selected_color = False
-        self.drop_background_enabled = False  # Initialize the variable
-        self.previous_background_enabled = False  # Store the previous state
         self.three_d_viewport = None
         self.original_pixmap = None
         self.image = None
+        self.image_path = None  # To hold the currently loaded image path
         self.processed_image = None
-        self.eyedropper_active = False
+        self.initialize_variables()
 
         try:
 
@@ -165,6 +145,29 @@ class MainWindow_ImageProcessing(QMainWindow):
         except Exception as e:
             print("Error initializing MainWindow:")
             print(traceback.format_exc())
+
+    def initialize_variables(self):
+        self.line_thickness = 2
+        self.sensitivity = 150
+        self.blend_amount = 100
+        self.resolution = 700
+        self.depth_amount = 1.0
+        self.max_depth = 50.0
+        self.background_tolerance = 10  # Default value
+        self.grayscale_enabled = False
+        self.use_processed_image_enabled = False
+        self.project_on_original = True
+        self.invert_colors_enabled = False
+        self.edge_thickness = 1  # Default line thickness
+        self.flat_back_enabled = False
+        self.edge_detection_enabled = True
+        self.depth_drop_percentage = 0.0  # Default percentage depth drop
+        self.background_color = [0, 0, 0]  # Default background color = dark gray
+        self.current_selected_color = None  # Default to white
+        self.use_selected_color = False
+        self.drop_background_enabled = False  # Initialize the variable
+        self.previous_background_enabled = False  # Store the previous state
+        self.eyedropper_active = False
 
     def _init_ui(self):
         self.central_widget = QWidget()
@@ -772,8 +775,8 @@ class MainWindow_ImageProcessing(QMainWindow):
 
         # Store the RGB color components in a readable format
         self.current_selected_color = [color.red(), color.green(), color.blue()]
-        if self.verbose:
-            print(f"Current selected color as RGB: {self.current_selected_color}")
+
+        if debug: print(f"Current selected color as RGB: {self.current_selected_color}")
 
         # Invert font color for better readability
         font_color = [255 - color.red(), 255 - color.green(), 255 - color.blue()]
@@ -867,7 +870,7 @@ class MainWindow_ImageProcessing(QMainWindow):
 
     def toggle_flat_back(self, state):
         """Enable or disable Dynamic Depth based on the checkbox state."""
-        state_to_bool(state, self.flat_back_checkbox)
+        state_to_bool(self.flat_back_checkbox, state)
         self.flat_back_enabled = self.flat_back_checkbox.isChecked()
         if self.verbose: print(f"Flat back Enabled: {self.flat_back_enabled}")
 
@@ -924,6 +927,9 @@ class MainWindow_ImageProcessing(QMainWindow):
         scaling_factor = new_width / original_width
         new_height = int(original_height * scaling_factor)
 
+        if self.verbose:
+            print(f"scale_proportionally() -- Original Image Size: {original_height}x{original_width}")
+            print(f"                       -- New Image Size: {new_height}x{new_width}")
         return new_height, new_width
 
     def process_image(self):
@@ -1114,7 +1120,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         #     self.invert_checkbox.setCheckState(Qt.CheckState.Checked)
         # else:
         #     self.invert_checkbox.setCheckState(Qt.Unchecked)
-        state_to_bool(state, self.invert_checkbox)
+        state_to_bool(self.invert_checkbox, state)
         self.invert_colors_enabled = self.invert_checkbox.isChecked()
         if self.verbose: print(f"Invert Colors Enabled: {self.invert_colors_enabled}")
         self.update_preview()
@@ -1382,30 +1388,28 @@ class MainWindow_ImageProcessing(QMainWindow):
             self.config.write(configfile)
 
     def reset_defaults(self):
-        self.invert_checkbox.setChecked(False)
-        self.grayscale_checkbox.setChecked(False)
-        self.drop_background_checkbox.setChecked(True)
-        self.background_tolerance_input.setValue(10)
-        self.resolution_input.setText("700")
-        self.line_thickness_slider.setValue(1)  # Set the desired value
-        self.edge_detection_checkbox.setChecked(True)
-        self.project_on_original_checkbox.setChecked(True)
-        self.use_processed_image_checkbox.setChecked(True)
-        self.flat_back_checkbox.setChecked(True)
-        self.percentage_input.setText("0")
-        self.sensitivity_slider.setValue(150)
-        self.percentage_input.setText("0")
-        self.depth_amount_input.setText("1.0")
-        self.min_depth_input.setText("100.0")
-        self.blend_slider.setValue(100)
-        self.smoothing_dropdown.setCurrentIndex(0)
-        self.depth_method_dropdown.setCurrentIndex(0)
-        self.current_selected_color = None
+        self.initialize_variables()
+        self.invert_checkbox.setChecked(self.invert_colors_enabled)
+        self.grayscale_checkbox.setChecked(self.grayscale_enabled)
+        self.drop_background_checkbox.setChecked(self.drop_background_enabled)
+        self.resolution_input.setText(f"{self.resolution}")
+        self.line_thickness_slider.setValue(self.line_thickness)  # Set the desired value
+        self.edge_detection_checkbox.setChecked(self.edge_detection_enabled)
+        self.project_on_original_checkbox.setChecked(self.project_on_original)
+        self.use_processed_image_checkbox.setChecked(self.use_processed_image_enabled)
+        self.flat_back_checkbox.setChecked(self.flat_back_enabled)
+        self.percentage_input.setText(f"{self.depth_drop_percentage}")
+        self.sensitivity_slider.setValue(self.sensitivity)
+        self.depth_amount_input.setText(f"{self.depth_amount}")
+        self.min_depth_input.setText(f"{self.max_depth}")
+        self.blend_slider.setValue(self.blend_amount)
+        self.background_tolerance_input.setValue(self.background_tolerance)
+        self.smoothing_dropdown.setCurrentIndex(self.smoothing_dropdown.findText(self.smoothing_method))
+        self.depth_method_dropdown.setCurrentIndex(self.depth_method_dropdown.findText(self.model))
         self.color_display.clear()
         self.update_color_swatch(self.default_color)  # Reset to white
         self.color_display.setText("<None>")
-        self.use_processed_image_enabled = False
-        self.use_processed_image_checkbox.setChecked(False)
+        self.use_processed_image_checkbox.setChecked(self.use_processed_image_enabled)
         # self.local_folder_input.setText(os.path.join(os.path.split(__file__)[0], "Depth Models"))
         # if not os.path.exists(self.local_depth_folder):
         #     os.makedirs(self.local_depth_folder)

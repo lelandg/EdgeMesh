@@ -421,6 +421,7 @@ class DepthTo3D:
         h, w, _ = image.shape
         print(f"Image size: {h}x{w}, target_size: {target_size}")
         image = cv2.resize(image, (target_size[1], target_size[0]), interpolation=cv2.INTER_LINEAR)
+        h, w, _ = image.shape
         # If color_to_remove is provided, use it as the background color.
         if color_to_remove is not None:
             # Handle QColor if it is passed
@@ -552,15 +553,23 @@ class DepthTo3D:
         flattened = depth_array.flatten()
 
         # Calculate the threshold value based on the given percentage
-        threshold = np.percentile(flattened, percentage)
+        # threshold = np.percentile(flattened, percentage)
+        percentage = percentage / 100
+        threshold = percentage * flattened.max()
 
-        print(f"Removed {percentage}% of the lowest depth values. Original had {original_length}. Has {len(flattened)} values. Min depth value: {flattened.min()}. Max depth value: {flattened.max()}.")
+        if self.verbose:
+            print(f"Removed {percentage}% of the lowest depth values. Original had {original_length}. Threshold: {threshold} "
+                  f"Has {len(flattened)} values. Min depth value: {flattened.min()}. Max depth value: {flattened.max()}.")
         # Apply a mask to set values below the threshold to zero
-        modified_depth = np.where(depth_array > threshold, depth_array, -1)
+        modified_depth = np.where(depth_array > threshold, depth_array, threshold)
         min = modified_depth.min()
-        print(f"Modified depth is {modified_depth.shape}.\nMin depth value: {min}")
+        max = modified_depth.max()
+        if self.verbose: print(f"Modified depth is {modified_depth.shape}.\nMin depth value: {min} Max depth value: {max}")
         if min > 0:
             modified_depth = modified_depth - min # Normalize the depth values
+            min = modified_depth.min()
+            max = modified_depth.max()
+            if self.verbose: print(f"Normalized depth {modified_depth.shape}.\nMin depth value: {min} Max depth value: {max}")
 
         return modified_depth
 
