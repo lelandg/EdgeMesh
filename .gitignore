@@ -209,3 +209,4 @@ setup.py
 torch_hub_model_list.py
 torch_info.txt
 build.bat
+logs/ImageResizingWithInterpolationMethods.py
