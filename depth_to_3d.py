@@ -18,7 +18,7 @@ from spinner import Spinner
 import PyQt6.QtGui as QtGui
 
 """!@brief DepthTo3D modelnames supported by the DepthTo3D class."""
-model_names = {"DenseDepth": "dense_depth", "MiDaS": "midas", "DPT": "dpt", "LeReS": "leres",
+model_names = {"MiDaS": "midas",
                "DepthAnythingV2": "depth_anything_v2", "Depth Pro": "depth_pro"}
 
 
