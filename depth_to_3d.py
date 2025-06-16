@@ -168,7 +168,7 @@ class DepthTo3D:
             resized_image = cv2.flip(resized_image, 1)  # Flip horizontally
             print(f"Flipped image size = {resized_image.shape}")
         # Convert to tensor
-        
+
         # Predict depth
         with torch.no_grad():
             if self.model_type == "dense_depth" or self.model_type == "leres":
@@ -607,9 +607,9 @@ class DepthTo3D:
 
     def pad_to_square(self, image):
         """!
-        Pads a given cv2 image to make it square.
-        - If the two corners being padded have the same color, uses that color for padding.
-        - Otherwise, uses black for padding.
+        Pads a given cv2 image to make it square with padding evenly distributed.
+        Uses the average color of the image corners for padding to create a more
+        natural transition.
 
         @param image (numpy.ndarray) The input cv2 image.
 
@@ -621,38 +621,35 @@ class DepthTo3D:
         height, width = image.shape[:2]
         channels = 1 if len(image.shape) == 2 else image.shape[2]
 
-        # Default padding color is black
-        padding_color = [0, 0, 0] if channels == 3 else 0
-
-        # Check corner colors to determine padding color
-        top_right_color = image[0, -1].tolist() if channels == 3 else image[0, -1]
-        bottom_right_color = image[-1, -1].tolist() if channels == 3 else image[-1, -1]
-        bottom_left_color = image[-1, 0].tolist() if channels == 3 else image[-1, 0]
-
-        # Determine padding dimensions
-        if height > width:
-            diff = height - width
-            pad_left = 0 # diff // 2
-            pad_right = diff # - pad_left
-            pad_top, pad_bottom = 0, 0
-            if top_right_color == bottom_right_color:
-                padding_color = top_right_color
-        elif width > height:
-            diff = width - height
-            pad_top = 0 # diff // 2
-            pad_bottom = diff # - pad_top
-            pad_left, pad_right = 0, 0
-            if bottom_right_color == bottom_left_color:
-                padding_color = bottom_right_color
-        else:
-            # Already square
+        # If already square, return the original image
+        if height == width:
             return image
 
-        # # Ensure padding_color format matches cv2 requirements
-        # if channels == 3 and isinstance(padding_color, list):
-        #     padding_color = [int(c) for c in padding_color]
-        # elif channels == 1 and isinstance(padding_color, (list, np.ndarray)):
-        #     padding_color = int(padding_color[0])
+        # Get all four corner colors
+        top_left_color = image[0, 0].tolist() if channels == 3 else int(image[0, 0])
+        top_right_color = image[0, -1].tolist() if channels == 3 else int(image[0, -1])
+        bottom_left_color = image[-1, 0].tolist() if channels == 3 else int(image[-1, 0])
+        bottom_right_color = image[-1, -1].tolist() if channels == 3 else int(image[-1, -1])
+
+        # Determine padding color by averaging the corners
+        if channels == 3:
+            padding_color = [
+                int(sum(c) / 4) for c in zip(top_left_color, top_right_color, bottom_left_color, bottom_right_color)
+            ]
+        else:
+            padding_color = int((top_left_color + top_right_color + bottom_left_color + bottom_right_color) / 4)
+
+        # Calculate padding dimensions to center the image
+        if height > width:
+            diff = height - width
+            pad_left = diff // 2
+            pad_right = diff - pad_left
+            pad_top, pad_bottom = 0, 0
+        else:  # width > height
+            diff = width - height
+            pad_top = diff // 2
+            pad_bottom = diff - pad_top
+            pad_left, pad_right = 0, 0
 
         # Add padding using cv2.copyMakeBorder
         square_image = cv2.copyMakeBorder(

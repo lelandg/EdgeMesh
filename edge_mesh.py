@@ -98,7 +98,7 @@ def process_preview_image(image, is_grayscale=False, invert_colors=False):
         image = cv2.bitwise_not(image)
     return image
 
-class MainWindow_ImageProcessing(QMainWindow):
+class MainWindowImageProcessing(QMainWindow):
     def __init__(self, image_path=None, verbose=True):
         super().__init__()
         self.verbose = verbose
@@ -1085,7 +1085,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         # return sharpened.astype(np.uint8)
         return sharpened
 
-    # In MainWindow_ImageProcessing Class, replace generate_mesh()
+    # In MainWindowImageProcessing Class, replace generate_mesh()
 
     def generate_mesh(self):
         """ Generate a 3D mesh from the processed image edges. Actually called when "Generate 2D" is clicked. """
@@ -1524,7 +1524,7 @@ class MainWindow_ImageProcessing(QMainWindow):
         """
         try:
             self._save_config()
-            super(MainWindow_ImageProcessing, self).closeEvent(event)  # Ensure the close event proceeds
+            super(MainWindowImageProcessing, self).closeEvent(event)  # Ensure the close event proceeds
         except Exception as e:
             print(f"Error during close event: {traceback.format_exc()}")
 
@@ -1537,7 +1537,7 @@ def main(arg, argv):
     )
     args = parser.parse_args()
     app = QApplication(argv)
-    window = MainWindow_ImageProcessing(verbose=args.verbose)
+    window = MainWindowImageProcessing(verbose=args.verbose)
     window.show()
     sys.exit(app.exec())
 
