@@ -1,267 +1,344 @@
-# User Documentation for the EdgeMesh Application
-# 3D Text Generator
+# 🎨 EdgeMesh - Advanced 3D Mesh Generation from Images
 
-This tool creates 3D text meshes using Open3D and PyVista.
+<div align="center">
 
-## Installation
+[![GitHub](https://img.shields.io/github/license/lelandg/EdgeMesh)](https://github.com/lelandg/EdgeMesh/blob/main/LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.12-blue)](https://www.python.org/)
+[![PyQt6](https://img.shields.io/badge/PyQt6-Latest-green)](https://www.riverbankcomputing.com/software/pyqt/)
+[![Open3D](https://img.shields.io/badge/Open3D-0.19.0-orange)](http://www.open3d.org/)
 
-There are two ways to install the required dependencies:
+**Transform 2D images into stunning 3D meshes using AI-powered depth estimation and advanced edge detection** ✨
 
-### Option 1: Automated Installation
+[**🚀 Quick Start**](#-quick-start) | [**📸 Features**](#-key-features) | [**🛠️ Installation**](#-installation) | [**📖 Documentation**](Docs/CodeMap.md) | [**🎯 Examples**](#-examples)
 
-Run the provided installation script:
+<img src="https://github.com/lelandg/EdgeMesh/assets/YOUR_IMAGE.png" alt="EdgeMesh Demo" width="600"/>
+
+</div>
+
+---
+
+## 🌟 Overview
+
+**EdgeMesh** is a powerful PyQt6-based desktop application that converts 2D images into 3D meshes using state-of-the-art depth estimation models and sophisticated edge detection algorithms. Whether you're a 3D artist, game developer, researcher, or hobbyist, EdgeMesh provides an intuitive interface for creating detailed 3D models from ordinary photographs.
+
+### 🎯 What Can EdgeMesh Do?
+
+- 🖼️ **Convert any image to a 3D mesh** in seconds
+- 🧠 **AI-powered depth estimation** using multiple models (MiDaS, DPT, ZoeDepth, Depth-Anything)
+- 🎨 **Advanced edge detection** with customizable parameters
+- 🔧 **Real-time 3D preview** with interactive viewport
+- 📁 **Export to standard formats** (.obj, .stl) for 3D printing or modeling software
+- 🎮 **SpaceMouse support** for professional 3D navigation
+
+---
+
+## ✨ Key Features
+
+### 🖼️ Image Processing
+- **Smart Background Removal** - Automatically detects and removes backgrounds based on corner colors
+- **Edge Detection** - Advanced Canny edge detection with adjustable thresholds
+- **Multiple Smoothing Methods** - Gaussian, Bilateral, Median, and Anisotropic Diffusion
+- **Grayscale Conversion** - Process images in grayscale for enhanced control
+- **Dynamic Depth Adjustment** - Create front-half meshes perfect for 3D printing
+
+### 🧠 Depth Estimation Models
+Choose from multiple state-of-the-art models:
+- **MiDaS** (Small & Large variants) - Fast and reliable
+- **DPT** (Large & Hybrid) - High accuracy
+- **ZoeDepth** (K, N, NK, N-indoor) - Specialized for different scenarios
+- **Depth-Anything** - Latest cutting-edge models
+
+### 🎨 3D Mesh Generation
+- **Depth-to-3D Conversion** - Direct conversion from depth maps
+- **Edge-based Mesh Creation** - Generate meshes from detected edges
+- **Surface Partitioning** - Intelligent surface segmentation
+- **Extrusion Projection** - Complex 3D reconstructions from contours
+- **Real-time Preview** - See your mesh as it's created
+
+### 🛠️ Professional Tools
+- **3D Text Generator** - Create 3D text meshes using the included MeshTools
+- **Mesh Manipulation** - Scale, rotate, and transform meshes
+- **Custom Coloring** - Apply gradients and color transitions
+- **Measurement Grid** - Visualize dimensions and proportions
+- **Batch Processing** - Process multiple images efficiently
+
+---
+
+## 🚀 Quick Start
+
+### 📋 Prerequisites
+
+- **Python 3.12** (⚠️ Not compatible with Python 3.13+)
+- **Windows** (primary support) or **Linux/WSL**
+- **4GB+ RAM** recommended
+- **NVIDIA GPU** (optional, for faster processing)
+
+### 🛠️ Installation
+
+#### Option 1: Automated Installation (Recommended) 🎯
 
 ```bash
+# Clone the repository
+git clone https://github.com/lelandg/EdgeMesh.git
+cd EdgeMesh
+
+# Run the automated installer
 python install_requirements.py
 ```
 
-This will install all dependencies, including Open3D 0.19.0 which is compatible with Python 3.12.
+#### Option 2: Manual Installation 📦
 
-### Option 2: Manual Installation
+```bash
+# Clone the repository
+git clone https://github.com/lelandg/EdgeMesh.git
+cd EdgeMesh
 
-If the automated installation doesn't work, try these steps:
+# Update pip
+python -m pip install --upgrade pip
 
-1. Update pip:
+# Install requirements
+pip install -r requirements.txt
+
+# For Open3D compatibility issues
+python install_open3d.py
+```
+
+### ▶️ Running EdgeMesh
+
+#### Windows 🪟
+```bash
+python edge_mesh.py
+# or simply:
+run.bat
+```
+
+#### Linux/WSL 🐧
+```bash
+python3 edge_mesh.py
+```
+
+---
+
+## 📖 How to Use
+
+### Step 1: Load an Image 📸
+Click **"Load Image"** and select any image file (PNG, JPG, etc.)
+
+### Step 2: Configure Settings ⚙️
+- **Depth Model**: Choose your preferred AI model
+- **Smoothing**: Select smoothing method and intensity
+- **Edge Detection**: Adjust thresholds for edge sensitivity
+- **Resolution**: Set mesh resolution (higher = more detail)
+
+### Step 3: Process the Image 🔄
+Click **"Generate 3D Mesh"** to create your 3D model
+
+### Step 4: Preview and Export 💾
+- Use the 3D viewport to inspect your mesh
+- **Mouse controls**: Rotate, zoom, pan
+- Export as `.obj` or `.stl` for 3D printing or further editing
+
+### Pro Tips 💡
+- Enable **"Dynamic Depth"** for 3D printing-friendly meshes
+- Use **"Remove Background"** for cleaner results
+- Try different depth models for various image types
+- Indoor scenes work best with ZoeDepth N-indoor model
+
+---
+
+## 🏗️ Architecture
+
+EdgeMesh follows a modular pipeline architecture:
+
+```
+📷 Image Input
+    ↓
+🎨 Preprocessing (Edge Detection, Smoothing)
+    ↓
+🧠 Depth Estimation (AI Models)
+    ↓
+🔨 Mesh Generation (Depth-to-3D or Edge-based)
+    ↓
+✨ 3D Viewport (Interactive Preview)
+    ↓
+💾 Export (.obj, .stl)
+```
+
+For detailed architecture information, see the [Code Map](Docs/CodeMap.md).
+
+---
+
+## 🎯 Examples
+
+### Creating a 3D Portrait
+1. Load a portrait photo
+2. Select **MiDaS Large** model
+3. Enable **Dynamic Depth**
+4. Generate and export for 3D printing
+
+### Architectural Visualization
+1. Load building photograph
+2. Use **DPT Hybrid** for accuracy
+3. Enable edge detection for sharp details
+4. Export to modeling software
+
+### 3D Text Creation
+```bash
+python MeshTools/text_3d.py --text "Hello 3D" --height 100 --depth 20
+```
+
+---
+
+## 🔧 Troubleshooting
+
+### Python Version Compatibility ⚠️
+**Important**: Open3D 0.19.0 is not compatible with Python 3.13+
+
+**Solutions**:
+1. Use Python 3.12:
    ```bash
-   python -m pip install --upgrade pip
+   # Check your version
+   python --version
+
+   # If 3.13+, install Python 3.12
    ```
 
-2. Install core dependencies:
+2. Create a virtual environment:
    ```bash
-   python -m pip install numpy matplotlib
-   ```
-
-3. Install Open3D specifically:
-   ```bash
-   python -m pip install open3d==0.19.0 --no-cache-dir
-   ```
-
-4. Install remaining requirements:
-   ```bash
-   python -m pip install -r MeshTools/requirements.txt
-   ```
-
-## Troubleshooting
-
-### Python Version Compatibility
-
-**Important**: Open3D 0.19.0 is **not compatible** with Python 3.13 or newer versions.
-
-If you're using Python 3.13+, you'll encounter an error importing Open3D. This is because Open3D 0.19.0 was developed before Python 3.13 was released and hasn't been updated to support it yet.
-
-### Resolution Options:
-
-1. **Downgrade to Python 3.12 (Recommended)**:
-   - Install Python 3.12 from [python.org](https://www.python.org/downloads/)
-   - Reinstall dependencies with `python install_requirements.py`
-
-2. **Use a Python 3.12 Virtual Environment**:
-   ```bash
-   # Install Python 3.12 first
-   # Then create a virtual environment
    python3.12 -m venv venv
-
-   # On Windows
-   venv\Scripts\activate
-
-   # On Linux/Mac
-   source venv/bin/activate
-
-   # Install requirements
-   python install_requirements.py
+   source venv/bin/activate  # Linux/Mac
+   venv\Scripts\activate      # Windows
    ```
 
-3. **Wait for Open3D Update**: Future versions of Open3D may add support for Python 3.13+.
-
-### General Troubleshooting:
-
-1. Try running the `install_open3d.py` script which will detect your Python version and provide guidance:
+3. Run compatibility checker:
    ```bash
    python install_open3d.py
    ```
 
-2. If you're using Python 3.12 or earlier and still have issues, try:
-   ```bash
-   python -m pip install open3d==0.19.0 --force-reinstall --no-cache-dir
-   ```
+### Common Issues
 
-## Usage
-
-To create a 3D text mesh:
-
+**Issue**: ImportError with Open3D
+**Solution**: Reinstall with specific version
 ```bash
-python MeshTools/text_3d.py --text "Your Text" --height 100 --depth 20
+pip install open3d==0.19.0 --force-reinstall --no-cache-dir
 ```
 
-This will create a 3D mesh of your text, save it as a PLY file, and display it in a visualization window.
-## Introduction
-This application provides advanced functionality for processing images, performing edge detection, generating 3D meshes from depth maps, and rendering them in a 3D viewport. Primarily designed for professionals working in computer vision, 3D modeling, and similar fields, the application offers an interactive GUI to manipulate features like edge detection, smoothing methods, dynamic depth adjustments, and more.
-
-To install, you need pip. Use:
-`pip install -r requirements.txt`
-
----
-
-## Features
-Note that some of these features are not exposed in the GUI, but are available in the code. Like Edge Clustering, Shape Analysis, Surface Partitioning, and Extrusion Projection. These may be implemented later.
-
-### 1. **Image Processing**
-- **Image Loading**: Users can load images into the application for processing.
-- **Edge Detection**: Tools for detecting edges in grayscale or color images. Adjustable parameters include:
-  - Low and high thresholds.
-  - Edge thickness.
-  - Option to project on the original image or a clean canvas.
-- **Grayscale Conversion**: Option to process images in grayscale for better control over data visualization.
-
-### 2. **Depth Map Processing**
-- **Depth-to-3D Conversion**:
-  - Converts an image with depth information into a 3D mesh.
-  - Model options to suit various use cases (e.g., `DepthTo3D` class provides customizable depth translation).
-- **Depth Smoothing Techniques**:
-  - Gaussian Smoothing.
-  - Bilateral Smoothing.
-  - Median Smoothing.
-  - Anisotropic Diffusion.
-- **Dynamic Depth Adjustments**:
-  - Users can dynamically toggle depth adjustments for better representation of 3D objects.
-
-### 3. **3D Mesh Generation**
-- **Processing Mesh**: The application processes image data to generate 3D models using a variety of techniques. Features include:
-  - **Edge Clustering**: Analyze and cluster detected edges.
-  - **Shape Analysis**: Extract geometrical primitives such as polygons and ellipses.
-  - **Surface Partitioning**: Segment surfaces into regions for reconstruction.
-  - **Extrusion Projection**: Handle complex 3D reconstructions from contours.
-- **Visualization**:
-  - Options to visualize edge clustering, depth map, partitioning, and extruded edges.
-
-### 4. **Image Manipulation and Visualization**
-- Resize and sharpen processed images for best results in edge and mesh processing.
-- If you select "Remove Background" and all four corners of the image are the same color, the background is removed automatically.
-- Toggle between processed and unprocessed outputs for real-time comparisons.
-
-### 5. **3D Viewport**
-- **Interactive Viewport**: Display generated 3D meshes in an open3d-based environment.
-- **Mesh Manipulation**:
-  - Zooming and panning to adjust the view.
-  - Center meshes within the viewport.
-  - Export meshes as `.obj` or `.stl` files for external use.
-- **Background Color Customization**: Change the background color of the viewport automatically when background is detected.
-
-### 6. **Edge Detection**
-- Utilize the `detect_and_project_edges` function for fine-tuned edge detection.
-- Adjustable parameters include:
-  - Thresholds for edge sensitivity.
-  - Edge thickness.
-  - Projection options for detected edges.
-
-### 7. **Configuration-Based Customization**
-- Configuration file support for maintaining user preferences and settings.
-- Save and load custom configurations for workflow consistency.
-
-### 8. **Exporting and Saving**
-- Export processed images or meshes in multiple formats for further use in modeling software or analysis.
-- Save states within the application to retain project-specific information.
+**Issue**: CUDA/GPU not detected
+**Solution**: Install PyTorch with CUDA support
+```bash
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+```
 
 ---
 
-## How to Use the Application
+## 📚 Documentation
 
-### Step 1: Load an Image
-1. Start by loading the image using the **Load Image** button in the GUI.
-2. Select the image path, and it will appear in the workspace for further operations.
-
-### Step 2: Adjust Image Settings (Optional)
-- Set parameters for smoothness, edge detection sensitivity, resolution, and grayscale conversion.
-- It's important to realize that you'll be processing the image on the left, **Unless** you select **Use Processed Image**. Then you'll be processing the image on the right.
-
-### Step 3: Perform Edge Detection
-1. Enable the **Edge Detection Checkbox** to perform edge detection on the image.
-2. Adjust thresholds, thickness, and select options to project the edges on the original image or a plain background.
-
-### Step 4: Depth Map Adjustments (Optional)
-1. Utilize depth adjustment inputs to modify how the 3D mesh should be shaped from the depth map.
-2. Toggle the **Dynamic Depth** to create only the "front half" of the mesh. This is useful for 3D printing. Normally, the front half (that we can see) is mirrored to the back half.
-
-
-### Step 5: Generate 3D Mesh
-1. Click the **Generate 3D Mesh** button to process the loaded image into a 3D mesh.
-2. Visualize intermediate steps like depth maps, edge detection, and surface partitioning if visualization options are enabled.
-
-### Step 6: Render Mesh in 3D Viewport
-1. The 3D mesh is automatically loaded into the viewport. Use pan, zoom, and background customization to adjust the view.
-2. Export the mesh in `.obj` or `.stl` formats using the corresponding buttons.
-
-### Step 7: Save and Export
-- Save your project or export the resulting mesh/image for use in other tools or workflows.
-
-### Caveats
-- When **Use Processed Image** is enabled, and **Grayscale Mode** or **Edge Detection** are also selected, this will affect the edge detection and depth map generation process. 
+- 📖 [**Code Map**](Docs/CodeMap.md) - Complete project structure and navigation
+- 🔄 [**3D Mesh Creation Flow**](docs/3D_Mesh_Creation_Flow.md) - Detailed processing pipeline
+- 📝 [**Version History**](docs/Versions.md) - Release notes and changes
+- 🛠️ [**API Reference**](Docs/CodeMap.md#core-application) - Detailed class and method documentation
 
 ---
 
-## Key User Interface Components
+## 🤝 Contributing
 
-### Buttons
-- **Load Image**: Select and load images for processing.
-- **Generate Mesh**: Process the currently loaded image into a 3D mesh.
-- **Export Mesh**: Save the final mesh in the desired format.
+We welcome contributions! Here's how you can help:
 
-### Toggles and Checkboxes
-- **Grayscale**: Toggle grayscale conversion for the image.
-- **Edge Detection**: Enable edge detection and configuration.
-- **Dynamic Depth**: Dynamically adjust depth values.
+1. 🍴 Fork the repository
+2. 🌿 Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. 💻 Make your changes
+4. ✅ Test thoroughly
+5. 📝 Commit (`git commit -m 'Add AmazingFeature'`)
+6. 📤 Push (`git push origin feature/AmazingFeature`)
+7. 🎯 Open a Pull Request
 
-### Inputs
-- **Thresholds and Sensitivity Sliders**: Adjust edge detection parameters such as sensitivity and thresholds.
-- **Resolution**: Set the resolution of the 3D mesh.
-- **Depth Input**: Modify the amount of depth applied.
+### Development Setup
 
-### Viewport
-- **Mesh Viewer**: A real-time 3D viewer that allows for mesh inspection.
-- **Pan/Zoom Controls**: Interactive manipulation of the 3D viewport.
+```bash
+# Clone with submodules
+git clone --recursive https://github.com/lelandg/EdgeMesh.git
 
----
+# Install in development mode
+pip install -e .
 
-## Notes on Additional Features
-- The application is extensible, allowing developers to enhance existing methods or add new features by modifying/integrating additional utility files.
-- Debugging tools and logging are implemented for troubleshooting or refining operations.
+# Run tests (when available)
+python -m pytest
+```
 
 ---
 
-## Advanced Features for Developers
+## 🌐 Related Projects
 
-The application comprises multiple modular scripts. Key components include:
+### 🎨 ImageAI by Leland Green
+For AI-powered image generation that can serve as input for 3D mesh creation, check out [**ImageAI**](https://github.com/lelandg/ImageAI) - a comprehensive tool supporting multiple AI providers including:
+- Google Gemini
+- OpenAI DALL-E
+- Stability AI
+- Local Stable Diffusion
 
-1. **Image Preprocessing**:
-   - Smoothing techniques provided in `smoothing_depth_map_utils.py`.
-   - Versatile edge detection using `edge_detection.py`.
-
-2. **3D Processing**:
-   - Depth processing and 3D mesh reconstruction are implemented within the `depth_to_3d.py`.
-
-3. **Custom Rendering**:
-   - Open3D-based viewport handling is defined in `viewport_3d.py`.
-
-4. **Mesh Generation**:
-   - High-level processing and mesh generation logic are encapsulated in `mesh_generator.py`.
-
-These scripts employ libraries like OpenCV and NumPy for computational efficiency.
+Perfect for creating unique images to convert into 3D meshes! 🚀
 
 ---
 
-## Conclusion
+## 👨‍💻 Author
 
-This application combines cutting-edge computer vision and 3D rendering techniques to provide a robust tool for mesh generation from depth maps. With its extensive customization options and intuitive GUI, it is suitable for both professionals and enthusiasts in the fields of 3D modeling and image analysis.
-- *A bonus utility is **viewport_3d.py**.* It can be used standalone or imported into your code.
-- It now has export_mesh_as_obj() and export_mesh_as_stl() methods, and a SUPPORTED_EXTENSIONS list, so you can be sure of your file type(s) before import/export!
-- It takes a list of mesh files as arguments and opens a viewport for each valid file. (One at a time.)
-- Be careful when loading a lot of files! *Especially* if they're large. It will work just fine, but you must wait for each window to close before the next one opens. For this reason, running from a Python IDE like PyCharm is very recommended. From there, you can press <Ctrl>+<F2> to stop the program. (I'm sure other IDEs have similar features.)
-- Large files take a few seconds to minutes to load, depending on your system specs.
-- *Or* pass it file names with full path and/or liberal wildcards. (I tested multiple asterisks, for example.)
-- *Or* use it from your code to display a mesh.
+**Leland Green**
+- 🌐 Website: [LelandGreen.com](https://www.lelandgreen.com)
+- 📧 Email: contact@lelandgreen.com
+- 💬 Discord: [The Intersection of Art and AI](https://discord.gg/a64xRg9w)
+- 🐙 GitHub: [@lelandg](https://github.com/lelandg)
 
-Notes: "Invert Colors" is intended for edge detection. (Should it just be automatic?) IDK, because it's fun
-          to have the option. It's like a filter. If you enable it, colors become their opposite, or complementary
-          color. This may be useful sometimes for a grayscale image. Or, if you have a picture of a negative! 
-          So I think it's fun _and_ useful.
-        **Warning** Use your new inverted colors with care.  
+*Also creator of [ImageAI](https://github.com/lelandg/ImageAI) - Advanced AI Image & Video Generation Tool*
+
+---
+
+## 📄 License
+
+This project is proprietary software. Please see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- **Open3D Team** - For the excellent 3D processing library
+- **PyTorch Team** - For deep learning framework
+- **MiDaS Contributors** - For depth estimation models
+- **Qt/PyQt6** - For the robust GUI framework
+- **Community Contributors** - For feedback and improvements
+
+---
+
+## 🚀 Roadmap
+
+### Coming Soon 🔜
+- [ ] 🤖 More AI models (SAM integration)
+- [ ] 📱 Mobile companion app
+- [ ] ⚡ GPU acceleration optimizations
+- [ ] 🔧 Plugin system for custom processors
+
+### Future Vision 🔮
+- Real-time 3D reconstruction from webcam
+- VR/AR export capabilities
+- Cloud processing for large batches
+- AI-assisted mesh refinement
+
+---
+
+## 💖 Support
+
+If you find EdgeMesh useful, please:
+- ⭐ Star the repository
+- 🐛 Report bugs via [Issues](https://github.com/lelandg/EdgeMesh/issues)
+- 💡 Suggest features
+- 📣 Share with others
+- 🤝 Join our [Discord Community](https://discord.gg/a64xRg9w)
+
+---
+
+<div align="center">
+
+**Made with ❤️ by [Leland Green](https://www.lelandgreen.com)**
+
+[🔝 Back to Top](#-edgemesh---advanced-3d-mesh-generation-from-images)
+
+</div>

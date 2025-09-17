@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(if [ -f \"pytest.ini\" ])",
+      "Bash([ -f \"setup.cfg\" ])",
+      "Bash([ -f \"tox.ini\" ])",
+      "Bash([ -f \".pre-commit-config.yaml\" ])",
+      "Bash(then echo \"Found test/linting config files\")",
+      "Bash(else echo \"No test/linting config files found\")",
+      "Bash(fi)",
+      "Read(//home/leland/.claude/**)",
+      "Read(//mnt/d/Documents/Code/GitHub/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
