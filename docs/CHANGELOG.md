@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+## [0.6.7] - 2026-08-07
+
+### Changed
+- Unified agent instructions: `AGENTS.md` is now the canonical guide for all AI coding CLIs, with `CLAUDE.md` and `GEMINI.md` as thin `@import` pointers.
+- Added the even-numbered Python minor version rule to `AGENTS.md`, and a WSL runbook (`docs/python-3.14-wsl-runbook-2026-08-07.html`) for installing Python 3.14 alongside 3.12 — EdgeMesh stays on 3.12 until Open3D ships wheels past cp312.
+- Adopted version-manager conventions: `version.py` is the canonical version location (`_version.py` is now a re-export shim), and `docs/Versions.md` was renamed to `docs/CHANGELOG.md`.
+- Normalized line endings across the tree; `.venv_linux/` is now git-ignored.
+- Updated MeshTools submodule and relaxed the open3d version pin.
+- Added project documentation, license, and architecture map.
+
+### Added
+- `Plans/3D_Face_Reconstruction_PRD.md` — product requirements for 3D face reconstruction.
+
 Version history (entries below 0.6.7 use the legacy format):
 * 0.6.6:
   * Disable "TF_ENABLE_ONEDNN_OPTS" to get precise results from tensorflow.
