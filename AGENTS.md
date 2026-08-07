@@ -22,13 +22,13 @@ python3 edge_mesh.py
 ### Installing Dependencies
 ```bash
 # Automated installation (recommended)
-python install_requirements.py
+python3 install_requirements.py
 
 # Manual installation
 pip install -r requirements.txt
 
 # For Open3D compatibility issues with Python 3.13+
-python install_open3d.py
+python3 install_open3d.py
 ```
 
 ### Building Standalone Executable
@@ -79,6 +79,8 @@ Located in `MeshTools/` directory, provides:
 ### Python Version Compatibility
 - **Critical**: Open3D 0.19.0 is NOT compatible with Python 3.13+
 - Use Python 3.12 or earlier for full functionality
+- Prefer **even-numbered** Python minor versions (3.12, 3.14, ...); if a
+  dependency forces an odd version, say so explicitly
 - The project includes `install_open3d.py` to detect version and provide guidance
 
 ### Image Processing Flow

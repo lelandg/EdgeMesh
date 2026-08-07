@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python 3.14 on WSL — Runbook | ChameleonLabs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Albert+Sans:ital,wght@0,300..800;1,300..800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* dark editorial palette */
+    --bg: #10140f;
+    --bg-2: #1f2719;
+    --card: #181e16;
+    --edge: #2c3527;
+    --text: #eef0e8;
+    --text-soft: #aab4a2;
+    --text-faint: #7d8579;
+    --accent: #6fdc6f;
+    --accent-2: #3f8f44;
+    --warn: #f2b13c;
+    --danger: #e0654f;
+    --dot: rgba(238,240,232,0.035);
+    --glow: rgba(111,220,111,0.10);
+    --shadow: rgba(0,0,0,0.4);
+    --mono: 'IBM Plex Mono', monospace;
+    color-scheme: dark;
+  }
+  [data-theme="light"] {
+    --bg: #f6f3ec;
+    --bg-2: #efeadf;
+    --card: #fffdf8;
+    --edge: #d8d2c2;
+    --text: #1d231c;
+    --text-soft: #4a5347;
+    --text-faint: #7d8579;
+    --accent: #2e7d32;
+    --accent-2: #7cb87f;
+    --warn: #b97309;
+    --danger: #b03a2e;
+    --dot: rgba(29,35,28,0.05);
+    --glow: rgba(67,160,71,0.10);
+    --shadow: rgba(29,35,28,0.10);
+    color-scheme: light;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Albert Sans', sans-serif;
+    font-size: 17px;
+    line-height: 1.66;
+    transition: background-color 0.35s ease, color 0.35s ease;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 50% -5%, var(--glow), transparent 60%),
+      radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0);
+    background-size: auto, 28px 28px;
+  }
+  .sheet { max-width: 900px; margin: 0 auto; padding: 0 28px 90px; position: relative; z-index: 1; }
+
+  header.masthead { padding: 56px 0 36px; }
+  .kicker {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--accent); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+    margin-bottom: 28px;
+  }
+  .kicker .brand::before { content: "◆ "; color: var(--warn); }
+  .kicker a { color: var(--accent); text-decoration: none; }
+  .kicker a:hover { text-decoration: underline; }
+  .kicker-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .theme-toggle {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
+    background: var(--card); border: 1px solid var(--edge); border-radius: 99px;
+    color: var(--text-soft); padding: 3px 12px; cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease;
+  }
+  .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  h1 {
+    font-family: 'Fraunces', serif; font-weight: 850;
+    font-size: clamp(40px, 7vw, 72px); line-height: 1.04; letter-spacing: -0.015em;
+  }
+  h1 em { font-style: italic; font-weight: 460; color: var(--accent); }
+  .dek { margin-top: 22px; font-size: clamp(18px, 2.3vw, 21px); font-weight: 330; color: var(--text-soft); max-width: 680px; }
+  .dek strong { color: var(--text); }
+
+  section { margin-top: 80px; }
+  .sec-head { display: flex; align-items: baseline; gap: 18px; border-bottom: 2px solid var(--edge); padding-bottom: 12px; margin-bottom: 28px; }
+  .sec-head h2 { font-family: 'Fraunces', serif; font-weight: 800; font-size: clamp(26px, 4vw, 38px); }
+  .sec-head .no { font-family: var(--mono); font-size: 13px; color: var(--accent); letter-spacing: 0.15em; }
+  section > p { max-width: 700px; color: var(--text-soft); margin-bottom: 16px; }
+  section > p strong, section li strong { color: var(--text); }
+  section a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--accent-2); }
+  section a:hover { border-bottom-color: var(--accent); }
+  code.t { font-family: var(--mono); font-size: 0.88em; background: var(--bg-2); border: 1px solid var(--edge); border-radius: 4px; padding: 1px 6px; color: var(--accent); }
+
+  .cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 28px; }
+  @media (max-width: 760px) { .cards { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--edge); border-radius: 6px; padding: 22px; }
+  .card h3 { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 720; margin-bottom: 8px; color: var(--text); }
+  .card p { font-size: 15px; color: var(--text-soft); }
+
+  /* warning banner */
+  .banner {
+    display: flex; gap: 14px; align-items: flex-start;
+    background: var(--card); border: 1px solid var(--warn); border-left-width: 4px;
+    border-radius: 6px; padding: 18px 20px; margin: 28px 0; max-width: 760px;
+  }
+  .banner .pulse {
+    flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--warn);
+    margin-top: 7px; animation: pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+  .banner p { font-size: 15.5px; color: var(--text-soft); }
+  .banner strong { color: var(--text); }
+
+  /* command block with copy button */
+  .cmd {
+    position: relative; background: var(--bg-2); border: 1px solid var(--edge);
+    border-radius: 6px; margin: 14px 0 20px; max-width: 760px;
+  }
+  .cmd pre {
+    font-family: var(--mono); font-size: 14px; line-height: 1.6; color: var(--text);
+    padding: 16px 110px 16px 18px; overflow-x: auto; white-space: pre;
+  }
+  .cmd .copy-btn {
+    position: absolute; top: 10px; right: 10px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em;
+    background: var(--card); border: 1px solid var(--edge); border-radius: 99px;
+    color: var(--text-soft); padding: 4px 14px; cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease;
+  }
+  .cmd .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .cmd .copy-btn.copied { border-color: var(--accent); color: var(--accent); }
+  .cmd-label {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--text-faint); margin: 22px 0 0;
+  }
+  .step-note { font-size: 15px; color: var(--text-faint); max-width: 700px; margin: -10px 0 18px; }
+
+  footer {
+    margin-top: 90px; padding-top: 22px; border-top: 2px solid var(--edge);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    font-family: var(--mono); font-size: 12px; color: var(--text-faint);
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  header.masthead, section, footer { animation: rise 0.7s cubic-bezier(0.22,1,0.36,1) both; }
+  section:nth-of-type(1){animation-delay:.08s} section:nth-of-type(2){animation-delay:.14s}
+  section:nth-of-type(3){animation-delay:.2s} section:nth-of-type(4){animation-delay:.26s}
+</style>
+<script>
+/* THEME INIT — must stay in <head> so first paint has the right theme. */
+(function(){
+  var t;
+  try { t = localStorage.getItem('cl.docs.theme'); } catch(e) {}
+  if (t !== 'light' && t !== 'dark') {
+    t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  document.documentElement.setAttribute('data-theme', t);
+})();
+</script>
+</head>
+<body>
+<div class="sheet">
+
+  <header class="masthead">
+    <div class="kicker">
+      <span class="brand">Chameleon Labs — Runbook</span>
+      <span class="kicker-right">
+        <a href="https://chameleonlabs.ai">chameleonlabs.ai</a>
+        <a href="https://discord.gg/chameleonlabs">Discord</a>
+        <span>August 7, 2026</span>
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark theme">☾ dark</button>
+      </span>
+    </div>
+    <h1>Python 3.14 on WSL, <em>side by side.</em></h1>
+    <p class="dek">Install the newest Python 3.14.x on WSL Ubuntu 24.04 without touching the system 3.12. <strong>EdgeMesh must stay on 3.12</strong> — Open3D 0.19.0 ships no wheels past cp312, so 3.14 goes in alongside, not instead.</p>
+  </header>
+
+  <section>
+    <div class="sec-head"><span class="no">01 /</span><h2>Before you start</h2></div>
+    <div class="banner">
+      <span class="pulse"></span>
+      <p><strong>Open3D blocks EdgeMesh from 3.14.</strong> As of today, PyPI's latest Open3D is 0.19.0 with wheels for CPython 3.8–3.12 only. If EdgeMesh's interpreter moves to 3.13+, <code class="t">pip install open3d</code> fails and the 3D viewport dies. Also: a <strong>3.14.7</strong> patch release could not be confirmed to exist — the commands below install the newest 3.14.x actually published (currently 3.14.0 in uv's registry).</p>
+    </div>
+    <div class="cards">
+      <div class="card"><h3>System today</h3><p>Ubuntu 24.04.3 LTS on WSL2. System <code class="t">python3</code> → 3.12.3, plus a 3.10 remnant. Do not repoint the <code class="t">python3</code> symlink — apt tooling depends on 3.12.</p></div>
+      <div class="card"><h3>Path A — uv</h3><p>Recommended. Per-user install, no <code class="t">sudo</code>, exact-version pinning, instant venvs. <code class="t">uv</code> is already installed at <code class="t">~/.local/bin/uv</code>.</p></div>
+      <div class="card"><h3>Path B — deadsnakes</h3><p>Traditional apt route via the deadsnakes PPA. Gives a system-wide <code class="t">python3.14</code> binary. Needs <code class="t">sudo</code>, so you run it yourself.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="no">02 /</span><h2>Path A — uv (recommended)</h2></div>
+    <p>Four commands, no <code class="t">sudo</code>. Step 1 refreshes uv so its Python registry knows the newest 3.14.x patch; step 2 installs it.</p>
+
+    <p class="cmd-label">1 · Update uv itself</p>
+    <div class="cmd"><pre>uv self update</pre><button class="copy-btn">copy</button></div>
+
+    <p class="cmd-label">2 · Install the newest Python 3.14.x</p>
+    <div class="cmd"><pre>uv python install 3.14</pre><button class="copy-btn">copy</button></div>
+    <p class="step-note">To pin an exact patch instead (only if it exists in <code class="t">uv python list</code>): <code class="t">uv python install 3.14.7</code></p>
+
+    <p class="cmd-label">3 · Verify</p>
+    <div class="cmd"><pre>uv run --python 3.14 -- python --version</pre><button class="copy-btn">copy</button></div>
+
+    <p class="cmd-label">4 · Make a 3.14 venv anywhere you want one</p>
+    <div class="cmd"><pre>uv venv --python 3.14 ~/.venvs/py314 &amp;&amp; ~/.venvs/py314/bin/python --version</pre><button class="copy-btn">copy</button></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="no">03 /</span><h2>Path B — deadsnakes PPA (apt)</h2></div>
+    <p>Run these yourself in the WSL terminal — they need <code class="t">sudo</code>. Installs <code class="t">python3.14</code> system-wide next to 3.12; the default <code class="t">python3</code> is left alone.</p>
+
+    <p class="cmd-label">1 · Add the deadsnakes PPA</p>
+    <div class="cmd"><pre>sudo add-apt-repository ppa:deadsnakes/ppa -y</pre><button class="copy-btn">copy</button></div>
+
+    <p class="cmd-label">2 · Refresh package lists</p>
+    <div class="cmd"><pre>sudo apt update</pre><button class="copy-btn">copy</button></div>
+
+    <p class="cmd-label">3 · Install Python 3.14 + venv + headers</p>
+    <div class="cmd"><pre>sudo apt install -y python3.14 python3.14-venv python3.14-dev</pre><button class="copy-btn">copy</button></div>
+
+    <p class="cmd-label">4 · Verify</p>
+    <div class="cmd"><pre>python3.14 --version</pre><button class="copy-btn">copy</button></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="no">04 /</span><h2>EdgeMesh stays on 3.12</h2></div>
+    <p>Per the project's <code class="t">AGENTS.md</code>, EdgeMesh needs Python ≤ 3.12 until Open3D publishes cp313/cp314 wheels. While you're here, this creates the missing <code class="t">.venv_linux</code> the agent-side house rules expect, pinned correctly:</p>
+
+    <p class="cmd-label">Create EdgeMesh's WSL venv on 3.12</p>
+    <div class="cmd"><pre>uv venv --python 3.12 /mnt/d/Documents/Code/GitHub/EdgeMesh/.venv_linux</pre><button class="copy-btn">copy</button></div>
+
+    <p class="cmd-label">Install EdgeMesh requirements into it</p>
+    <div class="cmd"><pre>uv pip install --python /mnt/d/Documents/Code/GitHub/EdgeMesh/.venv_linux -r /mnt/d/Documents/Code/GitHub/EdgeMesh/requirements.txt</pre><button class="copy-btn">copy</button></div>
+
+    <p class="step-note">When Open3D ships a cp314 wheel, re-run the first command with <code class="t">--python 3.14</code> to migrate. Check with: <code class="t">curl -s https://pypi.org/pypi/open3d/json | grep -o 'cp31[34]' | sort -u</code></p>
+  </section>
+
+  <footer>
+    <span>Chameleon Labs LLC · <a href="https://chameleonlabs.ai">chameleonlabs.ai</a> · <a href="https://discord.gg/chameleonlabs">Join our Discord</a></span>
+    <span><a href="https://github.com/astral-sh/uv">uv</a> · <a href="https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa">deadsnakes PPA</a></span>
+    <span>Compiled 2026-08-07</span>
+  </footer>
+
+</div>
+<script>
+/* THEME TOGGLE — persists to the shared key so all CL docs stay in sync. */
+(function(){
+  var btn = document.getElementById('themeToggle');
+  function sync(){
+    btn.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀ light' : '☾ dark';
+  }
+  btn.addEventListener('click', function(){
+    var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem('cl.docs.theme', next); } catch(e) {}
+    sync();
+  });
+  sync();
+})();
+/* COPY BUTTONS */
+(function(){
+  document.querySelectorAll('.cmd').forEach(function(block){
+    var btn = block.querySelector('.copy-btn');
+    var pre = block.querySelector('pre');
+    if (!btn || !pre) return;
+    btn.addEventListener('click', function(){
+      var text = pre.textContent;
+      function done(){
+        btn.textContent = 'copied ✓'; btn.classList.add('copied');
+        setTimeout(function(){ btn.textContent = 'copy'; btn.classList.remove('copied'); }, 1600);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done);
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); done(); } catch(e) {}
+        document.body.removeChild(ta);
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>
