@@ -1,4 +1,8 @@
-Version history:
+# Changelog
+
+## [Unreleased]
+
+Version history (entries below 0.6.7 use the legacy format):
 * 0.6.6:
   * Disable "TF_ENABLE_ONEDNN_OPTS" to get precise results from tensorflow.
   * Update main in `edge_mesh.py` to print version, author, and show '-h for help'. Not much there right now, just 'verbose'.

@@ -235,7 +235,7 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
 
 - 📖 [**Code Map**](Docs/CodeMap.md) - Complete project structure and navigation
 - 🔄 [**3D Mesh Creation Flow**](docs/3D_Mesh_Creation_Flow.md) - Detailed processing pipeline
-- 📝 [**Version History**](docs/Versions.md) - Release notes and changes
+- 📝 [**Version History**](docs/CHANGELOG.md) - Release notes and changes
 - 🛠️ [**API Reference**](Docs/CodeMap.md#core-application) - Detailed class and method documentation
 
 ---

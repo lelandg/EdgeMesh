@@ -133,7 +133,7 @@ EdgeMesh/
 │   │   └── CodeMap.md           # This file
 │   └── docs/
 │       ├── 3D_Mesh_Creation_Flow.md
-│       └── Versions.md
+│       └── CHANGELOG.md
 │
 └── Images/                       # Sample images
     └── example.png              # Example image for testing
