@@ -1,5 +1,5 @@
-from PyQt6.QtCore import Qt, QRect, QSize, QPoint
-from PyQt6.QtWidgets import QApplication, QMainWindow, QLineEdit, QVBoxLayout, QWidget, QLayout, QSizePolicy
+from PySide6.QtCore import Qt, QRect, QSize, QPoint
+from PySide6.QtWidgets import QApplication, QMainWindow, QLineEdit, QVBoxLayout, QWidget, QLayout, QSizePolicy
 
 
 class ExpandableLineEdit(QLineEdit):

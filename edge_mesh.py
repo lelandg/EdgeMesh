@@ -60,15 +60,15 @@ import cv2
 import numpy as np
 import open3d as o3d
 
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QApplication, QMainWindow, QFileDialog, QLabel, QVBoxLayout, QSlider,
     QPushButton, QWidget, QHBoxLayout, QSizePolicy, QCheckBox, QComboBox, QLineEdit, QSpinBox
 )
-from PyQt6.QtCore import Qt, QSize, QEvent, QByteArray, QTimer
-import PyQt6.QtGui as QtGui
-from PyQt6.QtGui import QPixmap, QImage, QIntValidator, QIcon, QDoubleValidator
-from PyQt6 import QtWidgets
-from PyQt6.QtGui import QColor, QPalette
+from PySide6.QtCore import Qt, QSize, QEvent, QByteArray, QTimer
+import PySide6.QtGui as QtGui
+from PySide6.QtGui import QPixmap, QImage, QIntValidator, QIcon, QDoubleValidator
+from PySide6 import QtWidgets
+from PySide6.QtGui import QColor, QPalette
 
 def process_preview_image(image, is_grayscale=False, invert_colors=False):
     """

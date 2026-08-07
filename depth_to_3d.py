@@ -15,7 +15,7 @@ from MeshTools.mesh_tools import MeshTools
 import smoothing_depth_map_utils
 from spinner import Spinner
 
-import PyQt6.QtGui as QtGui
+import PySide6.QtGui as QtGui
 
 """!@brief DepthTo3D modelnames supported by the DepthTo3D class."""
 model_names = {"MiDaS": "midas",
