@@ -16,6 +16,8 @@ from depth_based3d_reconstruction import ExtrusionProjectionReconstruction
 
 class MeshGenerator:
     def __init__(self, options=None):
+        if options is None:
+            options = {}
         self.visualize_clustering = options.get("visualize_clustering", False)
         self.visualize_depth = options.get("visualize_depth", False)
         self.visualize_partitioning = options.get("visualize_partitioning", True)
@@ -47,13 +49,15 @@ class MeshGenerator:
             num_vertices = len(vertices)  # Start indexing for this shape
             vertices.extend(shape)
 
-            # Create faces (connecting vertices sequentially, assuming convex shapes)
-            for i in range(0, len(shape) - 1, 2):
+            # Create faces (connecting vertices sequentially, assuming convex shapes).
+            # The face references i + 2, so the last valid start index is len(shape) - 3;
+            # 2-point shapes produce no faces instead of an out-of-range vertex index.
+            for i in range(0, len(shape) - 2, 2):
                 faces.append([num_vertices + i, num_vertices + i + 1, num_vertices + i + 2])
 
         # Convert vertices and faces to numpy arrays
-        vertices = np.array(vertices, dtype=np.float64)
-        faces = np.array(faces, dtype=np.int32)
+        vertices = np.array(vertices, dtype=np.float64).reshape(-1, 3)
+        faces = np.array(faces, dtype=np.int32).reshape(-1, 3)
 
         # Create an open3d TriangleMesh object
         mesh = o3d.geometry.TriangleMesh()
@@ -120,6 +124,8 @@ class MeshGenerator:
         extruded_edges = extrusion_projector.extrude()
 
         mesh = self.mesh_from_shapes(extruded_edges)
+        if len(mesh.triangles) > 0:
+            mesh.compute_vertex_normals()  # required for .stl export
         if file_name is not None:
             # For part of file name, format current date and time in format: YYYYMMDD_HHmmss
             now = datetime.now()

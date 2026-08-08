@@ -22,8 +22,13 @@ def install_requirements():
     except subprocess.CalledProcessError as e:
         print(f"Failed to install Open3D: {e}")
 
-    # Install remaining requirements
-    requirements_path = os.path.join("MeshTools", "requirements.txt")
+    # Install remaining requirements. The root requirements.txt is a superset of
+    # MeshTools/requirements.txt (and uses pygame-ce, which the submodule list
+    # would clobber with plain pygame), so prefer it; fall back to the submodule
+    # list only if the root file is missing.
+    requirements_path = "requirements.txt"
+    if not os.path.exists(requirements_path):
+        requirements_path = os.path.join("MeshTools", "requirements.txt")
     if os.path.exists(requirements_path):
         try:
             subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", requirements_path])

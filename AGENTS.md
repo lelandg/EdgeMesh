@@ -77,11 +77,20 @@ Located in `MeshTools/` directory, provides:
 ## Key Technical Details
 
 ### Python Version Compatibility
-- **Critical**: Open3D 0.19.0 is NOT compatible with Python 3.13+
-- Use Python 3.12 or earlier for full functionality
+- **Minimum Python is 3.12** — `mesh_generator.py` uses PEP 701 f-strings
+  (nested same-type quotes), which do not parse on 3.11 or earlier
+- Python 3.12 and 3.14 are both supported. The difference is where Open3D
+  comes from:
+  - **3.12**: released `open3d==0.19.0` from PyPI (PyPI wheels stop at cp312)
+  - **3.13/3.14**: no PyPI wheels; use the upstream `main-devel` prerelease
+    wheel, downloaded ONCE and installed from a pinned local file
+    (`~/.cache/edgemesh/wheels/` or `EDGEMESH_OPEN3D_WHEEL`) because the
+    `main-devel` URLs are overwritten in place as upstream main moves.
+    `install_open3d.py` automates this.
 - Prefer **even-numbered** Python minor versions (3.12, 3.14, ...); if a
   dependency forces an odd version, say so explicitly
-- The project includes `install_open3d.py` to detect version and provide guidance
+- `pygame` has no cp314 wheels; the project uses **pygame-ce** (drop-in fork,
+  still `import pygame`)
 
 ### Image Processing Flow
 1. Images are loaded in BGR format (OpenCV standard)

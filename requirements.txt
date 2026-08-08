@@ -16,7 +16,7 @@ scipy
 open3d
 pyvista
 keyboard
-pygame
+pygame-ce  # drop-in pygame fork; pygame itself has no Python 3.14 (cp314) wheels
 hidapi
 pygetwindow
 trimesh
