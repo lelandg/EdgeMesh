@@ -1,135 +1,45 @@
-# AGENTS.md
+# AGENTS.md — EdgeMesh
 
-Canonical instructions for **every** AI coding agent working in this repository
-(Claude Code, Codex, Copilot, Gemini, Antigravity, Pi, and others). Tool-specific
-mechanics live in each tool's own pointer file (e.g. `CLAUDE.md`).
+Canonical instructions for every AI coding agent in this repo. `CLAUDE.md` and
+`GEMINI.md` import this file and add only tool-specific notes.
 
-## Project Overview
+EdgeMesh is a PyQt6 desktop app. It runs edge detection on images, estimates
+depth with torch models (MiDaS, DPT, ZoeDepth, Depth-Anything), and builds 3D
+meshes from the depth maps. `edge_mesh.py` is the entry point.
 
-EdgeMesh is a PyQt6-based application for advanced image processing, edge detection, and 3D mesh generation from depth maps. It provides an interactive GUI for professionals working in computer vision and 3D modeling.
+## Gotchas
 
-## Commands
+- **Minimum Python is 3.12.** `mesh_generator.py` uses PEP 701 f-strings
+  (nested same-type quotes). Python 3.11 and earlier cannot parse the file.
+- **Open3D wheels depend on the Python version.** On 3.12, install the released
+  `open3d==0.19.0` from PyPI. PyPI wheels stop at cp312. On 3.13/3.14, there
+  are no PyPI wheels. `install_open3d.py` downloads the upstream `main-devel`
+  prerelease wheel once and installs it from a pinned local file
+  (`~/.cache/edgemesh/wheels/`, or the path in `EDGEMESH_OPEN3D_WHEEL`). Do not
+  install from the `main-devel` URL directly. Upstream overwrites those URLs in
+  place as main moves, so the URL is not reproducible.
+- **`pygame` has no cp314 wheels.** The project depends on `pygame-ce`, a
+  drop-in fork. The import stays `import pygame`.
+- **`MeshTools/` is a separate git repository** nested in this tree. Commit
+  changes to MeshTools inside `MeshTools/`, not from the EdgeMesh root.
+- **Color order:** images load and process in BGR (OpenCV). Convert to RGB only
+  for the Qt preview. Depth maps normalize to 0–255 before mesh generation.
+- Module-level flags in `edge_mesh.py` control diagnostics: `debug` (log
+  output) and `visualize_images` (OpenCV windows). Both default to `False`.
+- Edge clustering (`edge_clustering_analyzer.py`), shape analysis
+  (`shape_analyzer.py`), and surface partitioning exist but the GUI does not
+  fully expose them.
 
-### Running the Application
-```bash
-# Windows
-python edge_mesh.py  # or run.bat
+## Build / test
 
-# Linux/WSL
-python3 edge_mesh.py
-```
+- `python3 install_requirements.py` installs all dependencies. Run
+  `python3 install_open3d.py` after it on Python 3.13+ (see Gotchas).
+- Standalone Windows builds: `build.bat` (Nuitka). `build-cx-Freeze.bat` and
+  `build-nuitka.bat` are alternates.
 
-### Installing Dependencies
-```bash
-# Automated installation (recommended)
-python3 install_requirements.py
+## Pointers
 
-# Manual installation
-pip install -r requirements.txt
-
-# For Open3D compatibility issues with Python 3.13+
-python3 install_open3d.py
-```
-
-### Building Standalone Executable
-```bash
-# Windows (using Nuitka)
-build.bat
-```
-
-## Architecture
-
-### Core Processing Pipeline
-The application follows a multi-stage pipeline for 3D mesh generation:
-1. **Image Loading & Preprocessing** → `image_processor.py`
-2. **Depth Estimation** → `depth_to_3d.py` (uses various torch models: MiDaS, DPT, ZoeDepth)
-3. **Edge Detection** → `edge_detection.py` (Canny edge detection with customizable parameters)
-4. **Mesh Generation** → `mesh_generator.py` or direct depth-to-mesh conversion
-5. **3D Visualization** → `MeshTools/viewport_3d.py` (Open3D-based rendering)
-
-### Key Components
-
-**Main Entry Point**: `edge_mesh.py`
-- Contains `MainWindowImageProcessing` class
-- Manages PyQt6 GUI and user interactions
-- Coordinates between processing modules
-
-**Depth Processing Models** (`depth_to_3d.py`):
-- MiDaS variants (small, large)
-- DPT models (large, hybrid)
-- ZoeDepth models (K, N, NK, N-indoor)
-- Depth-Anything models
-
-**Processing Features**:
-- Multiple smoothing methods (Gaussian, Bilateral, Median, Anisotropic Diffusion)
-- Background removal based on corner color detection
-- Dynamic depth adjustment for front-half mesh generation
-- Edge clustering and shape analysis (not fully exposed in GUI)
-- Surface partitioning and extrusion projection capabilities
-
-### MeshTools Submodule
-Located in `MeshTools/` directory, provides:
-- `viewport_3d.py`: Standalone 3D viewport with export capabilities (.obj, .stl)
-- `mesh_tools.py`: Core mesh manipulation utilities
-- `text_3d.py`: 3D text mesh generation using Open3D and PyVista
-- SpaceMouse controller support for 3D navigation
-
-## Key Technical Details
-
-### Python Version Compatibility
-- **Minimum Python is 3.12** — `mesh_generator.py` uses PEP 701 f-strings
-  (nested same-type quotes), which do not parse on 3.11 or earlier
-- Python 3.12 and 3.14 are both supported. The difference is where Open3D
-  comes from:
-  - **3.12**: released `open3d==0.19.0` from PyPI (PyPI wheels stop at cp312)
-  - **3.13/3.14**: no PyPI wheels; use the upstream `main-devel` prerelease
-    wheel, downloaded ONCE and installed from a pinned local file
-    (`~/.cache/edgemesh/wheels/` or `EDGEMESH_OPEN3D_WHEEL`) because the
-    `main-devel` URLs are overwritten in place as upstream main moves.
-    `install_open3d.py` automates this.
-- Prefer **even-numbered** Python minor versions (3.12, 3.14, ...); if a
-  dependency forces an odd version, say so explicitly
-- `pygame` has no cp314 wheels; the project uses **pygame-ce** (drop-in fork,
-  still `import pygame`)
-
-### Image Processing Flow
-1. Images are loaded in BGR format (OpenCV standard)
-2. Internal processing maintains BGR for consistency
-3. Preview images are converted to RGB for Qt display
-4. Depth maps are normalized to 0-255 range
-5. 3D vertices are generated from depth values with configurable scaling
-
-### GUI State Management
-- Uses Qt checkboxes and sliders for real-time parameter adjustment
-- Configuration persistence through ConfigParser
-- Supports both processed and original image as input source
-- "Use Processed Image" checkbox determines processing pipeline source
-
-### Mesh Generation Approaches
-1. **Depth-based**: Converts depth map directly to 3D mesh
-2. **Edge-based**: Uses detected edges to generate mesh structure
-3. Both approaches support visualization of intermediate steps
-
-## Development Notes
-
-### File Organization
-- Core processing modules are at project root
-- GUI extensions and utilities in `qt_extensions.py`
-- Torch/model utilities in `torch_utils.py`, `torch_test.py`
-- File operations helpers in `file_tools.py`
-- Logging utilities in `log_utils.py` (debug mode configurable)
-
-### Important Flags
-- `debug = False` in `edge_mesh.py` - Controls debug output
-- `visualize_images = False` - Enables OpenCV visualization windows
-- Various visualization flags for mesh generation stages
-
-### External Dependencies
-Key libraries required:
-- PyQt6 for GUI
-- OpenCV (cv2) for image processing
-- Open3D for 3D operations and visualization
-- PyTorch and torchvision for depth estimation models
-- Trimesh for mesh manipulation
-- NumPy, SciPy, scikit-learn for computational operations
-- Transformers for model loading
+- Code map: `Docs/CodeMap.md`.
+- Python 3.14 migration record: `Docs/python-3.14-migration-2026-08-07.md`.
+- Mesh pipeline walkthrough: `Docs/3D_Mesh_Creation_Flow.md`.
+- Global house rules apply (`~/.config/agents/AGENTS.md`).
