@@ -13,5 +13,8 @@
     ],
     "deny": [],
     "ask": []
+  },
+  "skillOverrides": {
+    "getting-started": "off"
   }
 }

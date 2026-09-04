@@ -11,7 +11,7 @@ def detect_and_project_edges(image, low_threshold, high_threshold, thickness=1, 
     :param high_threshold: Higher threshold for edge detection.
     :param thickness: Thickness of the edges.
     :param project_on_original: Whether to project edges on the original image or a black canvas.
-    :return: RGB Image with projected edges.
+    :return: BGR image with projected edges, ready for OpenCV processing.
     """
     # Read image (OpenCV defaults to BGR color space)
     if isinstance(image, str):
@@ -22,25 +22,17 @@ def detect_and_project_edges(image, low_threshold, high_threshold, thickness=1, 
     if original_image is None:
         raise ValueError("Could not read image. Check the image path.")
 
-    if original_image.ndim == 3:
-        # Convert Original Image to RGB (if required)
-        if original_image.ndim == 3 and original_image.shape[2] != 3:
-            rgb_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
-        else:
-            rgb_image = original_image
-    elif original_image.ndim == 2:
-        if original_image.ndim == 3 and original_image.shape[2] != 3:
-            # Convert Grayscale Image to RGB
-            rgb_image = cv2.cvtColor(original_image, cv2.COLOR_GRAY2RGB)
+    if original_image.ndim == 2:
+        bgr_image = cv2.cvtColor(original_image, cv2.COLOR_GRAY2BGR)
+    elif original_image.ndim == 3 and original_image.shape[2] == 3:
+        bgr_image = original_image
+    elif original_image.ndim == 3 and original_image.shape[2] == 4:
+        bgr_image = cv2.cvtColor(original_image, cv2.COLOR_BGRA2BGR)
     else:
-        raise ValueError("Invalid image format. Please provide an image in RGB or Grayscale format.")
-
-    is_grayscale = original_image.ndim == 2
-    if is_grayscale:
-        original_image = cv2.cvtColor(original_image, cv2.COLOR_GRAY2RGB)
+        raise ValueError("Invalid image format. Provide a BGR, BGRA or grayscale image.")
 
     # Convert to grayscale for edge detection
-    grayscale_image = cv2.cvtColor(original_image, cv2.COLOR_RGB2GRAY)
+    grayscale_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2GRAY)
 
     # Perform edge detection
     edges = cv2.Canny(grayscale_image, low_threshold, high_threshold)
@@ -51,20 +43,16 @@ def detect_and_project_edges(image, low_threshold, high_threshold, thickness=1, 
 
     # Initialize output
     if project_on_original:
-        if is_grayscale:
-            # If the original image was grayscale, convert it to RGB
-            result_image = cv2.cvtColor(original_image, cv2.COLOR_GRAY2RGB)
-        else:
-            result_image = rgb_image.copy()
+        result_image = bgr_image.copy()
         # Project edges in red color (RGB format: dark gray = [20, 20, 20])
         result_image[thick_edges > 0] = [20, 20, 20]
     else:
         # If not projecting on the original, use a black background
-        result_image = np.zeros_like(rgb_image)
+        result_image = np.zeros_like(bgr_image)
         # Project edges in white [255, 255, 255]
         result_image[thick_edges > 0] = [255, 255, 255]
 
-    # Return the final image (explicitly RGB for display compatibility)
+    # Convert BGR to RGB only at the Qt display boundary.
     return result_image
 
 def detect_edges(image, low_threshold, high_threshold, thickness=1, project_on_original=False):

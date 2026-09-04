@@ -56,12 +56,20 @@ class SmoothingDepthMapUtils:
         :param gamma: Integration constant (usually <= 0.25 for stability).
         :return: Smoothed depth map.
         """
-        smoothed_map = depth_map.copy()
+        # Work in floating point so signed gradients and fractional updates do
+        # not wrap or fail for the uint8 depth maps produced by ImageProcessor.
+        smoothed_map = np.array(depth_map, dtype=np.float64, copy=True)
         for _ in range(iterations):
             nabla_n = np.roll(smoothed_map, -1, axis=0) - smoothed_map
             nabla_s = np.roll(smoothed_map, 1, axis=0) - smoothed_map
             nabla_e = np.roll(smoothed_map, -1, axis=1) - smoothed_map
             nabla_w = np.roll(smoothed_map, 1, axis=1) - smoothed_map
+
+            # Image boundaries are not adjacent to the opposite image edge.
+            nabla_n[-1, :] = 0
+            nabla_s[0, :] = 0
+            nabla_e[:, -1] = 0
+            nabla_w[:, 0] = 0
 
             diffusion = (
                     np.exp(-(nabla_n / kappa) ** 2) * nabla_n +
@@ -81,6 +89,8 @@ class SmoothingDepthMapUtils:
         :return: Normalized depth map.
         """
         min_val, max_val = np.min(depth_map), np.max(depth_map)
+        if max_val == min_val:
+            return np.full(depth_map.shape, output_range[0], dtype=np.uint8)
         normalized_map = (depth_map - min_val) / (max_val - min_val) * (output_range[1] - output_range[0]) + \
                          output_range[0]
         return normalized_map.astype(np.uint8)

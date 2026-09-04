@@ -11,6 +11,7 @@ __email__ = "lelandgreenproductions@gmail.com"
 __license__ = "Commercial. License Required." # License of this script is free for all purposes.
 
 import image_processor
+from log_utils import get_logger
 
 debug = False # Set False to disable debug messages. Yes. We do need this.
 verbose = True # Not used, yet. When I add logging, this will also print messages to console when enabled.
@@ -1163,7 +1164,7 @@ class MainWindowImageProcessing(QMainWindow):
             self.show_error(s)
 
     def export_mesh(self):
-        if not self.three_d_viewport.edges:
+        if self.three_d_viewport is None or self.three_d_viewport.mesh is None:
             self.show_error("No 3D mesh is generated to export.")
             return
 
@@ -1176,10 +1177,14 @@ class MainWindowImageProcessing(QMainWindow):
 
         if save_path:
             try:
-                # Determine export format based on selected file extension
-                if selected_filter == "OBJ Files (*.obj)" or save_path.endswith(".obj"):
+                # An explicitly typed extension takes precedence over the dialog filter.
+                extension = os.path.splitext(save_path)[1].lower()
+                if not extension:
+                    extension = ".stl" if selected_filter == "STL Files (*.stl)" else ".obj"
+                    save_path += extension
+                if extension == ".obj":
                     self.three_d_viewport.export_mesh_as_obj(save_path)
-                elif selected_filter == "STL Files (*.stl)" or save_path.endswith(".stl"):
+                elif extension == ".stl":
                     self.three_d_viewport.export_mesh_as_stl(save_path)
                 else:
                     self.show_error("Unsupported file format.")
@@ -1188,34 +1193,19 @@ class MainWindowImageProcessing(QMainWindow):
 
     def update_preview(self):
         """Reprocess the preview and refresh the 3D viewport."""
-        if not self.image_path:  # No image to process
+        if self.image is None:  # No image to process
             return
 
         try:
-            fname = self.image_path
+            self.processed_image = self.image.copy()
             if self.grayscale_enabled:
-                self.processed_image = cv2.cvtColor(cv2.imread(fname, cv2.IMREAD_GRAYSCALE), cv2.COLOR_GRAY2RGB)
-            else:
-                self.processed_image = cv2.imread(fname, cv2.IMREAD_COLOR)
-            if self.grayscale_enabled:
-                grayscale = cv2.imread(self.image_path, cv2.IMREAD_GRAYSCALE)
-                basename, ext = os.path.splitext(self.image_path)
-                fname = f"{basename}_gray.{ext}"
-                cv2.imwrite(fname, grayscale)
+                grayscale = cv2.cvtColor(self.processed_image, cv2.COLOR_BGR2GRAY)
+                self.processed_image = cv2.cvtColor(grayscale, cv2.COLOR_GRAY2BGR)
             if self.edge_detection_enabled:
                 # Perform edge detection if enabled
                 low_threshold = 200 - self.sensitivity
-
-                if self.grayscale_enabled and self.project_on_original:
-                    grayscale = cv2.imread(self.image_path, cv2.IMREAD_GRAYSCALE)
-                    basename, ext = os.path.splitext(self.image_path)
-                    fname = f"{basename}_gray.{ext}"
-                    cv2.imwrite(fname, grayscale)
-                self.processed_image = detect_edges(fname, low_threshold, low_threshold * 3,
+                self.processed_image = detect_edges(self.processed_image, low_threshold, low_threshold * 3,
                     thickness=self.edge_thickness, project_on_original=self.project_on_original)
-            elif self.grayscale_enabled:
-                # Otherwise, convert to grayscale if enabled
-                self.processed_image = cv2.cvtColor(cv2.imread(fname, cv2.IMREAD_GRAYSCALE), cv2.COLOR_GRAY2RGB)
 
             # Apply inversion if enabled (applies to all modes)
             if self.invert_colors_enabled:
@@ -1247,8 +1237,7 @@ class MainWindowImageProcessing(QMainWindow):
         event.setDropAction(Qt.CopyAction)
         event.accept()
         for url in event.mimeData().urls():
-            self.image_path = url.toLocalFile()
-            self.load_image(self.image_path)
+            self.load_image(url.toLocalFile())
 
     def load_image(self, path=None):
         if not path:
@@ -1270,13 +1259,13 @@ class MainWindowImageProcessing(QMainWindow):
         if not path:
             return
 
-        self.image_path = path
-        self._update_config("Settings", "last_used_image", path)
-
-        self.image = cv2.imread(self.image_path, cv2.IMREAD_COLOR)
-        if self.image is None:
+        image = cv2.imread(path, cv2.IMREAD_COLOR)
+        if image is None:
             self.show_error("Failed to load image.")
             return
+        self.image = image
+        self.image_path = path
+        self._update_config("Settings", "last_used_image", path)
         self.display_original_image()
         self.update_preview()
 
@@ -1316,16 +1305,21 @@ class MainWindowImageProcessing(QMainWindow):
             self.preview_label.setPixmap(QPixmap.fromImage(q_img).scaled(target_width, target_height,Qt.AspectRatioMode.KeepAspectRatio))
 
     def save_image(self):
-        if not self.processed_image.any():
+        if self.processed_image is None or self.processed_image.size == 0:
             self.show_error("No processed image to save.")
             return
         options = QFileDialog.Options()
         save_path, _ = QFileDialog.getSaveFileName(
             self, "Save Processed Image", "", "Images (*.png *.jpg *.bmp)", options=options)
         if save_path:
-            cv2.imwrite(save_path, self.processed_image, [cv2.IMWRITE_PNG_COMPRESSION, 9])
+            try:
+                if not cv2.imwrite(save_path, self.processed_image, [cv2.IMWRITE_PNG_COMPRESSION, 9]):
+                    raise OSError(f"Could not write image to {save_path}")
+            except (cv2.error, OSError) as error:
+                self.show_error(f"Failed to save image: {error}")
 
     def show_error(self, message):
+        get_logger().error(message)
         print(f"Error: {message}")
 
     def load_last_used_image(self):
@@ -1513,7 +1507,7 @@ class MainWindowImageProcessing(QMainWindow):
         config = configparser.ConfigParser()
         if not os.path.exists(self.CONFIG_FILE_PATH):
             # Create default config.ini
-            config["Settings"] = self.SETTINGS
+            config["Settings"] = {"last_used_image": ""}
             with open(self.CONFIG_FILE_PATH, "w") as configfile:
                 config.write(configfile)
         return config

@@ -5,6 +5,7 @@ import subprocess
 import os
 
 def install_requirements():
+    script_directory = os.path.dirname(os.path.abspath(__file__))
     print("Installing all requirements from requirements.txt...")
 
     # Install core requirements first
@@ -18,7 +19,7 @@ def install_requirements():
 
     # Install Open3D specifically
     try:
-        subprocess.check_call([sys.executable, "install_open3d.py"])
+        subprocess.check_call([sys.executable, os.path.join(script_directory, "install_open3d.py")])
     except subprocess.CalledProcessError as e:
         print(f"Failed to install Open3D: {e}")
 
@@ -26,9 +27,9 @@ def install_requirements():
     # MeshTools/requirements.txt (and uses pygame-ce, which the submodule list
     # would clobber with plain pygame), so prefer it; fall back to the submodule
     # list only if the root file is missing.
-    requirements_path = "requirements.txt"
+    requirements_path = os.path.join(script_directory, "requirements.txt")
     if not os.path.exists(requirements_path):
-        requirements_path = os.path.join("MeshTools", "requirements.txt")
+        requirements_path = os.path.join(script_directory, "MeshTools", "requirements.txt")
     if os.path.exists(requirements_path):
         try:
             subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", requirements_path])

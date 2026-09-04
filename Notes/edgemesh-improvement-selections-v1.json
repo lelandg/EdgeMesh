@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "project": "EdgeMesh",
+  "reportId": "edgemesh-code-review-2026-09-04",
+  "exportedAt": "2026-09-04T23:35:11.853Z",
+  "generalNotes": "",
+  "selections": [
+    {
+      "id": "eng-background-jobs",
+      "title": "Keep the UI responsive during mesh generation",
+      "priority": "high",
+      "notes": ""
+    },
+    {
+      "id": "eng-model-cache",
+      "title": "Cache models and processors with pinned revisions",
+      "priority": "high",
+      "notes": ""
+    },
+    {
+      "id": "eng-mesh-validation",
+      "title": "Explain mesh health before export",
+      "priority": "high",
+      "notes": "Should be optional"
+    },
+    {
+      "id": "eng-sessions",
+      "title": "Save undoable sessions and useful presets",
+      "priority": "medium",
+      "notes": ""
+    },
+    {
+      "id": "eng-data-contracts",
+      "title": "Define shared image, depth, and geometry contracts",
+      "priority": "high",
+      "notes": ""
+    },
+    {
+      "id": "eng-user-state",
+      "title": "Complete portable per-user settings and error reporting",
+      "priority": "high",
+      "notes": ""
+    },
+    {
+      "id": "eng-reproducibility",
+      "title": "Make dependency and CI checks reproducible",
+      "priority": "high",
+      "notes": ""
+    },
+    {
+      "id": "eng-codemap",
+      "title": "Refresh the code map around real user workflows",
+      "priority": "medium",
+      "notes": ""
+    },
+    {
+      "id": "ai-subject-mask",
+      "title": "Select the subject with interactive SAM2 masks",
+      "priority": "medium",
+      "notes": ""
+    },
+    {
+      "id": "ai-parameter-assistant",
+      "title": "Suggest parameters locally, with preview and confirmation",
+      "priority": "medium",
+      "notes": ""
+    }
+  ]
+}

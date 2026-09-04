@@ -8,7 +8,6 @@ import trimesh
 from trimesh import Trimesh
 
 from PIL import Image
-from torchvision.transforms import Compose, ToTensor, Normalize, Resize
 from transformers import AutoImageProcessor, AutoModelForDepthEstimation
 from MeshTools.mesh_tools import MeshTools
 
@@ -73,34 +72,13 @@ class DepthTo3D:
             transform = LeReS.transform  # Replace with LeReS-specific preprocessing logic if necessary
             transform = None  # Replace with LeReS-specific preprocessing logic if necessary
 
-        elif self.model_type == "depth_anything_v2":
-            # Depth Anything V2 implementation
-            # from depth_anything_v2.dpt import DepthAnythingV2
-            # model = DepthAnythingV2().to(self.device).eval()
-            # transform = Compose([
-            #     ToTensor(),
-            #     Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
-            # ])  # Replace this line with actual DepthAnythingV2-specific preprocessing logic if necessary
-
-            # import torch
-            # import numpy as np
-            # import requests
-
-            # url = "http://images.cocodataset.org/val2017/000000039769.jpg"
-            # image = Image.open(requests.get(url, stream=True).raw)
-            #
-            model = AutoModelForDepthEstimation.from_pretrained("depth-anything/Depth-Anything-V2-Large-hf")
-            transform = Compose([
-                ToTensor(),
-                Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
-            ])
-        elif self.model_type == "depth_pro":
-            # Depth Pro (local weights)
-            model = AutoModelForDepthEstimation.from_pretrained("apple/DepthPro-hf")
-            transform = Compose([
-                ToTensor(),
-                Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
-            ])
+        elif self.model_type in ("depth_anything_v2", "depth_pro"):
+            model_id = {
+                "depth_anything_v2": "depth-anything/Depth-Anything-V2-Large-hf",
+                "depth_pro": "apple/DepthPro-hf",
+            }[self.model_type]
+            model = AutoModelForDepthEstimation.from_pretrained(model_id).to(self.device).eval()
+            transform = AutoImageProcessor.from_pretrained(model_id)
         else:
             raise ValueError(
                 f"Unsupported model type. Use one of:\n{', '.join(model_names.keys())}.")
@@ -141,113 +119,41 @@ class DepthTo3D:
         return depth_map
 
     def estimate_depth(self, image, target_size=(500, 500), flip=False):
+        """Estimate normalized depth from BGR input; target_size is (height, width).
+
+        (0, 0) or None preserves the original dimensions. A processing flip is
+        undone on the prediction so geometry remains aligned with image colors.
         """
-        Estimate depth from a single image.
-        :param image: Input image (numpy array).
-        :param target_size: Tuple defining the target size (width, height) for the output depth map.
-        :param flip: Whether to horizontally flip the image for processing.
-        :return: Depth map (numpy array) of the limited size.
-        """
-        print(f"Estimating depth with target size: {target_size}...")
-        img_h, img_w, _ = image.shape  # Use NumPy shape to get height and width
-        print(f"Input image size: {img_h}x{img_w}")
-
-        # Convert the image to grayscale for cv2.minMaxLoc
-        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-        # Ensure grayscale image is passed to minMaxLoc
-        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(gray_image)
-        print(f"Max value in image has ranges from {min_val} - {max_val}, at {min_loc} and {max_loc}, respectively.")
-
-        # Resize to ensure divisibility by 32
-        new_h = (img_h + 31) // 32 * 32
-        new_w = (img_w + 31) // 32 * 32
-        resized_image = cv2.resize(image, (new_w, new_h))  # Resize to divisible by 32
-
+        img_h, img_w = image.shape[:2]
+        output_size = (img_h, img_w) if target_size is None or tuple(target_size) == (0, 0) else tuple(target_size)
+        rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         if flip:
-            resized_image = cv2.flip(resized_image, 1)  # Flip horizontally
-            print(f"Flipped image size = {resized_image.shape}")
-        # Convert to tensor
+            rgb_image = cv2.flip(rgb_image, 1)
 
-        # Predict depth
         with torch.no_grad():
-            if self.model_type == "dense_depth" or self.model_type == "leres":
-                img_input = Image.fromarray(cv2.cvtColor(resized_image, cv2.COLOR_BGR2RGB))
-                img_tensor = self.transform(img_input).unsqueeze(0).to(self.device) if self.transform else None
-                # depth = self.model(img_input)[0]  # Replace with respective model's output logic
-                depth = self.model(img_tensor)[0]  # Replace with respective model's output logic
+            if self.model_type in ("depth_anything_v2", "depth_pro"):
+                inputs = self.transform(images=rgb_image, return_tensors="pt")
+                inputs = {name: tensor.to(self.device) for name, tensor in inputs.items()}
+                depth = self.model(**inputs).predicted_depth
             else:
-                if self.model_type == "depth_anything_v2":
-                    img_input = Image.fromarray(cv2.cvtColor(resized_image, cv2.COLOR_BGR2RGB))
-                    img_tensor = self.transform(img_input).unsqueeze(0).to(self.device) if self.transform else None
-                    # Depth Anything V2 (local weights)
-                    # Prepare image for the model
-                    image_processor = AutoImageProcessor.from_pretrained("depth-anything/Depth-Anything-V2-Large-hf")
-                    inputs = image_processor(images=image, return_tensors="pt")
-
-                    with torch.no_grad():
-                        outputs = self.model(**inputs)
-                        predicted_depth = outputs.predicted_depth
-
-                    if target_size and target_size != (0, 0) and target_size != (img_h, img_w):
-                        print("Target size specified, resizing to match.")
-                        # Interpolate to original size
-                        depth = torch.nn.functional.interpolate(
-                            predicted_depth.unsqueeze(1),
-                            size=target_size,  # Match original image dimensions here
-                            mode="bicubic",
-                            align_corners=False,
-                        )
-                    else:
-                        print ("No target size specified, using original size.")
-                        # Interpolate to original size
-                        depth = torch.nn.functional.interpolate(
-                            predicted_depth.unsqueeze(1),
-                            # scale_factor=1.0,
-                            size=(img_h, img_w),  # Match original image dimensions here
-                            mode="bicubic",
-                            align_corners=False,
-                        )
-                elif self.model_type == "depth_pro":
-                    img_input = Image.fromarray(cv2.cvtColor(resized_image, cv2.COLOR_BGR2RGB))
-                    img_tensor = self.transform(img_input).unsqueeze(0).to(self.device) if self.transform else None
-                    # Depth Pro (local weights)
-                    # Prepare image for the model
-                    image_processor = AutoImageProcessor.from_pretrained("apple/DepthPro-hf")
-                    inputs = image_processor(images=image, return_tensors="pt")
-
-                    with torch.no_grad():
-                        outputs = self.model(**inputs)
-                        predicted_depth = outputs.predicted_depth
-
-                    # Interpolate to original size
-                    depth = torch.nn.functional.interpolate(
-                        predicted_depth.unsqueeze(1),
-                        size=(img_h, img_w),  # Match original image dimensions here
-                        mode="bicubic",
-                        align_corners=False,
-                    )
-                elif self.model_type == "midas":
-                    img_input = cv2.cvtColor(resized_image, cv2.COLOR_BGR2RGB)
-                    img_tensor = self.transform(img_input).to(self.device)
+                resized = cv2.resize(rgb_image, ((img_w + 31) // 32 * 32, (img_h + 31) // 32 * 32))
+                if self.model_type in ("midas", "dpt"):
+                    img_tensor = self.transform(resized).to(self.device)
                     depth = self.model(img_tensor)
                 else:
-                    depth = self.model(img_tensor)
-        print(f"Initial depth map shape: {depth.shape}, values: {depth.min()} - {depth.max()}.")
-        # Resize depth back to original image dimensions
-        depth = depth.squeeze().cpu().numpy()
-        print(f"Squeezed depth map shape: {depth.shape}, values: {depth.min()} - {depth.max()} {np.sum(depth < 0)} negative values.")
-        depth[depth < 0] = 0  # replace negative values with 0
-        if target_size and target_size != (0, 0) and target_size != (img_h, img_w):
-            print(f"Target size specified: {target_size} Resizing to match.")
-            # Limit the depth map size
-            depth = cv2.resize(depth, (target_size[1], target_size[0]), interpolation=cv2.INTER_NEAREST_EXACT)  # Match original input image size
-            print(f"Resized depth map shape: {depth.shape}, values: {depth.min()} - {depth.max()} {np.sum(depth < 0)} negative values.")
+                    img_tensor = self.transform(Image.fromarray(resized)).unsqueeze(0).to(self.device)
+                    depth = self.model(img_tensor)[0]
 
-        # Normalize for visualization (optional)
-        depth = cv2.normalize(depth, None, 0, 255, norm_type=cv2.NORM_MINMAX)
-        print(f"Final depth map shape: {depth.shape}, values: {depth.min()} - {depth.max()}")
-        return depth
+        # Preserve singleton spatial dimensions when stripping batch/channel axes.
+        depth = depth.detach().cpu().numpy()
+        depth = depth.reshape(depth.shape[-2:])
+        if flip:
+            depth = np.fliplr(depth).copy()
+        depth = np.maximum(depth, 0)
+        if depth.shape != output_size:
+            depth = cv2.resize(depth, (output_size[1], output_size[0]), interpolation=cv2.INTER_CUBIC)
+        depth = np.maximum(depth, 0)
+        return cv2.normalize(depth, None, 0, 255, norm_type=cv2.NORM_MINMAX)
 
     # def solidify_mesh(self, mesh, depth_offset=-1.0):
     #     """
@@ -294,97 +200,39 @@ class DepthTo3D:
     #     return solid_mesh
 
     def remove_masked_islands(self, mask):
+        """Keep only background pixels connected to an image border.
+
+        Label pixels rather than filling contours, which erases foreground holes.
         """
-        Remove all masked regions (white areas) from the mask that are not contiguous with the edge of the image.
+        _, labels = cv2.connectedComponents((mask != 0).astype(np.uint8), connectivity=8)
+        border_labels = np.unique(np.concatenate((labels[0], labels[-1], labels[:, 0], labels[:, -1])))
+        border_labels = border_labels[border_labels != 0]
+        return np.where(np.isin(labels, border_labels), 255, 0).astype(np.uint8)
 
-        :param mask: Input binary mask (numpy array, 0 for unmasked and 255 for masked areas).
-        :return: Cleaned mask where only regions connected to the image edges remain.
-        """
-        # Step 1: Create a blank mask to store the cleaned output
-        cleaned_mask = np.zeros_like(mask, dtype=np.uint8)
-
-        # Step 2: Find contours of the mask
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-
-        # Step 3: Check each contour to see if it touches the edges of the image
-        h, w = mask.shape
-        for contour in contours:
-            # Check if the contour connects with the edge of the image
-            is_connected_to_edge = False
-            for point in contour:
-                x, y = point[0]  # Contour points are stored as [[x, y]]
-                if x == 0 or y == 0 or x == w - 1 or y == h - 1:
-                    is_connected_to_edge = True
-                    break
-
-            # If the region is connected to the edge, keep it
-            if is_connected_to_edge:
-                cv2.drawContours(cleaned_mask, [contour], -1, 255, thickness=cv2.FILLED)
-
-        return cleaned_mask
+    @staticmethod
+    def _background_color(image, color_to_remove, background_removal, background_tolerance):
+        """Return BGR for processing; explicitly selected colors arrive as RGB."""
+        if color_to_remove is not None:
+            if isinstance(color_to_remove, QtGui.QColor):
+                color_to_remove = color_to_remove.getRgb()[:3]
+            return np.asarray(color_to_remove, dtype=np.int32)[::-1]
+        corners = np.array([image[0, 0], image[0, -1], image[-1, 0], image[-1, -1]], dtype=np.float32)
+        average = corners.mean(axis=0)
+        if background_removal and np.all(np.abs(corners - average) <= background_tolerance):
+            return average.astype(np.int32)
+        return None
 
     def create_background_mask(self, image, color_to_remove=None,
                                background_removal=False, background_tolerance=0):
-        """
-        Create a background mask for an image by removing the specified background color.
-        Smooth the edges by eroding and blending edges. After that, remove masks surrounded by unmasked areas.
-
-        :param image: Input image (numpy array).
-        :param color_to_remove: Specific color to remove from the background.
-        :param background_removal: Whether background removal is enabled.
-        :param background_tolerance: Tolerance for background color matching.
-        :return: Final processed mask.
-        """
-        # Step 1: Background processing
-        h, w, _ = image.shape
-
-        if color_to_remove is not None:
-            if isinstance(color_to_remove, QtGui.QColor):
-                # Convert QColor to a list of RGB values
-                color_to_remove = list(color_to_remove.getRgb()[:3])  # Discard the alpha channel
-            background_color = np.array(color_to_remove, dtype=np.uint8)
-        else:
-            corners = [image[0, 0], image[0, w - 1], image[h - 1, 0], image[h - 1, w - 1]]
-            avg_color = np.mean(corners, axis=0)
-
-            if background_removal and all(
-                    np.all(np.abs(corner - avg_color) < background_tolerance) for corner in corners):
-                background_color = avg_color.astype(np.uint8)
-            else:
-                background_color = None
-
-        # Step 2: Create the background mask
-        if background_color is not None:
-            print(f"Masking background color = {background_color.tolist()}")
-            mask = cv2.inRange(image, background_color - background_tolerance, background_color + background_tolerance)
-        else:
-            mask = np.zeros((h, w), dtype=np.uint8)  # Default to all zeros (no mask)
-
-        # # Step 3: Smooth the edges of the mask
-        # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))  # Larger kernel for smoothing
-        # mask_dilate1 = cv2.dilate(mask, kernel, iterations=3)
-        # # mask_dilate2 = cv2.addWeighted(mask, 0.7, mask_dilate1, 0.3, 0)
-        #
-        # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))  # Smaller kernel for edge adjustment
-        # mask_eroded = cv2.erode(mask, kernel, iterations=1)
-        #
-        # mask_smoothed = cv2.dilate(mask_eroded, kernel, iterations=1)
-        # smoothed_mask = cv2.addWeighted(mask_smoothed, 0.8, mask_smoothed, 0.2, 0)
-        # contours, _ = cv2.findContours(smoothed_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-        # cleaned_mask = np.zeros_like(smoothed_mask)  # Start with a blank mask
-
-        # Step 4: Remove masked regions surrounded by unmasked areas
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        cleaned_mask = np.zeros_like(mask)  # Start with a blank mask
-
-        for contour in contours:
-            # Filter contours based on their area
-            if cv2.contourArea(contour) > 0:  # Keep significant contours
-                cv2.drawContours(cleaned_mask, [contour], -1, (255), thickness=cv2.FILLED)
-
-        cleaned_mask = self.remove_masked_islands(cleaned_mask)
-        # Return the finalized mask (foreground is marked as white)
-        return cleaned_mask
+        """Mask border-connected BGR background; selected colors are RGB/QColor."""
+        background_color = self._background_color(image, color_to_remove, background_removal, background_tolerance)
+        if background_color is None:
+            return np.zeros(image.shape[:2], dtype=np.uint8)
+        # Signed arithmetic prevents black/white tolerance bounds wrapping at 255.
+        lower = np.clip(background_color - background_tolerance, 0, 255).astype(np.uint8)
+        upper = np.clip(background_color + background_tolerance, 0, 255).astype(np.uint8)
+        mask = cv2.inRange(image, lower, upper)
+        return self.remove_masked_islands(mask)
 
     def create_3d_mesh(self, image, depth, filename, smoothing_method, target_size, flat_back, grayscale_enabled,
                        edge_detection_enabled, invert_colors_enabled=False, depth_amount=1.0, project_on_original=False,
@@ -422,24 +270,7 @@ class DepthTo3D:
         print(f"Image size: {h}x{w}, target_size: {target_size}")
         image = cv2.resize(image, (target_size[1], target_size[0]), interpolation=cv2.INTER_LINEAR)
         h, w, _ = image.shape
-        # If color_to_remove is provided, use it as the background color.
-        if color_to_remove is not None:
-            # Handle QColor if it is passed
-            if isinstance(color_to_remove, QtGui.QColor):
-                # Convert QColor to a list of RGB values
-                color_to_remove = list(color_to_remove.getRgb()[:3])  # Discard the alpha channel
-            # Convert to uint8 numpy array
-            background_color = np.array(color_to_remove, dtype=np.uint8)
-        else:
-            # Otherwise, calculate the background color from image corners
-            corners = [image[0, 0], image[0, w - 1], image[h - 1, 0], image[h - 1, w - 1]]
-            avg_color = np.mean(corners, axis=0)
-
-            if background_removal and all(
-                    np.all(np.abs(corner - avg_color) < background_tolerance) for corner in corners):
-                background_color = avg_color.astype(np.uint8)
-            else:
-                background_color = None
+        background_color = self._background_color(image, color_to_remove, background_removal, background_tolerance)
 
         if background_color is not None:
             # print(f"Masking background color = {background_color.tolist()}")
@@ -532,6 +363,8 @@ class DepthTo3D:
 
         if background_color is None:
             background_color = [-1, -1, -1]
+        else:
+            background_color = background_color[::-1].tolist()  # Viewport expects RGB.
         return output_ply_filename, background_color
 
     def modify_depth(self, depth_array, percentage):
@@ -687,12 +520,10 @@ class DepthTo3D:
         # dname = os.path.dirname(image_path)
         # fname = os.path.join(dname, f"{os.path.basename(image_path)}_padded.png")
         # cv2.imwrite(fname, image)
-        img_h, img_w, _ = image.shape
-        if target_size == (0,0):
-            target_size = (img_h, img_w)
-
         if image is None:
             raise ValueError(f"Image not found: {image_path}")
+        if target_size is None or tuple(target_size) == (0, 0):
+            target_size = image.shape[:2]
 
         # Estimate depth
         flip = False
