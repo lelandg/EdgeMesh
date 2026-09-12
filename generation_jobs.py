@@ -1,4 +1,4 @@
-"""Cooperative Qt jobs; workers never read or mutate widgets."""
+"""Cooperative PySide6 jobs; workers never read or mutate widgets."""
 import threading
 import traceback
 from PySide6.QtCore import QObject, QThread, Signal, Slot

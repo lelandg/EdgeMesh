@@ -311,7 +311,7 @@ class DialogPersistenceTests(unittest.TestCase):
             self.assertEqual(self.service.choose_directory(None, "Folder", "folders"), "")
 
     def test_widget_fallback_accepts_an_absolute_path_with_spaces(self):
-        # The offscreen platform has no native picker. Exercise Qt's fallback
+        # The offscreen platform has no native picker. Exercise PySide6's fallback
         # filename field with the same full path a user can type or paste.
         target_directory = Path(self.temporary.name) / "Project folder"
         target_directory.mkdir()

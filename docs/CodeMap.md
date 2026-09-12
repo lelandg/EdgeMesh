@@ -11,16 +11,16 @@ are not additional directories.
 
 | Module | Verified entry points | Responsibility |
 |---|---|---|
-| [edge_mesh.py](../edge_mesh.py) | `main`, `MainWindowImageProcessing` | Qt application, image controls, preview, viewport creation and explicit export. |
+| [edge_mesh.py](../edge_mesh.py) | `main`, `MainWindowImageProcessing` | PySide6 application, image controls, preview, viewport creation and explicit export. |
 | [workspace_ui.py](../workspace_ui.py) | `WorkspaceMixin`, `ImagePreviewLabel` | Resizable workspace, detachable parameter panel, visible mask, Setup and History integration, layout persistence. |
 | [project_workflows.py](../project_workflows.py) | `ProjectWorkflowMixin` | Project menus, visible project location, autosave and project save/open/copy orchestration. |
 | [model_compliance_ui.py](../model_compliance_ui.py) | `ModelComplianceMixin`, `ModelLicenseDialog` | Model consent UI, separate selected/accepted model labels and bindings between accepted mesh provenance and export. |
 | [history_panel.py](../history_panel.py) | `HistoryPanel` | Metadata-only history browser, setting comparisons and explicit snapshot restore requests. |
-| [embedded_viewport.py](../embedded_viewport.py) | `EmbeddedMeshViewport`, `validated_mesh`, `mesh_to_polydata` | Lazy Qt/VTK viewer with independent display buffers and Open3D geometry for health/export. |
+| [embedded_viewport.py](../embedded_viewport.py) | `EmbeddedMeshViewport`, `validated_mesh`, `mesh_to_polydata` | Lazy PySide6/VTK viewer with independent display buffers and Open3D geometry for health/export. |
 | [feature_workflows.py](../feature_workflows.py) | `WorkflowMixin`, `preview_image`, `pixmap` | Session/AI/model/mesh menus, immutable job inputs, cancellation, result acceptance and optional previews. |
 | [generation_jobs.py](../generation_jobs.py) | `JobController`, `Cancellation`, `JobCancelled` | One cooperative `QThread` job per controller; result/progress/error/cancellation signals. |
 | [data_contracts.py](../data_contracts.py) | `as_bgr`, `output_shape`, `proportional_shape`, `normalized_depth`, `foreground_mask` | Shared image, dimension, depth and foreground-mask validation. |
-| [qt_extensions.py](../qt_extensions.py) | `FlowLayout`, `ExpandableLineEdit`, `state_to_bool` | Layout helpers and Qt checkbox-state conversion. |
+| [pyside6_extensions.py](../pyside6_extensions.py) | `FlowLayout`, `ExpandableLineEdit`, `state_to_bool` | Layout helpers and PySide6 checkbox-state conversion. |
 
 `MainWindowImageProcessing` inherits `ProjectWorkflowMixin`, `ModelComplianceMixin`,
 `WorkspaceMixin` and `WorkflowMixin`. `process_image` starts the
@@ -112,7 +112,7 @@ defers closing until workers finish. The accepted work folder is released at
 close. `WorkflowMixin._model_work_active` guards restore/unload/register/new work
 while either type of worker is active, so the GUI does not wait on a model-store
 lock held by a loading worker.
-The embedded VTK interactor uses Qt's event loop. Rendering initializes on the
+The embedded VTK interactor uses PySide6's event loop. Rendering initializes on the
 first valid mesh, and `shutdown` finalizes its native window during application
 close. A candidate mesh is validated and rendered before it replaces accepted
 geometry; viewport buffers are independent from export geometry. The old
@@ -267,7 +267,7 @@ timed-out WMI query. It also defines `initialize_opencv_runtime`,
 called by the main window before image loading or background work. It probes
 OpenCV's native parallel scheduler and logs a single-thread fallback if that
 scheduler cannot initialize; healthy runtimes retain their thread settings.
-The package and Windows constraints pin PySide6/Qt 6.11.2. Cold subprocess
+The package and Windows constraints pin PySide6 6.11.2. Cold subprocess
 coverage lives in `tests/test_platform_startup.py`; `tests/test_native_startup.py`
 opts into a real Windows event loop with `EDGEMESH_TEST_NATIVE_GUI=1`.
 [_build_support.py](../_build_support.py) defines `application_modules` and
@@ -316,7 +316,7 @@ Do not treat edits there as ordinary parent-repository files.
 
 ## Validation and dependency boundaries
 
-Root `tests/` covers contracts, depth/edges, generation jobs, actual offscreen Qt
+Root `tests/` covers contracts, depth/edges, generation jobs, actual offscreen PySide6
 workflows, sessions/user storage, model-store and SAM2 provider contracts,
 suggestions, mesh health, contour generation, smoothing, logging and installer
 paths/checksums. `MeshTools/tests/test_mesh_topology.py` covers topology, rotation

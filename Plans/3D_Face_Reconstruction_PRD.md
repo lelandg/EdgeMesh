@@ -64,7 +64,7 @@ Integrate proven 3D face reconstruction models into EdgeMesh as a new processing
 
 ### Architecture
 ```
-User Interface (PyQt6)
+User Interface (PySide6)
     ↓
 Face Reconstruction Manager
     ↓
@@ -80,7 +80,7 @@ Face Detection → Preprocessing → Model Inference → Mesh Export
 
 ### Technology Stack
 - **Framework**: PyTorch (consistent with existing EdgeMesh)
-- **GUI**: PyQt6 (existing)
+- **GUI**: PySide6 (existing)
 - **3D Rendering**: Open3D (existing)
 - **Face Detection**: Included with models or dlib
 - **Export Formats**: .obj, .ply, .stl (existing support)
@@ -417,7 +417,7 @@ EdgeMesh/
 │           └── checkpoints/
 │
 ├── gui/                             # Existing, update
-│   └── face_reconstruction_widget.py # New PyQt6 widget
+│   └── face_reconstruction_widget.py # New PySide6 widget
 │
 ├── edge_mesh.py                     # Update: Add new tab
 ├── requirements.txt                 # Update: Add dependencies
@@ -517,7 +517,7 @@ license_accepted = false
 **Goal**: Add Face Reconstruction tab to EdgeMesh GUI
 
 **Tasks**:
-- [ ] Design PyQt6 widget layout
+- [ ] Design PySide6 widget layout
 - [ ] Implement `FaceReconstructionWidget` class
 - [ ] Add tab to `MainWindowImageProcessing`
 - [ ] Connect signals/slots for UI controls

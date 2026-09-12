@@ -9,7 +9,7 @@ pip install nuitka
 # This builds for Windows:
 nuitka --standalone --remove-output --mingw64 --onefile \
        --show-progress --show-scons --show-modules \
-       --enable-plugin=pyqt6 \
+       --enable-plugin=pyside6 \
        --enable-plugin=numpy \
        --enable-plugin=tensorflow \
        --enable-plugin=multiprocessing \

@@ -27,7 +27,7 @@ The base profile does not require torch or Transformers. Claude and Codex comman
 
 ## Command-line behavior
 
-The installed command supports `edgemesh --help`, `edgemesh --version`, an optional project file/directory argument, and `edgemesh diagnose-depth --help`. Help and version do not import Qt or torch. Depth diagnostics use their own argument parser and preserve JSON output without launcher messages on standard output. Missing depth dependencies are logged and reported on standard error with an instruction to install the `depth` extra.
+The installed command supports `edgemesh --help`, `edgemesh --version`, an optional project file/directory argument, and `edgemesh diagnose-depth --help`. Help and version do not import PySide6 or torch. Depth diagnostics use their own argument parser and preserve JSON output without launcher messages on standard output. Missing depth dependencies are logged and reported on standard error with an instruction to install the `depth` extra.
 
 ## Supported Python and platform boundary
 

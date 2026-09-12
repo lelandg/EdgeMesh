@@ -1,4 +1,4 @@
-"""Real Qt mask gestures, dialog directories, and explicit preference persistence."""
+"""Real PySide6 mask gestures, dialog directories, and explicit preference persistence."""
 
 import os
 from pathlib import Path

@@ -46,7 +46,7 @@ def detect_and_project_edges(image, low_threshold, high_threshold, thickness=1, 
         # Project edges in white [255, 255, 255]
         result_image[thick_edges > 0] = [255, 255, 255]
 
-    # Convert BGR to RGB only at the Qt display boundary.
+    # Convert BGR to RGB only at the PySide6 display boundary.
     return result_image
 
 def detect_edges(image, low_threshold, high_threshold, thickness=1, project_on_original=False):

@@ -1,4 +1,4 @@
-"""An in-process Qt mesh viewport with lazy VTK rendering.
+"""An in-process PySide6 mesh viewport with lazy VTK rendering.
 
 The Open3D mesh is the source of truth for export and mesh-health analysis.
 VTK receives a copy for display, so camera and display changes cannot modify
@@ -29,7 +29,7 @@ PROJECTIONS = ("Perspective", "Orthographic")
 
 
 def wheel_navigation(modifiers):
-    """Map exact Qt modifiers to a camera operation on fixed world axes."""
+    """Map exact PySide6 modifiers to a camera operation on fixed world axes."""
     shift, control, alt = (
         Qt.KeyboardModifier.ShiftModifier,
         Qt.KeyboardModifier.ControlModifier,
@@ -610,7 +610,7 @@ class _VTKRenderer:
 
 
 class EmbeddedMeshViewport(QWidget):
-    """Qt-hosted preview exposing the existing viewport's mesh/export API."""
+    """PySide6-hosted preview exposing the existing viewport's mesh/export API."""
 
     error_occurred = Signal(str)
     view_state_changed = Signal()

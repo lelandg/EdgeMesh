@@ -1,4 +1,4 @@
-"""Actual Qt application workflows with isolated user storage and no inference."""
+"""Actual PySide6 application workflows with isolated user storage and no inference."""
 
 import contextlib
 import io

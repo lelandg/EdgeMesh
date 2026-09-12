@@ -4,7 +4,7 @@
 
 [![GitHub](https://img.shields.io/github/license/lelandg/EdgeMesh)](https://github.com/lelandg/EdgeMesh/blob/main/LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.12-blue)](https://www.python.org/)
-[![PySide6](https://img.shields.io/badge/PySide6-Qt6-green)](https://doc.qt.io/qtforpython-6/)
+[![PySide6](https://img.shields.io/badge/PySide6-6.11.2-green)](https://doc.qt.io/qtforpython-6/)
 [![Open3D](https://img.shields.io/badge/Open3D-0.19.0-orange)](http://www.open3d.org/)
 
 **Transform 2D images into stunning 3D meshes using AI-powered depth estimation and advanced edge detection** ✨
@@ -310,7 +310,7 @@ This project is proprietary software. Please see the [LICENSE](LICENSE) file for
 - **Open3D Team** - For the excellent 3D processing library
 - **PyTorch Team** - For deep learning framework
 - **MiDaS Contributors** - For depth estimation models
-- **Qt/PyQt6** - For the robust GUI framework
+- **PySide6** - For the robust GUI framework
 - **Community Contributors** - For feedback and improvements
 
 ---

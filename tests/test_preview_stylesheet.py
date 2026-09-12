@@ -1,4 +1,4 @@
-"""Capture Qt's stylesheet diagnostics during real preview initialization."""
+"""Capture PySide6's stylesheet diagnostics during real preview initialization."""
 
 import unittest
 

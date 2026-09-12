@@ -85,7 +85,7 @@ class _Viewport:
 
 
 class _Workspace(ProjectWorkflowMixin):
-    """Keep real project/history/settings I/O while avoiding Qt or GPU startup."""
+    """Keep real project/history/settings I/O while avoiding PySide6 or GPU startup."""
 
     def __init__(self, root, source=None):
         self.paths = SimpleNamespace(root=root / 'profile', work_dir=root / 'work')

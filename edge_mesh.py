@@ -61,7 +61,7 @@ License:
 
 import ast
 import traceback
-from qt_extensions import FlowLayout, state_to_bool
+from pyside6_extensions import FlowLayout, state_to_bool
 import configparser
 import sys
 import cv2
@@ -777,7 +777,7 @@ class MainWindowImageProcessing(ProjectWorkflowMixin, ModelComplianceMixin, Work
 
         # Apply the new color to the display using the palette
         palette = self.color_display.palette()
-        palette.setColor(QPalette.ColorRole.Window, color)  # PyQt6: Updated Enum
+        palette.setColor(QPalette.ColorRole.Window, color)  # PySide6 enum
         self.color_display.setPalette(palette)
 
     def update_color_picker(self, color):

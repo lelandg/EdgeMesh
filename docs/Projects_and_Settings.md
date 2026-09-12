@@ -54,7 +54,7 @@ recovers offscreen positions when monitors have changed. File dialogs retain the
 directory the user last visited for that operation.
 
 File and folder pickers use the operating system's native dialog when available,
-including the Windows address bar for copying and pasting folder paths. Qt's
+including the Windows address bar for copying and pasting folder paths. PySide6's
 file picker remains the fallback on platforms without native dialog support.
 In the Windows picker, use Alt+D to edit the folder path or paste a complete
 file path into the File name field.

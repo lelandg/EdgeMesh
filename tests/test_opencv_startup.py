@@ -1,4 +1,4 @@
-"""Exercise native OpenCV thread failure recovery through actual Qt startup."""
+"""Exercise native OpenCV thread failure recovery through actual PySide6 startup."""
 
 import unittest
 from unittest.mock import Mock, patch

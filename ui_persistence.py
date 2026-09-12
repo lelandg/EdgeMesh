@@ -1,4 +1,4 @@
-"""Atomic per-user UI preferences and persistent, accessible Qt dialogs.
+"""Atomic per-user UI preferences and persistent, accessible PySide6 dialogs.
 
 Only geometry and explicitly named caller settings are stored. Text controls are
 never scraped: provider credentials belong to their own credential store.
@@ -147,7 +147,7 @@ def _encoded(value):
 
 def _decoded(value):
     if not isinstance(value, str) or len(value) > 131_072:
-        raise ValueError("Invalid saved Qt state")
+        raise ValueError("Invalid saved PySide6 state")
     return QByteArray(base64.b64decode(value, validate=True))
 
 
@@ -198,7 +198,7 @@ class DialogPersistence(QObject):
                     window = watched.window()
                     if isinstance(window, QDialog):
                         self._click_accept_button(window)
-                        # Do not let Qt fall back to an unrelated auto-default
+                        # Do not let PySide6 fall back to an unrelated auto-default
                         # action when acceptance is unavailable or disabled.
                         return True
             if self._persistent_window(watched) and watched not in self._busy:
@@ -239,13 +239,13 @@ class DialogPersistence(QObject):
             if not isinstance(saved, dict):
                 raise ValueError("Invalid saved window record")
             if saved.get("geometry") and not window.restoreGeometry(_decoded(saved["geometry"])):
-                raise ValueError("Qt rejected saved window geometry")
+                raise ValueError("PySide6 rejected saved window geometry")
             if isinstance(window, QMainWindow) and saved.get("state"):
                 if not window.restoreState(_decoded(saved["state"]), 1):
-                    raise ValueError("Qt rejected saved main window state")
+                    raise ValueError("PySide6 rejected saved main window state")
             elif isinstance(window, QFileDialog) and saved.get("state"):
                 if not window.restoreState(_decoded(saved["state"])):
-                    raise ValueError("Qt rejected saved file dialog state")
+                    raise ValueError("PySide6 rejected saved file dialog state")
             splitters = saved.get("splitters", {})
             if not isinstance(splitters, dict):
                 raise ValueError("Invalid saved splitter settings")
@@ -253,7 +253,7 @@ class DialogPersistence(QObject):
                 name = splitter.objectName()
                 if name and splitter.window() is window and name in splitters:
                     if not splitter.restoreState(_decoded(splitters[name])):
-                        raise ValueError("Qt rejected saved splitter state")
+                        raise ValueError("PySide6 rejected saved splitter state")
             self._recover_screen(window)
             self._restored.add(window)
             return True
@@ -314,11 +314,11 @@ class DialogPersistence(QObject):
             if dialog is not None:
                 dialog.setWindowTitle(caption)
         except RuntimeError:
-            dialog = None  # Its temporary parent was already destroyed by Qt.
+            dialog = None  # Its temporary parent was already destroyed by PySide6.
         if dialog is None:
             dialog = QFileDialog(parent, caption)
             # Prefer the operating system picker (including Windows Explorer's
-            # editable address bar). Qt supplies its widget picker when a native
+            # editable address bar). PySide6 supplies its widget picker when a native
             # dialog is unavailable. Set this before any other dialog properties.
             dialog.setOption(QFileDialog.Option.DontUseNativeDialog, False)
             dialog.setObjectName(f"file-dialog:{mode}:{directory_key}")
@@ -332,7 +332,7 @@ class DialogPersistence(QObject):
             self._restored.discard(dialog)
         # QFileDialog's binary state also contains a directory. Restore it
         # before applying the separately remembered, validated target below.
-        # A first-ever dialog keeps Qt's normal initial centering behavior.
+        # A first-ever dialog keeps PySide6's normal initial centering behavior.
         windows = self.settings.get("windows", {})
         if isinstance(windows, dict) and self._key(dialog) in windows:
             self.restore_window(dialog)
@@ -389,7 +389,7 @@ class DialogPersistence(QObject):
 
     def save_file(self, parent, caption, directory_key, filter="All files (*)", initial_directory=None,
                   suggested_name="", default_suffix: str | None = None):
-        """Choose a target; Qt adds the optional suffix only when one is absent."""
+        """Choose a target; PySide6 adds the optional suffix only when one is absent."""
         dialog = self._dialog(parent, caption, directory_key, "save", filter, initial_directory)
         dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
         dialog.setFileMode(QFileDialog.FileMode.AnyFile)

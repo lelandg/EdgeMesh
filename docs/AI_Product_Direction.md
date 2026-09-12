@@ -59,15 +59,15 @@ The useful references are:
 - `../ImageAI/gui/main_window.py` (`_init_settings_tab`): provider selection, masked key inputs, and an explicit Save & Test action.
 - `../ImageAI/core/config.py` and `core/security.py`: persistence and keyring abstractions.
 
-Both current applications use PySide6; EdgeMesh's supplied PyQt6 description is stale. Reuse focused interfaces and interaction patterns rather than importing ImageAI's large main window. Give EdgeMesh Setup sections for Device, Local Models, Optional Providers, Storage, and Diagnostics. Show concrete readiness states and the next useful action; avoid making first use depend on filling every optional provider field.
+Both current applications use PySide6. Reuse focused interfaces and interaction patterns rather than importing ImageAI's large main window. Give EdgeMesh Setup sections for Device, Local Models, Optional Providers, Storage, and Diagnostics. Show concrete readiness states and the next useful action; avoid making first use depend on filling every optional provider field.
 
 There is one pattern to improve while adapting: ImageAI's inspected `ConfigManager.set_api_key` falls back to file storage when keyring storage fails, and its main window also maintains legacy key fields. A new EdgeMesh integration should use the OS credential store or a clearly identified session-only key, with no silent plaintext fallback. Never write keys into project history, prompts, logs, or exported bundles. No credential values were inspected for this report.
 
 ## Integrated 3D preview
 
-The inspected baseline used `MeshTools/viewport_3d.py`, which constructs an Open3D `VisualizerWithKeyCallback` and calls `create_window`. The accompanying workspace refresh replaces that external UI dependency with `embedded_viewport.py`, a Qt widget using VTK's existing Qt interactor. MeshTools remains a separate nested repository. The new viewer preserves Open3D mesh data for health checks and export.
+The inspected baseline used `MeshTools/viewport_3d.py`, which constructs an Open3D `VisualizerWithKeyCallback` and calls `create_window`. The accompanying workspace refresh replaces that external UI dependency with `embedded_viewport.py`, a PySide6 widget using VTK's existing PySide6 interactor. MeshTools remains a separate nested repository. The new viewer preserves Open3D mesh data for health checks and export.
 
-PyVistaQt's `QtInteractor` is another practical candidate: upstream explicitly documents embedding it inside a Qt main window. This implementation uses VTK's Qt widget directly because VTK is installed and PyVistaQt is not. Existing dependencies do not prove packaged compatibility or rendering performance. [PyVistaQt embedding example](https://qt.pyvista.org/usage.html).
+PyVistaQt's `QtInteractor` is another practical candidate: upstream explicitly documents embedding it inside a PySide6 main window. This implementation uses VTK's PySide6 widget directly because VTK is installed and PyVistaQt is not. Existing dependencies do not prove packaged compatibility or rendering performance. [PyVistaQt embedding example](https://qt.pyvista.org/usage.html).
 
 The first viewer should expose orbit/pan/zoom, fit/reset, front/side/top views, perspective/orthographic projection, solid/wireframe/vertex-color display, axes, background selection, and screenshots. Later add selected-defect overlays, clipping, measurements with explicit units, material channels, and turntable output. Keep large-mesh work off the UI thread, preserve camera position across parameter changes when appropriate, and validate color/orientation by reopening exported assets.
 

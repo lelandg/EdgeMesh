@@ -3,7 +3,7 @@
 Recorded 2026-09-04 19:12, local Windows time.
 
 The supported regression-test target is Windows x64, CPython 3.12.10, with
-PyTorch CPU operations and Qt's offscreen platform. The current `.venv` reports
+PyTorch CPU operations and PySide6's offscreen platform. The current `.venv` reports
 PyTorch 2.8.0+cpu with no CUDA runtime. Linux, macOS, Python 3.13/3.14, CUDA,
 standalone packaged builds and interactive OpenGL rendering have not been
 validated by this dependency snapshot. This does not broaden platform support.
@@ -19,7 +19,7 @@ conflicts were found between the selected installed packages and their declared
 requirements. This is a selected runtime closure, not a blanket environment dump.
 
 These roots support CPU geometry, image and tensor tests, model-adapter contracts
-with mocked providers, and offscreen Qt tests. The closure includes Open3D's
+with mocked providers, and offscreen PySide6 tests. The closure includes Open3D's
 declared notebook/web dependencies even though the tests do not use them.
 Optional SAM/model weights, GPU libraries, hardware controller integrations and
 Nuitka/cx_Freeze build tools are not part of this test environment. A future
@@ -33,7 +33,7 @@ is still an explicit CI verification step rather than a claimed local result.
 The already installed versions are retained; no packages were upgraded.
 
 The workspace refresh also uses the already installed VTK 9.5.2 directly for
-its embedded Qt viewport. That exact version is now included in the CPU test
+its embedded PySide6 viewport. That exact version is now included in the CPU test
 profile; its matplotlib dependency was already present. Renderer initialization
 remains lazy. Geometry, conversion and export tests can run without initializing
 OpenGL; they do not prove that a native GPU window renders correctly.

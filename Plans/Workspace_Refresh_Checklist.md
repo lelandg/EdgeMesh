@@ -11,9 +11,9 @@ Improve the working desktop workflow while evaluating newer AI models independen
 - [x] Create a resizable workspace with detachable controls, visible accepted mask and focused setup guidance.
 - [x] Improve mask editing with reversible edits and display controls (`subject_mask.py`); 22 mask tests pass.
 - [x] Expose navigable settings/mask history with explicit geometry-regeneration semantics.
-- [x] Add an embedded Qt/VTK preview using existing dependencies and preserve export geometry.
+- [x] Add an embedded PySide6/VTK preview using existing dependencies and preserve export geometry.
 - [x] Run focused and application regression checks; write a cited roadmap and implementation summary.
 
 Model adapters, cloud generation, agent connections and package publication are evaluated proposals in this pass, not enabled services. No credentials, weight downloads, package installs or external publishing were used for the workspace changes. The installed VTK version was recorded in dependency manifests. Existing code is uncommitted; no commit or push was requested.
 
-Validation: 155 tests passed; scoped Ruff and compilation passed; native Qt/VTK framebuffer smoke passed. See `Notes/workspace-refresh-2026-09-10.md` for evidence and remaining boundaries.
+Validation: 155 tests passed; scoped Ruff and compilation passed; native PySide6/VTK framebuffer smoke passed. See `Notes/workspace-refresh-2026-09-10.md` for evidence and remaining boundaries.

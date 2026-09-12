@@ -1,4 +1,4 @@
-"""Geometry/Qt checks that do not create an OpenGL context."""
+"""Geometry/PySide6 checks that do not create an OpenGL context."""
 
 from copy import deepcopy
 import json
