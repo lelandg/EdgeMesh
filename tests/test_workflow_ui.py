@@ -96,6 +96,47 @@ class WorkflowUITests(unittest.TestCase):
         )
         self.assertFalse(self.window._jobs.busy)
 
+    def test_export_dialog_writes_accepted_mesh_without_loading_selected_model(self):
+        import open3d as o3d
+        from embedded_viewport import EmbeddedMeshViewport, validated_mesh
+        from PySide6.QtWidgets import QFileDialog
+
+        viewport = EmbeddedMeshViewport(self.window)
+        viewport.mesh = validated_mesh(o3d.geometry.TriangleMesh.create_box())
+        self.window.three_d_viewport = viewport
+        self.window._seal_accepted_mesh(
+            {"model_id": "depth-anything/Depth-Anything-V2-Large-hf",
+             "revision": "a" * 40}, settings={"model": "DepthAnythingV2"}
+        )
+        for model in ("DepthAnythingV2", "DPT", "MiDaS"):
+            self.window.depth_method_dropdown.setCurrentText(model)
+            self.window._refresh_workspace()
+            for suffix in ("obj", "stl"):
+                with self.subTest(model=model, format=suffix):
+                    target = self.root / f"{model}.{suffix}"
+
+                    def accept_export(dialog):
+                        self.assertEqual(dialog.windowTitle(), "Export Mesh")
+                        dialog.selectNameFilter(f"{suffix.upper()} Files (*.{suffix})")
+                        dialog.selectFile(str(target))
+                        return QDialog.DialogCode.Accepted
+
+                    with patch.object(QFileDialog, "exec", accept_export), patch.object(
+                        self.window, "_start_generation"
+                    ) as generate, patch.object(
+                        self.window.model_store, "get_depth",
+                        side_effect=AssertionError("Export must not load a depth model"),
+                    ) as load_model:
+                        self.window.export_mesh_button.click()
+                    generate.assert_not_called()
+                    load_model.assert_not_called()
+                    self.assertTrue(target.is_file())
+                    reloaded = o3d.io.read_triangle_mesh(str(target))
+                    self.assertEqual(len(reloaded.triangles), len(viewport.mesh.triangles))
+                    np.testing.assert_allclose(reloaded.get_min_bound(), viewport.mesh.get_min_bound())
+                    np.testing.assert_allclose(reloaded.get_max_bound(), viewport.mesh.get_max_bound())
+                    self.assert_no_workflow_error()
+
     def test_startup_without_image_or_saved_ui_settings(self):
         self.window._history_timer.stop()
         self.window.close()
