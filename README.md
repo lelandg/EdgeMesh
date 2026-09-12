@@ -11,7 +11,7 @@
 
 [**🚀 Quick Start**](#-quick-start) | [**📸 Features**](#-key-features) | [**🛠️ Installation**](#-installation) | [**📖 Documentation**](docs/CodeMap.md) | [**🎯 Examples**](#-examples)
 
-<img src="docs/Workspace_Refresh.png" alt="EdgeMesh workspace with a visible mask, integrated preview and detachable controls" width="1000"/>
+![EdgeMesh-DepthAnythingV2-Mesh-Generation.png](Screenshots/EdgeMesh-DepthAnythingV2-Mesh-Generation.png)
 
 </div>
 
