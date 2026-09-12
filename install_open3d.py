@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 
 import glob
+import hashlib
+import hmac
+import logging
 import os
 import platform
+import re
 import subprocess
 import sys
 
@@ -17,6 +21,36 @@ MAIN_DEVEL_LINUX_X86_64_EXAMPLE = (
     "https://github.com/isl-org/Open3D/releases/download/main-devel/"
     "open3d-0.19.0-cp314-cp314-manylinux_2_35_x86_64.whl"
 )
+
+
+def verify_pinned_wheel(wheel):
+    """Verify a local wheel against an independently recorded SHA-256.
+
+    EDGEMESH_OPEN3D_SHA256 takes precedence; otherwise read <wheel>.sha256.
+    Sidecars accept a bare digest or the usual sha256sum digest/filename line.
+    """
+    try:
+        expected = os.environ.get('EDGEMESH_OPEN3D_SHA256', '').strip()
+        if not expected:
+            sidecar = os.fspath(wheel) + '.sha256'
+            if not os.path.isfile(sidecar):
+                raise ValueError(f"Missing wheel checksum: provide {sidecar} or EDGEMESH_OPEN3D_SHA256 from a trusted record.")
+            with open(sidecar, encoding='utf-8') as checksum_file:
+                contents = checksum_file.read().strip().split()
+            expected = contents[0] if contents else ''
+        if not re.fullmatch(r'[0-9a-fA-F]{64}', expected):
+            raise ValueError("Open3D wheel checksum must contain exactly 64 hexadecimal SHA-256 characters.")
+        digest = hashlib.sha256()
+        with open(wheel, 'rb') as wheel_file:
+            for chunk in iter(lambda: wheel_file.read(1024 * 1024), b''):
+                digest.update(chunk)
+        actual = digest.hexdigest()
+        if not hmac.compare_digest(actual, expected.lower()):
+            raise ValueError(f"Open3D wheel SHA-256 mismatch: {wheel}. Do not install this file; verify its source and expected checksum.")
+        return actual
+    except Exception:
+        logging.getLogger(__name__).exception("Open3D wheel verification failed: %s", wheel)
+        raise
 
 
 def find_pinned_wheel(major, minor):
@@ -39,18 +73,23 @@ def install_open3d():
     major, minor = map(int, python_version.split('.')[:2])
 
     # Python 3.13+: no PyPI wheels — install from a pinned local main-devel wheel
-    if (major == 3 and minor >= 13) or major > 3:
+    if os.environ.get('EDGEMESH_OPEN3D_WHEEL') or (major == 3 and minor >= 13) or major > 3:
         wheel = find_pinned_wheel(major, minor)
         if wheel:
+            verify_pinned_wheel(wheel)
             print(f"Installing pinned local wheel: {wheel}")
             try:
                 subprocess.check_call([sys.executable, "-m", "pip", "install", wheel])
                 print("Open3D installed successfully from the pinned wheel!")
             except subprocess.CalledProcessError:
-                print("Failed to install the pinned wheel. Check that its cp tag "
-                      f"matches this interpreter (cp{major}{minor}) and your glibc "
-                      "is >= the wheel's manylinux requirement.")
+                logging.getLogger(__name__).exception("Pinned Open3D wheel installation failed: %s", wheel)
+                raise
             return
+
+        if os.environ.get('EDGEMESH_OPEN3D_WHEEL'):
+            error = FileNotFoundError("EDGEMESH_OPEN3D_WHEEL must point to an existing local wheel.")
+            logging.getLogger(__name__).error(str(error))
+            raise error
 
         print("\n" + "=" * 80)
         print(f"Open3D on PyPI has no wheels for Python {major}.{minor} (PyPI stops at 3.12).")
@@ -61,7 +100,8 @@ def install_open3d():
         print(f"1. Download the cp{major}{minor} wheel for your platform ONCE, e.g.")
         print(f"   (Linux x86_64): {MAIN_DEVEL_LINUX_X86_64_EXAMPLE}")
         print(f"2. Save it under {WHEEL_CACHE}")
-        print("   (or point EDGEMESH_OPEN3D_WHEEL at the file), and record its sha256.")
+        print("   (or point EDGEMESH_OPEN3D_WHEEL at the file). Save its trusted SHA-256")
+        print("   in <wheel>.sha256 or EDGEMESH_OPEN3D_SHA256; verification is required.")
         print("3. Re-run this script — it will install from that pinned file.")
         print("Alternatively, use Python 3.12 and the released open3d==0.19.0 from PyPI.")
         print("=" * 80 + "\n")

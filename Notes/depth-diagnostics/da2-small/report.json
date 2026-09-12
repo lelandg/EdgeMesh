@@ -1,0 +1,110 @@
+{
+  "model": {
+    "backend": "huggingface",
+    "device": "cpu",
+    "license": "cc-by-nc-4.0",
+    "model_card": "https://huggingface.co/depth-anything/Depth-Anything-V2-Large-hf/tree/7581137eff8d4e94f6e796d3baea0e9fa79b22d2",
+    "model_id": "depth-anything/Depth-Anything-V2-Large-hf",
+    "model_type": "depth_anything_v2",
+    "preprocessing": {
+      "ensure_multiple_of": 14,
+      "keep_aspect_ratio": true,
+      "size": {
+        "height": 112,
+        "width": 112
+      }
+    },
+    "revision": "7581137eff8d4e94f6e796d3baea0e9fa79b22d2",
+    "weight_files_sha256": {
+      "model.safetensors": "4e01e34ed5549b529b70b92d53226bc370f03041977b390d3dde45d47f516cf9"
+    },
+    "license_policy": {
+      "model_type": "depth_anything_v2",
+      "model_id": "depth-anything/Depth-Anything-V2-Large-hf",
+      "display_name": "Depth Anything V2 Large",
+      "license": "cc-by-nc-4.0",
+      "usage_class": "noncommercial",
+      "license_url": "https://creativecommons.org/licenses/by-nc/4.0/",
+      "source_url": "https://github.com/DepthAnything/Depth-Anything-V2#license",
+      "guidance": "Use the model for non-commercial purposes. Keep attribution, license links, and notices when sharing licensed material, and identify changes. Do not use these weights for paid client work, a paid service, or other commercial advantage without separate permission from the rights holder. A non-profit organization or free app does not automatically make every use non-commercial.",
+      "restriction": "",
+      "commercial_status": "not-published",
+      "commercial_url": "",
+      "commercial_info": "No separate commercial licensing offer is published in the reviewed official sources.",
+      "policy_version": 1,
+      "requires_acceptance": true,
+      "badge": "NC \u00b7 non-commercial",
+      "notice": "General guidance, not legal advice. Read the linked weight license for your intended use. EdgeMesh being free or non-commercial does not change a model's terms. This label records the model used; it does not decide ownership or license of every output."
+    },
+    "policy_sha256": "885021665bf8ac67caa1fc0debcdf2728f2ec8cc96fb0eaa25446171af79fdf7"
+  },
+  "input": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\Images\\example.png",
+  "input_shape": [
+    928,
+    1232,
+    3
+  ],
+  "output_shape": [
+    72,
+    96
+  ],
+  "processor_override": {
+    "size": {
+      "height": 112,
+      "width": 112
+    },
+    "keep_aspect_ratio": true,
+    "ensure_multiple_of": 14
+  },
+  "device": "cpu",
+  "smoothing": "none",
+  "depth_amount": 1.0,
+  "raw_prediction": {
+    "shape": [
+      1,
+      112,
+      154
+    ],
+    "finite": true,
+    "minimum": 88.74072265625,
+    "maximum": 195.03204345703125,
+    "standard_deviation": 26.928043365478516,
+    "percentiles_5_50_95": [
+      97.66118354797364,
+      165.16661834716797,
+      186.458821105957
+    ]
+  },
+  "smoothed_normalized_depth": {
+    "shape": [
+      72,
+      96
+    ],
+    "finite": true,
+    "minimum": 0.0,
+    "maximum": 255.00001525878906,
+    "standard_deviation": 64.79051971435547,
+    "percentiles_5_50_95": [
+      20.912581729888917,
+      183.210693359375,
+      234.32611999511718
+    ]
+  },
+  "mesh": {
+    "path": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\Notes\\depth-diagnostics\\da2-small\\example_D1_0_none-depth_anything_v2_R72x96_dyn20260911_081924.ply",
+    "vertices": 13822,
+    "faces": 27640,
+    "extents": [
+      95.0,
+      71.0,
+      47.500003814697266
+    ],
+    "depth_to_longest_side": 0.5000000401547081,
+    "watertight": true
+  },
+  "seconds": {
+    "model_load": 1.3763808999792673,
+    "pipeline": 0.7794645999965724
+  },
+  "offline": true
+}

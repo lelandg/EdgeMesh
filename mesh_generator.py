@@ -7,7 +7,6 @@ import cv2
 import numpy as np
 import open3d as o3d
 
-from depth_to_3d import DepthTo3D
 from edge_clustering_analyzer import EdgeClustering
 from shape_analyzer import ShapeAnalysis
 from depth_cue_estimator_util import DepthCueEstimator

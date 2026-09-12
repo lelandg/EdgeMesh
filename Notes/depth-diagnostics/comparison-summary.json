@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "protocol": {
+    "input": "Images/example.png",
+    "input_shape": [
+      928,
+      1232,
+      3
+    ],
+    "processor_size": 112,
+    "mesh_shape": [
+      72,
+      96
+    ],
+    "depth_amount": 1.0,
+    "smoothing": "none",
+    "flat_back": true,
+    "device": "cpu",
+    "offline": true
+  },
+  "models": {
+    "DA1": {
+      "report": "Notes\\depth-diagnostics\\da1-small\\report.json",
+      "model_id": "LiheYoung/depth-anything-large-hf",
+      "revision": "27ccb0920352c0c37b3a96441873c8d37bd52fb6",
+      "license": "apache-2.0",
+      "raw_prediction": {
+        "shape": [
+          1,
+          112,
+          154
+        ],
+        "finite": true,
+        "minimum": 44.58732604980469,
+        "maximum": 96.01570129394531,
+        "standard_deviation": 11.576979637145996,
+        "percentiles_5_50_95": [
+          53.35697727203369,
+          84.90826797485352,
+          92.50109710693359
+        ]
+      },
+      "normalized_depth": {
+        "shape": [
+          72,
+          96
+        ],
+        "finite": true,
+        "minimum": 0.0,
+        "maximum": 255.0,
+        "standard_deviation": 58.3265266418457,
+        "percentiles_5_50_95": [
+          40.52848072052002,
+          200.1484603881836,
+          238.3590072631836
+        ]
+      },
+      "mesh": {
+        "path": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\Notes\\depth-diagnostics\\da1-small\\example_D1_0_none-depth_anything_v1_R72x96_dyn20260911_084829.ply",
+        "vertices": 13822,
+        "faces": 27636,
+        "extents": [
+          95.0,
+          71.0,
+          47.5
+        ],
+        "depth_to_longest_side": 0.5,
+        "watertight": true
+      },
+      "seconds": {
+        "runtime_setup": 48.43142039998202,
+        "model_load": 1.6445852000033483,
+        "pipeline": 1.4075887000071816,
+        "total": 51.57326069998089
+      },
+      "provenance_verification": {
+        "status": "verified",
+        "reason": "Recorded provenance matches this profile's local signature. Geometry matches."
+      },
+      "private_state_ignored": true
+    },
+    "DA2": {
+      "report": "Notes\\depth-diagnostics\\da2-saved-preview\\report.json",
+      "model_id": "depth-anything/Depth-Anything-V2-Large-hf",
+      "revision": "7581137eff8d4e94f6e796d3baea0e9fa79b22d2",
+      "license": "cc-by-nc-4.0",
+      "raw_prediction": {
+        "shape": [
+          1,
+          112,
+          154
+        ],
+        "finite": true,
+        "minimum": 88.74072265625,
+        "maximum": 195.03204345703125,
+        "standard_deviation": 26.928043365478516,
+        "percentiles_5_50_95": [
+          97.66118354797364,
+          165.16661834716797,
+          186.458821105957
+        ]
+      },
+      "normalized_depth": {
+        "shape": [
+          72,
+          96
+        ],
+        "finite": true,
+        "minimum": 0.0,
+        "maximum": 255.00001525878906,
+        "standard_deviation": 64.79051971435547,
+        "percentiles_5_50_95": [
+          20.912581729888917,
+          183.210693359375,
+          234.32611999511718
+        ]
+      },
+      "mesh": {
+        "path": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\Notes\\depth-diagnostics\\da2-saved-preview\\example_D1_0_none-depth_anything_v2_R72x96_dyn20260911_083839.ply",
+        "vertices": 13822,
+        "faces": 27640,
+        "extents": [
+          95.0,
+          71.0,
+          47.500003814697266
+        ],
+        "depth_to_longest_side": 0.5000000401547081,
+        "watertight": true
+      },
+      "seconds": {
+        "runtime_setup": 210.68480779998936,
+        "model_load": 1.6147332999971695,
+        "pipeline": 1.187390700011747,
+        "total": 213.54677660000743
+      },
+      "provenance_verification": {
+        "status": "verified",
+        "reason": "Recorded provenance matches this profile's local signature. Geometry matches."
+      },
+      "private_state_ignored": true
+    }
+  },
+  "saved_preprocessing": {
+    "mode": "saved_preview",
+    "original_pixels_sha256": "1a017de1e6878c4fb7f43b16aafefeeb6540c8d7d7bced440bc86db11224e7e5",
+    "settings": {
+      "use_processed_image_enabled": true,
+      "project_on_original": true,
+      "blend_amount": 100.0,
+      "edge_detection_enabled": false,
+      "grayscale_enabled": false,
+      "invert_colors_enabled": false,
+      "sensitivity": 148,
+      "line_thickness": 2
+    },
+    "identical_to_original": true,
+    "changed_pixels": 0,
+    "total_pixels": 1143296,
+    "mean_absolute_channel_difference": 0.0,
+    "max_absolute_channel_difference": 0,
+    "inferred_pixels_sha256": "1a017de1e6878c4fb7f43b16aafefeeb6540c8d7d7bced440bc86db11224e7e5",
+    "raw_prediction_equals_original_run": true,
+    "mesh_extents_equal_original_run": true
+  }
+}

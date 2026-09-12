@@ -9,12 +9,13 @@ scikit-learn
 opencv-python
 numpy
 matplotlib
-PySide6
+PySide6==6.11.2
 transformers
 pillow
 scipy
 open3d
 pyvista
+vtk
 keyboard
 pygame-ce  # drop-in pygame fork; pygame itself has no Python 3.14 (cp314) wheels
 hidapi

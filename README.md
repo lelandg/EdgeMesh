@@ -4,14 +4,14 @@
 
 [![GitHub](https://img.shields.io/github/license/lelandg/EdgeMesh)](https://github.com/lelandg/EdgeMesh/blob/main/LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.12-blue)](https://www.python.org/)
-[![PyQt6](https://img.shields.io/badge/PyQt6-Latest-green)](https://www.riverbankcomputing.com/software/pyqt/)
+[![PySide6](https://img.shields.io/badge/PySide6-Qt6-green)](https://doc.qt.io/qtforpython-6/)
 [![Open3D](https://img.shields.io/badge/Open3D-0.19.0-orange)](http://www.open3d.org/)
 
 **Transform 2D images into stunning 3D meshes using AI-powered depth estimation and advanced edge detection** ✨
 
-[**🚀 Quick Start**](#-quick-start) | [**📸 Features**](#-key-features) | [**🛠️ Installation**](#-installation) | [**📖 Documentation**](Docs/CodeMap.md) | [**🎯 Examples**](#-examples)
+[**🚀 Quick Start**](#-quick-start) | [**📸 Features**](#-key-features) | [**🛠️ Installation**](#-installation) | [**📖 Documentation**](docs/CodeMap.md) | [**🎯 Examples**](#-examples)
 
-<img src="https://github.com/lelandg/EdgeMesh/assets/YOUR_IMAGE.png" alt="EdgeMesh Demo" width="600"/>
+<img src="docs/Workspace_Refresh.png" alt="EdgeMesh workspace with a visible mask, integrated preview and detachable controls" width="1000"/>
 
 </div>
 
@@ -19,16 +19,22 @@
 
 ## 🌟 Overview
 
-**EdgeMesh** is a powerful PyQt6-based desktop application that converts 2D images into 3D meshes using state-of-the-art depth estimation models and sophisticated edge detection algorithms. Whether you're a 3D artist, game developer, researcher, or hobbyist, EdgeMesh provides an intuitive interface for creating detailed 3D models from ordinary photographs.
+**EdgeMesh** is a PySide6 desktop application for turning images into depth reliefs and contour meshes. The workspace brings together proportional image previews, an editable subject mask, mesh parameters and an embedded 3D viewer.
+
+Start in the **Setup** tab: open an image or try the included example, edit its mask, then choose **Depth Mesh**. Enable model downloads only when you need weights. **Contour Mesh** and manual mask brushes work without an AI model. The **History** tab compares and restores current-session settings and masks; regenerate to apply restored settings to geometry. Save a session to keep its current source reference, settings and mask between launches.
+
+See the [current desktop workflow](docs/Desktop_Workflow.html) for project autosave, mask editing, keyboard controls and optional provider connections. The [launch guide](docs/Packaging.html) has copyable launch commands; [packaging details](docs/Packaging.md) describe the standard launcher and local installation choices.
+
+The [earlier workspace guide](docs/Workspace_Refresh.html), [current model research](docs/Model_Options.md), and [AI and packaging direction](docs/AI_Product_Direction.md) provide additional context. New model backends and cloud generation described in those research reports remain separate from the implemented provider connections.
 
 ### 🎯 What Can EdgeMesh Do?
 
-- 🖼️ **Convert any image to a 3D mesh** in seconds
-- 🧠 **AI-powered depth estimation** using multiple models (MiDaS, DPT, ZoeDepth, Depth-Anything)
+- 🖼️ **Create a depth relief or contour mesh** from an image
+- 🧠 **AI-powered depth estimation** with DepthAnythingV2, Depth Pro, or registered local MiDaS/DPT models
 - 🎨 **Advanced edge detection** with customizable parameters
 - 🔧 **Real-time 3D preview** with interactive viewport
 - 📁 **Export to standard formats** (.obj, .stl) for 3D printing or modeling software
-- 🎮 **SpaceMouse support** for professional 3D navigation
+- 🗂️ **Settings and mask history** with explicit restore and regeneration
 
 ---
 
@@ -43,10 +49,11 @@
 
 ### 🧠 Depth Estimation Models
 Choose from multiple state-of-the-art models:
-- **MiDaS** (Small & Large variants) - Fast and reliable
-- **DPT** (Large & Hybrid) - High accuracy
-- **ZoeDepth** (K, N, NK, N-indoor) - Specialized for different scenarios
-- **Depth-Anything** - Latest cutting-edge models
+- **DepthAnythingV2** - Default image-to-relief route
+- **Depth Pro** - Alternative depth model
+- **MiDaS / DPT** - Use registered local source and matching checkpoints
+
+Each checkpoint has its own license and runtime requirements; review **Models → Model details** before use. SAM2 subject selection is optional and independent of manual mask editing.
 
 ### 🎨 3D Mesh Generation
 - **Depth-to-3D Conversion** - Direct conversion from depth maps

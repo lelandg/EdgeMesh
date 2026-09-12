@@ -3,24 +3,31 @@ __author__ = "Leland Green"
 import os
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
+from edgemesh_bootstrap.runtime import initialize_platform_runtime
+initialize_platform_runtime()
+
 from _version import version
 __version__ = version
 __date_created__ = "2025-01-28"
 __email__ = "lelandgreenproductions@gmail.com"
 
-__license__ = "Commercial. License Required." # License of this script is free for all purposes.
+__license__ = "0BSD (application source); model weights have separate licenses."
 
 import image_processor
 from log_utils import get_logger
+from feature_workflows import WorkflowMixin
+from workspace_ui import ImagePreviewLabel, WorkspaceMixin
+from project_workflows import ProjectWorkflowMixin
+from model_compliance_ui import ModelComplianceMixin
+from data_contracts import as_bgr
+from user_state import migrate_config, save_config
 
 debug = False # Set False to disable debug messages. Yes. We do need this.
 verbose = True # Not used, yet. When I add logging, this will also print messages to console when enabled.
 visualize_images = False # Set to True to visualize images in a GUI window. Requires OpenCV.
 
-from depth_to_3d import DepthTo3D, model_names
 from edge_detection import detect_edges
-from mesh_generator import MeshGenerator
-from MeshTools.viewport_3d import ThreeDViewport
+from importlib.metadata import PackageNotFoundError, version as installed_version
 
 visualize_clustering = visualize_images # Visualization flags for MeshGenerator
 visualize_depth = visualize_images
@@ -59,7 +66,6 @@ import configparser
 import sys
 import cv2
 import numpy as np
-import open3d as o3d
 
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QFileDialog, QLabel, QVBoxLayout, QSlider,
@@ -99,8 +105,8 @@ def process_preview_image(image, is_grayscale=False, invert_colors=False):
         image = cv2.bitwise_not(image)
     return image
 
-class MainWindowImageProcessing(QMainWindow):
-    def __init__(self, image_path=None, verbose=True):
+class MainWindowImageProcessing(ProjectWorkflowMixin, ModelComplianceMixin, WorkspaceMixin, WorkflowMixin, QMainWindow):
+    def __init__(self, image_path=None, verbose=True, *, restore_last_project=True):
         super().__init__()
         self.verbose = verbose
         self.depth_to_3d = None
@@ -121,37 +127,54 @@ class MainWindowImageProcessing(QMainWindow):
         self.initialize_variables()
 
         try:
+            self._init_workflow_state()
+            from edgemesh_bootstrap.runtime import initialize_opencv_runtime
+            initialize_opencv_runtime()
+            self._explicit_startup_image = bool(image_path)
+            self._restore_last_project = bool(restore_last_project)
+            self.setObjectName('edgeMeshMainWindow')
+            self._init_product_state()
 
             # Set the icon for the main window
-            icon_path = os.path.join(os.getcwd(), "EdgeMesh.ico")
+            from edgemesh_bootstrap.resources import resource_path
+            icon_path = str(resource_path('EdgeMesh.ico'))
             if os.path.exists(icon_path):
                 self.setWindowIcon(QIcon(icon_path))  # Set the main window's icon
 
             self.setWindowTitle(f"3D Mesh Generator v{__version__}")
-            self.setGeometry(50, 50, 929, 560) # Weird size, just looks good on my screen (today)
+            self.setGeometry(50, 50, 1380, 820)
 
             # The following doesn't work. Why not?
             # os.environ['TF_ENABLE_ONEDNN_OPTS'] = "1"  # Enable OneDNN optimizations for TensorFlow
 
             # Initialize configuration
             # Config file path
-            self.CONFIG_FILE_PATH = "config.ini"
+            self.CONFIG_FILE_PATH = str(self.paths.config_file)
             self.config = self.initialize_config()
 
             self._init_ui()
             self._load_config()
+            self._init_workflow_actions()
+            self._finish_workspace()
+            if image_path:
+                self.load_image(str(image_path))
+            self._finish_product_workflow()
 
-            # o3d.visualization.webrtc_server.enable_webrtc()
-            if self.verbose: print(f"Open3D version: {o3d.__version__}")
+            if self.verbose:
+                try:
+                    print(f"Open3D package: {installed_version('open3d')}")
+                except PackageNotFoundError:
+                    print("Open3D is not installed; mesh operations require it.")
         except Exception as e:
-            print("Error initializing MainWindow:")
-            print(traceback.format_exc())
+            self.show_error("Error initializing MainWindow: " + traceback.format_exc())
 
     def initialize_variables(self):
         self.line_thickness = 2
         self.sensitivity = 150
         self.blend_amount = 100
         self.resolution = 700
+        self.smoothing_method = "anisotropic"
+        self.model = "MiDaS"
         self.depth_amount = 1.0
         self.max_depth = 50.0
         self.background_tolerance = 10  # Default value
@@ -164,7 +187,7 @@ class MainWindowImageProcessing(QMainWindow):
         self.edge_detection_enabled = True
         self.depth_drop_percentage = 0.0  # Default percentage depth drop
         self.background_color = [0, 0, 0]  # Default background color = dark gray
-        self.current_selected_color = None  # Default to white
+        self.current_selected_color = None  # No selected background color
         self.use_selected_color = False
         self.drop_background_enabled = False  # Initialize the variable
         self.previous_background_enabled = False  # Store the previous state
@@ -181,7 +204,7 @@ class MainWindowImageProcessing(QMainWindow):
         palette = self.palette()
         self.default_color = palette.color(QtGui.QPalette.ColorRole.Window)
         # Original Image Preview
-        self.original_label = QLabel("Original Image")
+        self.original_label = ImagePreviewLabel("Original Image")
         self.original_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBaseline)
         self.original_label.setStyleSheet(f"background-color: {self.default_color.name()};")
         self.original_label.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.MinimumExpanding)
@@ -192,9 +215,9 @@ class MainWindowImageProcessing(QMainWindow):
         # self.original_label.setMaximumHeight(700)  # Limit height
 
         # Processed Image Preview
-        self.preview_label = QLabel("Processed Image")
+        self.preview_label = ImagePreviewLabel("Processed Image")
         self.preview_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBaseline)
-        self.preview_label.setStyleSheet("background-color: default_color.name();")
+        self.preview_label.setStyleSheet(f"background-color: {self.default_color.name()};")
         self.preview_label.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.MinimumExpanding)
         self.preview_label.setMinimumSize(150,100)
         self.preview_label.setToolTip("This is the processed image, based on your selections below. \r\n"
@@ -277,7 +300,7 @@ class MainWindowImageProcessing(QMainWindow):
         self.save_button.setToolTip("Save the processed image. What you see in the right hand image is what you get.")
 
         depth_method_label = QLabel("Depth Method")
-        depth_method_tooltip = "Select the depth estimation model to use. These are loaded via torch.hub."
+        depth_method_tooltip = "Select a depth model. Model files load only when requested; see Setup for downloads and local registration."
         depth_method_label.setToolTip(depth_method_tooltip)
         depth_method_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBaseline)
 
@@ -438,13 +461,13 @@ class MainWindowImageProcessing(QMainWindow):
         # Add Mesh From 2D Button
         self.generate_mesh_button = QPushButton("&Mesh From Edges")
         self.generate_mesh_button.setShortcut('Alt+M')
-        self.generate_mesh_button.setToolTip("Use edge analysis to generate an approximated mesh from the processed image. (Currently broken.)")
+        self.generate_mesh_button.setToolTip("Generate contour side walls from processed image edges. This does not cap the surfaces.")
         self.generate_mesh_button.clicked.connect(self.generate_mesh)
 
         # Additional "Export Mesh" button
         self.export_mesh_button = QPushButton("&Export Mesh")
         self.export_mesh_button.setShortcut('Alt+E')
-        self.export_mesh_button.setToolTip("Export the generated 3D mesh as a .PLY file.\n**NOTE** You do NOT need to use this because the mesh is automagically saved in the same folder as the source image.")
+        self.export_mesh_button.setToolTip("Save the accepted mesh as OBJ or STL. Optional health checks are in the Mesh menu.")
         self.export_mesh_button.clicked.connect(self.export_mesh)
 
         self.reset_defaults_button = QPushButton("&Reset Defaults")  # Button labeled "Reset Defaults"
@@ -592,22 +615,14 @@ class MainWindowImageProcessing(QMainWindow):
         button_layout.addWidget(self.generate_mesh_button)
         button_layout.addWidget(self.process_button)
 
-        main_layout = QtWidgets.QVBoxLayout()
-        main_layout.setContentsMargins(5, 5, 5, 5)
-
-        # Add groupboxes and button layout to the main layout
-        main_layout.addWidget(images_groupbox)
-        main_layout.addWidget(image_processing_groupbox)
-        main_layout.addWidget(depth_groupbox)
-        main_layout.addLayout(button_layout)
-        self.central_widget.setLayout(main_layout)
+        self._build_workspace(image_processing_groupbox, depth_groupbox)
         self.process_button.setFocus()
 
         self.initialized = True
         self.load_ui_settings()
         self.load_last_used_image()
-        self.central_widget.setMinimumSize(525, 475)
-        self.setMinimumSize(525, 475)
+        self.central_widget.setMinimumSize(480, 350)
+        self.setMinimumSize(800, 540)
         # self.populate_depth_method_local()
         QTimer.singleShot(500, self.display_processed_image)  # Load last used image after 1 second
         QTimer.singleShot(500, self.display_original_image)  # Load last used image after 1 second
@@ -746,6 +761,9 @@ class MainWindowImageProcessing(QMainWindow):
         Updates the color swatch to display the newly selected color.
         """
         # Ensure input is a QColor object
+        if color is None:
+            self.color_display.setText("<None>")
+            return
         if not isinstance(color, QColor):
             try:
                 r, g, b = color
@@ -926,7 +944,7 @@ class MainWindowImageProcessing(QMainWindow):
 
         # Calculate the scaling factor and new height
         scaling_factor = new_width / original_width
-        new_height = int(original_height * scaling_factor)
+        new_height = max(1, round(original_height * scaling_factor))
 
         if self.verbose:
             print(f"scale_proportionally() -- Original Image Size: {original_height}x{original_width}")
@@ -934,97 +952,7 @@ class MainWindowImageProcessing(QMainWindow):
         return new_height, new_width
 
     def process_image(self):
-        if not self.image_path:
-            self.show_error("Please load an image first!")
-            return
-
-        try:
-            self.resolution = int(self.resolution_input.text())
-            self.depth_amount = float(self.depth_amount_input.text())
-            self.max_depth = float(self.min_depth_input.text())
-
-            # Validate depth_amount > 0 (no flat meshes)
-            if self.depth_amount <= 0:
-                self.show_error("Depth Amount must be greater than 0!")
-                return
-
-            # Validate max_depth within range [0,10000] -- somewhat arbitrary
-            if not (0.0 <= self.max_depth <= 10000.0):
-                self.show_error("Max Depth must be between 0.0 and 1.0!")
-                return
-
-            # Get smoothing method and model type
-            smoothing_method = self.smoothing_dropdown.currentText()
-            method = self.depth_method_dropdown.currentText()
-            print(f"Processing image with Depth Method: {method}, Smoothing Method: {smoothing_method}")
-            # if method == "<Local>":
-            #     model_name = os.path.join(self.local_depth_folder, self.depth_method_local_dropdown.currentText())
-            #     if not model_name.endswith(".pth") or not os.path.exists(model_name):
-            #         self.show_error("Please select a local depth model.")
-            #         return
-            # else:
-            model_name = model_names[method]
-
-            self.depth_to_3d = DepthTo3D(model_type=model_name, verbose=self.verbose)
-
-            # Determine image path
-            image_to_use = self.image_path
-
-            # Save processed image if needed
-            if self.use_processed_image_enabled and self.processed_image is not None:
-                processed_image_path = self._get_processed_image_path()
-                cv2.imwrite(processed_image_path, self.processed_image)
-                image_to_use = processed_image_path
-
-            depth_amount = 1.0
-            try:
-                depth_amount = float(self.depth_amount_input.text())
-            except ValueError:
-                print("Invalid depth amount. Using default value of 1.0.")
-
-            if self.use_selected_color:
-                background_color = self.current_selected_color
-            else:
-                background_color = None
-
-            # width, height = self.image.shape[:2]
-            if self.resolution == 0:
-                target_size = (0,0)
-            else:
-                target_size = self.scale_proportionally(self.image, self.resolution)
-            if self.verbose: print(f"Target Size: {target_size}")
-            # Pass depth_amount and max_depth into depth_to_3d processing
-            self.mesh_3d, self.background_color = self.depth_to_3d.process_image(
-                image_to_use,
-                smoothing_method=smoothing_method,
-                target_size=target_size,
-                flat_back=self.flat_back_enabled,
-                grayscale_enabled=self.grayscale_enabled,
-                edge_detection_enabled=self.edge_detection_enabled,
-                invert_colors_enabled=self.invert_colors_enabled,
-                depth_amount=depth_amount,
-                depth_drop_percentage=self.depth_drop_percentage,
-                project_on_original=self.project_on_original,
-                background_removal=self.drop_background_enabled,
-                background_tolerance=self.background_tolerance,
-                background_color=background_color,
-                # max_depth=max_depth,  # Pass max_depth
-            )
-            self.mesh_from_2d = None
-            if self.verbose: print(f"3D model generated successfully with Depth Amount: {depth_amount}, Max Depth: {self.max_depth}")
-            self.depth_values = self.depth_to_3d.depth_values
-            self.depth_labels = self.depth_to_3d.depth_labels
-            if self.verbose: print(f"Depth Range: {self.depth_labels[0]} - {self.depth_labels[-1]}")
-            # Update 3D viewport
-            if max(self.background_color) > 0:
-                self.background_color = [c / 255.0 for c in self.background_color]
-                self.update_3d_viewport(self.background_color)
-            else:
-                # Default background color is dark gray so black parts of models stand out.
-                self.update_3d_viewport([10,10,10])
-
-        except Exception as e:
-            self.show_error(f"Error: {e}\r\n{traceback.format_exc()}")
+        self._start_generation(edge_only=False)
 
     def _get_processed_image_path(self):
         """Construct the file path for saving the processed image."""
@@ -1089,30 +1017,7 @@ class MainWindowImageProcessing(QMainWindow):
     # In MainWindowImageProcessing Class, replace generate_mesh()
 
     def generate_mesh(self):
-        """ Generate a 3D mesh from the processed image edges. Actually called when "Generate 2D" is clicked. """
-        if self.processed_image is None:
-            self.show_error("No processed image available.")
-            return
-
-        try:
-            # flipped_image = cv2.flip(self.processed_image, 0) # Flip vertically so 3D is upright
-
-            # Initialize the MeshGenerator with visualization options
-            visualizations = {
-                "visualize_clustering": visualize_clustering,
-                "visualize_depth": visualize_depth,
-                "visualize_partitioning": visualize_partitioning,
-                "visualize_edges": visualize_edges,
-            }
-
-            mesh_generator = MeshGenerator(visualizations)
-            self.mesh_from_2d = mesh_generator.generate(self.processed_image, self.image_path)
-            self.mesh = None
-            # Update the 3D viewport with the new mesh
-            self.update_3d_viewport(self.background_color)
-
-        except Exception as e:
-            self.show_error(f"Error while generating mesh: {str(e)}\r\n{traceback.format_exc()}")
+        self._start_generation(edge_only=True)
 
     def toggle_invert_colors(self, state):
         """Toggle invert colors based on checkbox state."""
@@ -1140,40 +1045,44 @@ class MainWindowImageProcessing(QMainWindow):
 
     def update_3d_viewport(self, background_color=None):
         if self.mesh_3d is None and self.mesh_from_2d is None:
-            print("Must set mesh_3d or mesh_from_2d before calling update_3d_viewport.")
-            return
-
-        if self.three_d_viewport is None or not self.three_d_viewport.viewer.poll_events():
-            self.three_d_viewport = ThreeDViewport(background_color=background_color)
-            print("3D viewport created or reopened.")
-
-        print(f"update_3d_viewport: Background color: {background_color}")
-
+            self.show_error("No mesh is available to display.")
+            return False
+        candidate = self.three_d_viewport
+        created = candidate is None
         try:
-            if background_color is not None:
-                self.three_d_viewport.viewer.get_render_option().background_color = background_color
-
-            self.three_d_viewport.clear_geometries()
+            if created:
+                candidate = self._install_embedded_viewport()
             if self.mesh_from_2d is not None:
-                self.three_d_viewport.load_mesh(self.mesh_from_2d)
+                candidate.load_mesh(self.mesh_from_2d)
             else:
-                self.three_d_viewport.load_mesh(self.mesh_3d, self.depth_labels)
-            self.three_d_viewport.run()
-        except Exception as e:
-            s = f"Error in update_3d_viewport: {str(e)}"
-            self.show_error(s)
+                candidate.load_mesh(self.mesh_3d, self.depth_labels)
+            self.three_d_viewport = candidate
+            self.mesh_placeholder.hide()
+            self.workspace_tabs.setCurrentIndex(0)
+            self._refresh_workspace()
+            return True
+        except Exception as error:
+            if created and candidate is not None:
+                candidate.shutdown()
+                self.mesh_preview_layout.removeWidget(candidate)
+                candidate.deleteLater()
+            self.show_error(f"Error in update_3d_viewport: {error}")
+            return False
 
     def export_mesh(self):
         if self.three_d_viewport is None or self.three_d_viewport.mesh is None:
             self.show_error("No 3D mesh is generated to export.")
             return
 
-        # Open save file dialog
-        options = QFileDialog.Options()
+        if getattr(self, "health_action", None) is not None and self.health_action.isChecked():
+            if not self.inspect_current_mesh(for_export=True):
+                return
+
         file_filter = "OBJ Files (*.obj);;STL Files (*.stl)"
-        save_path, selected_filter = QFileDialog.getSaveFileName(
-            self, "Export Mesh", "", file_filter, options=options
-        )
+        if hasattr(self, 'dialogs'):
+            save_path, selected_filter = self.dialogs.save_file(self, 'Export Mesh', 'mesh_export', file_filter, suggested_name='mesh.obj')
+        else:
+            save_path, selected_filter = QFileDialog.getSaveFileName(self, 'Export Mesh', '', file_filter)
 
         if save_path:
             try:
@@ -1188,6 +1097,9 @@ class MainWindowImageProcessing(QMainWindow):
                     self.three_d_viewport.export_mesh_as_stl(save_path)
                 else:
                     self.show_error("Unsupported file format.")
+                    return
+                if hasattr(self, '_write_export_provenance'):
+                    self._write_export_provenance(save_path)
             except Exception as e:
                 self.show_error(f"Failed to export mesh: {str(e)}")
 
@@ -1214,6 +1126,11 @@ class MainWindowImageProcessing(QMainWindow):
             if self.blend_amount < 100:
                 self.processed_image = image_processor.ImageProcessor.blend_images (self.image, self.processed_image, self.blend_amount)
             self.display_processed_image()
+            if hasattr(self, '_jobs') and self._jobs.busy:
+                self._source_generation += 1
+                self.cancel_generation()
+            if hasattr(self, '_schedule_history'):
+                self._schedule_history()
         except Exception as e:
             s = f"Error in update_preview(): {traceback.format_exc()}"
             self.show_error(s)
@@ -1241,33 +1158,45 @@ class MainWindowImageProcessing(QMainWindow):
 
     def load_image(self, path=None):
         if not path:
-            dialog = QFileDialog(self)  # Create an instance of QFileDialog
-            options = dialog.options()  # Retrieve the current dialog options
-            path = ""
-            if self.image_path is not None:
-                path = os.path.split(self.image_path)[0]
-            # Open the file dialog to get the file path
-            path, _ = dialog.getOpenFileName(
-                self,
-                "Load Image",
-                path,
-                "Images (*.bmp *.dib *.jpeg *.jpg *.jpe *.jp2 *.png *.webp *.pbm *.pgm *.ppm *.pxm *.pnm *.sr *.ras *.tiff *.tif *.exr *.hdr *.pic)",
-                options=options  # Pass the options to the dialog
-            )
+            image_filter = 'Images (*.bmp *.dib *.jpeg *.jpg *.jpe *.jp2 *.png *.webp *.pbm *.pgm *.ppm *.pxm *.pnm *.sr *.ras *.tiff *.tif *.exr *.hdr *.pic)'
+            initial = os.path.dirname(self.image_path) if self.image_path else None
+            if hasattr(self, 'dialogs'):
+                path, _ = self.dialogs.open_file(self, 'Load Image', 'images', image_filter, initial_directory=initial)
+            else:
+                path, _ = QFileDialog.getOpenFileName(self, 'Load Image', initial or '', image_filter)
 
         # If no file is selected, exit the function
         if not path:
             return
 
-        image = cv2.imread(path, cv2.IMREAD_COLOR)
-        if image is None:
-            self.show_error("Failed to load image.")
+        try:
+            image = cv2.imread(str(path), cv2.IMREAD_UNCHANGED)
+            if image is None:
+                raise ValueError('The selected file could not be decoded as an image.')
+            image = as_bgr(image)
+        except (cv2.error, ValueError, TypeError) as error:
+            self.show_error(f'Failed to load image: {error}')
             return
+        if getattr(self, '_workspace_ready', False):
+            self._history_timer.stop()
+            self._record_session()
+        if hasattr(self, '_before_new_source') and not self._before_new_source():
+            return
+        if hasattr(self, '_jobs'):
+            self.cancel_generation()
+            self._source_generation += 1
+            self._subject_mask = None
+            self._subject_mask_info = {}
+            self._subject_mask_provenance_trusted = False
         self.image = image
         self.image_path = path
         self._update_config("Settings", "last_used_image", path)
         self.display_original_image()
         self.update_preview()
+        if getattr(self, '_workspace_ready', False):
+            self._record_session()
+            self._refresh_workspace()
+            self.workspace_tabs.setCurrentIndex(0)
 
 
     def display_original_image(self):
@@ -1275,12 +1204,7 @@ class MainWindowImageProcessing(QMainWindow):
             height, width, channel = self.image.shape
             q_img = QImage(self.image.data, width, height, width * 3, QImage.Format.Format_RGB888).rgbSwapped()
             self.original_pixmap = QPixmap.fromImage(q_img)
-            self.original_label.setPixmap(
-                self.original_pixmap.scaled(
-                    self.original_label.width(), self.original_label.height(),
-                    Qt.AspectRatioMode.KeepAspectRatio
-                )
-            )
+            self.original_label.setPixmap(self.original_pixmap)
 
     def display_processed_image(self):
         if self.processed_image is not None:
@@ -1299,20 +1223,24 @@ class MainWindowImageProcessing(QMainWindow):
                     self.processed_image.data, width, height, bytes_per_line, QImage.Format.Format_RGB888
                 ).rgbSwapped()
 
-            target_height = self.preview_label.height()
-            target_width = self.preview_label.width()
-            # Update the QLabel with the processed image
-            self.preview_label.setPixmap(QPixmap.fromImage(q_img).scaled(target_width, target_height,Qt.AspectRatioMode.KeepAspectRatio))
+            self.preview_label.setPixmap(QPixmap.fromImage(q_img))
+            self._mask_preview_key = None
+            if hasattr(self, '_refresh_mask_preview'):
+                self._refresh_mask_preview()
 
     def save_image(self):
         if self.processed_image is None or self.processed_image.size == 0:
             self.show_error("No processed image to save.")
             return
-        options = QFileDialog.Options()
-        save_path, _ = QFileDialog.getSaveFileName(
-            self, "Save Processed Image", "", "Images (*.png *.jpg *.bmp)", options=options)
+        if hasattr(self, 'dialogs'):
+            save_path, _ = self.dialogs.save_file(self, 'Save Processed Image', 'processed_images',
+                'Images (*.png *.jpg *.bmp)', suggested_name='processed.png', default_suffix='png')
+        else:
+            save_path, _ = QFileDialog.getSaveFileName(self, 'Save Processed Image', '', 'Images (*.png *.jpg *.bmp)')
         if save_path:
             try:
+                if not os.path.splitext(save_path)[1]:
+                    save_path += '.png'
                 if not cv2.imwrite(save_path, self.processed_image, [cv2.IMWRITE_PNG_COMPRESSION, 9]):
                     raise OSError(f"Could not write image to {save_path}")
             except (cv2.error, OSError) as error:
@@ -1321,13 +1249,20 @@ class MainWindowImageProcessing(QMainWindow):
     def show_error(self, message):
         get_logger().error(message)
         print(f"Error: {message}")
+        if hasattr(self, '_error_log'):
+            self._error_log.insertPlainText(str(message) + "\n")
+            self._error_dock.show()
+            self.statusBar().showMessage(str(message).splitlines()[0])
 
     def load_last_used_image(self):
         last_image_path = self.config.get("Settings", "last_used_image", fallback="")
         if last_image_path and os.path.exists(last_image_path):
             self.load_image(last_image_path)
         else:
-            self.load_image("./Images/example.png")  # 1232x928
+            from edgemesh_bootstrap.resources import resource_path
+            example = str(resource_path('Images/example.png'))
+            if os.path.isfile(example):
+                self.load_image(example)
 
     def _load_config(self):
         self.config.read(self.CONFIG_FILE_PATH)
@@ -1335,15 +1270,14 @@ class MainWindowImageProcessing(QMainWindow):
         self.load_ui_settings()
 
     def _save_config(self):
-        self.config.set("Settings", "last_used_image", self.image_path)
+        self.config.set("Settings", "last_used_image", self.image_path or "")
         self.save_ui_settings()
 
     def _update_config(self, section, option, value):
         if not self.config.has_section(section):
             self.config.add_section(section)
         self.config.set(section, option, value)
-        with open(self.CONFIG_FILE_PATH, "w") as configfile:
-            self.config.write(configfile)
+        save_config(self.config, self.CONFIG_FILE_PATH)
         self.save_ui_settings()
 
     def save_ui_settings(self):
@@ -1377,9 +1311,15 @@ class MainWindowImageProcessing(QMainWindow):
 
         # Add more settings as needed...
 
+        if hasattr(self, 'health_action'):
+            if not self.config.has_section('Workflow'):
+                self.config.add_section('Workflow')
+            self.config.set('Workflow', 'mesh_health', str(self.health_action.isChecked()))
+            self.config.set('Workflow', 'allow_downloads', str(self.download_action.isChecked()))
+        if hasattr(self, '_save_workspace_settings'):
+            self._save_workspace_settings()
         # Write settings to the config file
-        with open(self.CONFIG_FILE_PATH, "w") as configfile:
-            self.config.write(configfile)
+        save_config(self.config, self.CONFIG_FILE_PATH)
 
     def reset_defaults(self):
         self.initialize_variables()
@@ -1421,10 +1361,12 @@ class MainWindowImageProcessing(QMainWindow):
                 # Load settings
                 geometry = self.config.get("UI_Settings", "windowGeometry", fallback=None)
                 # Decode the string to QByteArray
-                self.restoreGeometry(QByteArray.fromHex(geometry.encode()))
+                if geometry:
+                    self.restoreGeometry(QByteArray.fromHex(geometry.encode()))
                 # Convert the state string to bytes before passing to restoreState
                 state = self.config.get("UI_Settings", "windowState", fallback=None)
-                self.restoreState(QByteArray.fromHex(state.encode()))
+                if state:
+                    self.restoreState(QByteArray.fromHex(state.encode()))
                 self.invert_colors_enabled = self.config.getboolean("UI_Settings", "invert_colors", fallback=False)
                 self.grayscale_enabled = self.config.getboolean("UI_Settings", "grayscale", fallback=False)
                 self.drop_background_enabled = self.config.getboolean("UI_Settings", "drop_background", fallback=False)
@@ -1504,7 +1446,9 @@ class MainWindowImageProcessing(QMainWindow):
 
     # Ensure configuration file exists with default settings
     def initialize_config(self):
-        config = configparser.ConfigParser()
+        if hasattr(self, 'paths'):
+            return migrate_config(os.path.join(os.path.dirname(__file__), 'config.ini'), self.paths)
+        config = configparser.ConfigParser(interpolation=None)
         if not os.path.exists(self.CONFIG_FILE_PATH):
             # Create default config.ini
             config["Settings"] = {"last_used_image": ""}
@@ -1513,14 +1457,43 @@ class MainWindowImageProcessing(QMainWindow):
         return config
 
     def closeEvent(self, event):
-        """
-        This method is invoked when the window is about to be closed.
-        """
+        from subject_mask import has_active_jobs, cancel_active_jobs
+        if has_active_jobs():
+            self._closing_after_job = True
+            cancel_active_jobs()
+            self.cancel_generation()
+            event.ignore()
+            QTimer.singleShot(100, self.close)
+            return
+        if hasattr(self, '_jobs') and self._jobs.busy:
+            self._closing_after_job = True
+            self.cancel_generation()
+            event.ignore()
+            return
         try:
+            if hasattr(self, '_history_timer'):
+                self._history_timer.stop()
+                self._record_session()
+            if hasattr(self, '_save_project_now') and not self._save_project_now(force=True):
+                self._closing_after_job = False
+                event.ignore()
+                return
+            if hasattr(self, 'assistant_panel'):
+                self.assistant_panel.shutdown()
             self._save_config()
-            super(MainWindowImageProcessing, self).closeEvent(event)  # Ensure the close event proceeds
-        except Exception as e:
-            print(f"Error during close event: {traceback.format_exc()}")
+            if hasattr(self, '_viewport_timer'):
+                self._viewport_timer.stop()
+            if self.three_d_viewport is not None:
+                self.three_d_viewport.shutdown()
+            if getattr(self, "_accepted_job_folder", None):
+                self._discard_job_result({"folder": self._accepted_job_folder})
+                self._accepted_job_folder = None
+            super().closeEvent(event)
+        except Exception:
+            self._closing_after_job = False
+            self.show_error("Error closing the application: " + traceback.format_exc())
+            event.ignore()
+
 
 def main(arg, argv):
     print(f"Running EdgeMesh v{__version__} by {__author__}. Run with '-h' to see help.")

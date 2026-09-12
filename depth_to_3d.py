@@ -1,5 +1,8 @@
 import argparse
 import os
+from pathlib import Path
+from data_contracts import as_bgr, output_shape, normalized_depth, foreground_mask as validate_mask
+from log_utils import get_logger
 import cv2
 from datetime import datetime
 import numpy as np
@@ -8,7 +11,8 @@ import trimesh
 from trimesh import Trimesh
 
 from PIL import Image
-from transformers import AutoImageProcessor, AutoModelForDepthEstimation
+from transformers import AutoImageProcessor as AutoImageProcessor  # Backwards-compatible public import.
+from model_store import ModelStore
 from MeshTools.mesh_tools import MeshTools
 
 import smoothing_depth_map_utils
@@ -17,15 +21,19 @@ from spinner import Spinner
 import PySide6.QtGui as QtGui
 
 """!@brief DepthTo3D modelnames supported by the DepthTo3D class."""
-model_names = {"MiDaS": "midas",
+model_names = {"MiDaS": "midas", "DPT": "dpt",
                "DepthAnythingV2": "depth_anything_v2", "Depth Pro": "depth_pro"}
 
 
 class DepthTo3D:
-    def __init__(self, model_type="dpt", verbose = True):
+    def __init__(self, model_type="dpt", verbose=True, model_store=None, allow_download=False, cancelled=None,
+                 device=None):
         """
         Initialize the depth estimation and mesh generation pipeline.
-        :param model_type: "midas" (default) or "dense_depth". Specifies the depth estimation model.
+        :param model_type: Supported UI name or internal model identifier.
+        :param allow_download: Explicit opt-in to fetch missing pinned HF files.
+        :param cancelled: Optional callable checked between preparation stages.
+        :param device: Optional torch device. Explicit CPU avoids probing CUDA.
         """
         self.verbose = verbose
         self.mesh_tools = None
@@ -33,55 +41,22 @@ class DepthTo3D:
         self.depth_values = None
         self.depth_labels = None
         self.solid_mesh = None
-        self.model_type = model_type
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model_type = model_names.get(model_type, model_type)
+        self.device = torch.device(device) if device is not None else torch.device(
+            "cuda" if torch.cuda.is_available() else "cpu")
+        self.model_info = {}
+        self.model_store = model_store if model_store is not None else ModelStore()
+        self.allow_download = allow_download
+        self.cancelled = cancelled
         self.model, self.transform = self.load_model()
         self.spinner = Spinner(f"{{time}} ")
 
 
     def load_model(self):
-        """
-        Load the depth estimation model.
-        :return: model and corresponding transform pipeline
-        """
-        print(f"Loading depth estimation model: {self.model_type}...")
-        from torch.hub import load
-        if self.model_type == "midas":
-            # MiDaS model (Microsoft)
-            model = load("intel-isl/MiDaS", "MiDaS", pretrained=True).to(self.device).eval()
-            transforms = load("intel-isl/MiDaS", "transforms")
-            transform = transforms.dpt_transform
-
-        elif self.model_type == "dense_depth":
-            # DenseDepth model
-            from dense_depth_model import DenseDepth
-            model = DenseDepth().to(self.device).eval()
-            transform = DenseDepth.transform
-
-        elif self.model_type == "dpt":
-            # Dense Prediction Transformer (DPT)
-            from torch.hub import load
-            model = load("intel-isl/MiDaS", "DPT_Large", pretrained=True).to(self.device).eval()
-            transforms = load("intel-isl/MiDaS", "transforms")
-            transform = transforms.dpt_transform
-
-        elif self.model_type == "leres":
-            # LeReS (Lightweight Estimation)
-            from leres_model import LeReS  # Custom import
-            model = LeReS().to(self.device).eval()
-            transform = LeReS.transform  # Replace with LeReS-specific preprocessing logic if necessary
-            transform = None  # Replace with LeReS-specific preprocessing logic if necessary
-
-        elif self.model_type in ("depth_anything_v2", "depth_pro"):
-            model_id = {
-                "depth_anything_v2": "depth-anything/Depth-Anything-V2-Large-hf",
-                "depth_pro": "apple/DepthPro-hf",
-            }[self.model_type]
-            model = AutoModelForDepthEstimation.from_pretrained(model_id).to(self.device).eval()
-            transform = AutoImageProcessor.from_pretrained(model_id)
-        else:
-            raise ValueError(
-                f"Unsupported model type. Use one of:\n{', '.join(model_names.keys())}.")
+        """Use the same offline/pinned loader for GUI and direct Python callers."""
+        model, transform, self.model_info = self.model_store.get_depth(
+            self.model_type, self.device, allow_download=self.allow_download,
+            cancelled=self.cancelled)
         return model, transform
 
     def process_depth_map(depth_map, percentage_attenuate, percent_reduce):
@@ -124,14 +99,15 @@ class DepthTo3D:
         (0, 0) or None preserves the original dimensions. A processing flip is
         undone on the prediction so geometry remains aligned with image colors.
         """
+        image = as_bgr(image)
         img_h, img_w = image.shape[:2]
-        output_size = (img_h, img_w) if target_size is None or tuple(target_size) == (0, 0) else tuple(target_size)
+        output_size = output_shape(image.shape, target_size)
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         if flip:
             rgb_image = cv2.flip(rgb_image, 1)
 
         with torch.no_grad():
-            if self.model_type in ("depth_anything_v2", "depth_pro"):
+            if getattr(self, "model_info", {}).get("backend") == "huggingface" or self.model_type in ("depth_anything_v2", "depth_pro"):
                 inputs = self.transform(images=rgb_image, return_tensors="pt")
                 inputs = {name: tensor.to(self.device) for name, tensor in inputs.items()}
                 depth = self.model(**inputs).predicted_depth
@@ -149,11 +125,7 @@ class DepthTo3D:
         depth = depth.reshape(depth.shape[-2:])
         if flip:
             depth = np.fliplr(depth).copy()
-        depth = np.maximum(depth, 0)
-        if depth.shape != output_size:
-            depth = cv2.resize(depth, (output_size[1], output_size[0]), interpolation=cv2.INTER_CUBIC)
-        depth = np.maximum(depth, 0)
-        return cv2.normalize(depth, None, 0, 255, norm_type=cv2.NORM_MINMAX)
+        return normalized_depth(depth, output_size)
 
     # def solidify_mesh(self, mesh, depth_offset=-1.0):
     #     """
@@ -236,7 +208,8 @@ class DepthTo3D:
 
     def create_3d_mesh(self, image, depth, filename, smoothing_method, target_size, flat_back, grayscale_enabled,
                        edge_detection_enabled, invert_colors_enabled=False, depth_amount=1.0, project_on_original=False,
-                       background_removal=False, background_tolerance=10, color_to_remove=None):
+                       background_removal=False, background_tolerance=10, color_to_remove=None,
+                       subject_mask=None, cancel_check=None):
         """
         Args:
             image: Input image data.
@@ -248,8 +221,10 @@ class DepthTo3D:
             grayscale_enabled: (Optional) Whether to enable grayscale processing.
             edge_detection_enabled: (Optional) Whether to enable edge detection.
             invert_colors_enabled: (Optional) Whether to invert colors for depth data.
-            depth_amount: (Optional) Factor to control the depth scaling (1.0 = current behavior, 0.5 = half, 2.0 = double).
-                          Maximum allowed value is 100.0.
+            depth_amount: (Optional) Relative relief scale. At 1.0, a normalized
+                          depth of 255 reaches half the longest image side;
+                          0.5 is half that relief and 2.0 is double. Independent
+                          of output resolution. Maximum allowed value is 100.0.
             project_on_original: (Optional) Whether to project the mesh onto the original image.
             background_removal: (Optional) Whether to remove the background based on the average color.
             background_tolerance: (Optional) Tolerance for background color removal.
@@ -260,10 +235,20 @@ class DepthTo3D:
         print(f"Creating 3D mesh with depth amount: {depth_amount}...")
         # Assume depth has been normalized so 0 is the minimum value
 
+        check = cancel_check or (lambda: None)
+        check()
+        image = as_bgr(image)
+        target_size = output_shape(image.shape, target_size)
+        depth = np.asarray(depth, dtype=np.float32).copy()
+        if depth.shape != target_size or not np.isfinite(depth).all():
+            raise ValueError("Depth dimensions must match the mesh and all values must be finite.")
         depth_amount = max(0.0, min(depth_amount, 100.0))
 
-        # Adjust the depth data based on the depth_amount
-        depth = depth * depth_amount
+        # X/Y are pixel coordinates, but model depth is normalized to 0..255.
+        # Scale Z with the same image extent so resolution changes only detail,
+        # never the object's proportions. This is relative relief, not metres.
+        longest_side = max(target_size) - 1
+        depth = depth * (depth_amount * longest_side / (2.0 * 255.0))
 
         # Step 1: Background processing
         h, w, _ = image.shape
@@ -286,7 +271,10 @@ class DepthTo3D:
             mask = np.ones(target_size, dtype=np.uint8) * 255
 
         print(f"Image size: {image.shape}, depth size: {depth.shape}, mask size: {mask.shape}")
+        if subject_mask is not None:
+            mask[~validate_mask(subject_mask, target_size)] = 0
         depth[mask == 0] = 0
+        surface = (mask != 0) & ((depth != 0) if depth_amount > 0 else True)
         # Ensure consistent RGB color conversion
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
@@ -297,7 +285,7 @@ class DepthTo3D:
         y, x = np.meshgrid(np.linspace(0, h - 1, h), np.linspace(0, w - 1, w), indexing="ij")
         z = depth
         vertices = np.stack([x, y, z], axis=-1).reshape(-1, 3)
-        valid_mask = z.reshape(-1) >= 0
+        valid_mask = surface.reshape(-1)
         valid_vertices = vertices[valid_mask]
 
         # Step 3: Re-map faces
@@ -306,17 +294,22 @@ class DepthTo3D:
 
         faces = []
         for i in range(h - 1):
+            if i % 32 == 0:
+                check()
             for j in range(w - 1):
                 idx = i * w + j
-                if depth[i, j] != 0 and depth[i, j + 1] != 0 and depth[i + 1, j] != 0:
+                if surface[i, j] and surface[i, j + 1] and surface[i + 1, j]:
                     remapped = [index_map[idx], index_map[idx + 1], index_map[idx + w]]
                     if all(idx >= 0 for idx in remapped):
                         faces.append(remapped)
-                if depth[i + 1, j] != 0 and depth[i, j + 1] != 0 and depth[i + 1, j + 1] != 0:
+                if surface[i + 1, j] and surface[i, j + 1] and surface[i + 1, j + 1]:
                     remapped = [index_map[idx + 1], index_map[idx + w + 1], index_map[idx + w]]
                     if all(idx >= 0 for idx in remapped):
                         faces.append(remapped)
-        faces = np.array(faces)
+        faces = np.asarray(faces, dtype=np.int64).reshape(-1, 3)
+        if not len(faces):
+            raise ValueError("No surface remains. Increase depth or keep more foreground pixels.")
+        check()
 
         # Flatten the image to apply vertex_colors
         colors = image.reshape(-1, 3)
@@ -327,7 +320,9 @@ class DepthTo3D:
         self.mesh_tools = MeshTools(mesh, verbose=self.verbose)
         mesh = self.mesh_tools.flip_mesh(mesh)
 
-        if flat_back:
+        if depth_amount == 0:
+            solid_mesh = mesh
+        elif flat_back:
             solid_mesh = self.mesh_tools.solidify_mesh_with_flat_back(mesh, flat_back_depth=0.0)
         else:
             solid_mesh = self.mesh_tools.add_mirror_mesh(mesh)
@@ -358,7 +353,9 @@ class DepthTo3D:
         file_suffix += now.strftime("%Y%m%d_%H%M%S")
 
         output_ply_filename = (f"{os.path.splitext(filename)[0]}{file_suffix}.ply")
+        check()
         solid_mesh.export(output_ply_filename)
+        check()
         print(f"3D mesh saved to {output_ply_filename}")
 
         if background_color is None:
@@ -498,73 +495,58 @@ class DepthTo3D:
     def process_image(self, image_path, smoothing_method="anisotropic", target_size=(500, 500), flat_back=False,
                       grayscale_enabled=False, edge_detection_enabled=False, invert_colors_enabled=False,
                       depth_amount=1.0, depth_drop_percentage=0, project_on_original=False, background_removal=False,
-                      background_tolerance=0, background_color=None):
-        """
-        Process the input image to estimate depth, project into 3D space, and save as a PLY file.
-        :param image_path: Path to the input image.
-        :param smoothing_method: Depth map smoothing method.
-        :param target_size: Target resolution of the depth map.
-        :param flat_back: If True, flattens the back of the mesh at 0 depth.
-        :param grayscale_enabled: If True, indicates grayscale input was used.
-        :param edge_detection_enabled: If True, indicates edge detection was used.
-        """
-        # Load the image
-        print(f"Processing image: {image_path} \r\n\t\t\tWith: Depth map resolution = {target_size}, "
-              f"Grayscale = {grayscale_enabled} Edge detection = {edge_detection_enabled}, "
-              f"Invert colors = {invert_colors_enabled}, Dynamic depth = {flat_back}, Depth amount = {depth_amount}, "
-              f"Removing {depth_drop_percentage}% of the lowest depth values, Smoothing method = {smoothing_method}, "
-              f"Project on original = {project_on_original}, Background removal = {background_removal}, "
-              f"Background tolerance = {background_tolerance}")
-        image = cv2.imread(image_path)
-        # image = self.pad_to_square(image)
-        # dname = os.path.dirname(image_path)
-        # fname = os.path.join(dname, f"{os.path.basename(image_path)}_padded.png")
-        # cv2.imwrite(fname, image)
+                      background_tolerance=0, background_color=None, *, image_data=None, subject_mask=None,
+                      output_dir=None, progress=None, cancel_check=None):
+        """Process an immutable BGR snapshot; optional output_dir stages a worker job."""
+        check = cancel_check or (lambda: None)
+        progress = progress or (lambda message: None)
+        check()
+        image = cv2.imread(str(image_path), cv2.IMREAD_UNCHANGED) if image_data is None else image_data
         if image is None:
             raise ValueError(f"Image not found: {image_path}")
-        if target_size is None or tuple(target_size) == (0, 0):
-            target_size = image.shape[:2]
-
-        # Estimate depth
-        flip = False
-        if self.model_type == "depth_anything_v2":
-            flip = True
-        depth = self.estimate_depth(image, target_size, flip)
-        fname, ext = os.path.splitext(image_path)
-        cv2.imwrite(f"{fname}{self.model_type}_depth_map.png", depth)
-        # Remove the lowest values. 0.05 = remove 5% of the lowest depth values.
+        image = as_bgr(image)
+        target_size = output_shape(image.shape, target_size)
+        progress("Estimating depth")
+        depth = self.estimate_depth(image, target_size, flip=False)
+        check()
+        if output_dir is not None:
+            Path(output_dir).mkdir(parents=True, exist_ok=True)
+            image_path = str(Path(output_dir) / Path(image_path).name)
+        fname, _ = os.path.splitext(image_path)
+        if not cv2.imwrite(f"{fname}{self.model_type}_depth_map.png", np.rint(depth).astype(np.uint8)):
+            raise OSError("Could not save the generated depth preview.")
         depth = self.modify_depth(depth, depth_drop_percentage)
         self.depth_values, self.depth_labels = self.create_text_values_from_depth(depth)
-
-        min = depth.min()
-        if min > 0:
-            depth = depth - min # Normalize the depth values
-
-        # Apply depth smoothing
-        try:
-            depth = smoothing_depth_map_utils.SmoothingDepthMapUtils().apply_smoothing(depth, method=smoothing_method)
-        except Exception as e:
-            print(f"Warning: Could not smooth depth. Proceeding with raw depth. {e}")
-
-        # Generate and save 3D mesh with updated file suffix
-        return self.create_3d_mesh(image, depth, f"{image_path}", smoothing_method, target_size,
+        if depth.min() > 0:
+            depth = depth - depth.min()
+        progress("Smoothing depth")
+        check()
+        depth = smoothing_depth_map_utils.SmoothingDepthMapUtils().apply_smoothing(depth, method=smoothing_method)
+        self.depth_map = depth.copy()
+        check()
+        progress("Building mesh")
+        result = self.create_3d_mesh(image, depth, str(image_path), smoothing_method, target_size,
                                    flat_back, grayscale_enabled, edge_detection_enabled,
                                    invert_colors_enabled, depth_amount, project_on_original,
                                    background_removal, background_tolerance=background_tolerance,
-                                   color_to_remove=background_color)
+                                   color_to_remove=background_color, subject_mask=subject_mask,
+                                   cancel_check=check)
+        check()
+        return result
 
 if __name__ == "__main__":
     # Command-line argument parsing
     parser = argparse.ArgumentParser(description="3D Depth Estimation and Mesh Generation")
     parser.add_argument(
-        "image_path", type=str, help="Path to input image. Generates a 3D OBJ file in the same directory."
+        "image_path", type=str, help="Path to input image. Generates a PLY mesh in the same directory."
     )
     parser.add_argument(
-        "--model_type", type=str, default="midas", choices=["midas", "dense_depth"],
-        help="Type of pre-trained depth model to use (midas or dense_depth). Default: midas"
+        "--model_type", type=str, default="midas", choices=sorted(set(model_names.values())),
+        help="Registered or cached depth model. Default: midas"
     )
+    parser.add_argument("--allow-download", action="store_true", help="Allow a requested Hugging Face model download; otherwise offline.")
     args = parser.parse_args()
 
     # Run the depth-to-3D mesh pipeline
-    depth_to_3d = DepthTo3D(model_type=args.model_type)
+    depth_to_3d = DepthTo3D(model_type=args.model_type, allow_download=args.allow_download)
     depth_to_3d.process_image(args.image_path)

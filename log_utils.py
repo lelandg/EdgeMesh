@@ -1,7 +1,7 @@
 """Application logging with per-user storage and independent named loggers."""
 import logging
-import os
-import sys
+import hashlib
+import re
 from pathlib import Path
 from logging.handlers import RotatingFileHandler
 
@@ -10,13 +10,8 @@ the_logger = None
 
 
 def _log_directory():
-    if sys.platform == "win32":
-        base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
-    elif sys.platform == "darwin":
-        base = Path.home() / "Library" / "Logs"
-    else:
-        base = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local" / "state"))
-    return base / "EdgeMesh" / "logs"
+    from user_state import UserPaths
+    return UserPaths.discover().logs_dir
 
 
 def setup_logger(name="edgemesh", log_file=None, level=logging.INFO,
@@ -27,7 +22,10 @@ def setup_logger(name="edgemesh", log_file=None, level=logging.INFO,
     logger.setLevel(level)
     logger.propagate = False
     if not any(getattr(handler, "_edgemesh_handler", False) for handler in logger.handlers):
-        path = Path(log_file) if log_file is not None else _log_directory() / "edgemesh.log"
+        # Distinct rotating handlers must not race over the same default file.
+        stem = "edgemesh" if name == "edgemesh" else (
+            re.sub(r"[^A-Za-z0-9_.-]", "_", str(name))[:60] + "-" + hashlib.sha256(str(name).encode()).hexdigest()[:10])
+        path = Path(log_file) if log_file is not None else _log_directory() / f"{stem}.log"
         path.parent.mkdir(parents=True, exist_ok=True)
         handler = RotatingFileHandler(path, maxBytes=5_000_000, backupCount=3, encoding="utf-8")
         handler._edgemesh_handler = True

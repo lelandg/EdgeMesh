@@ -1,0 +1,27 @@
+   Building edgemesh @ file:///D:/Documents/Code/GitHub/EdgeMesh
+      Built edgemesh @ file:///D:/Documents/Code/GitHub/EdgeMesh
+Installed 131 packages in 54.30s
+Fresh installed run 1: exit=0
+State: 0
+State: 2
+State: 2
+State: 2
+INSTALLED_NATIVE_PASS Qt 6.11.2 PySide6 6.11.2 image (1488, 2276, 3) OpenCV_threads 32
+Installed module: C:\Users\aboog\AppData\Local\uv\cache\archive-v0\37HaYI3lXz50FumZkyysX\Lib\site-packages\edge_mesh.py
+
+Fresh installed run 2: exit=0
+State: 0
+State: 2
+State: 2
+State: 2
+INSTALLED_NATIVE_PASS Qt 6.11.2 PySide6 6.11.2 image (1488, 2276, 3) OpenCV_threads 32
+Installed module: C:\Users\aboog\AppData\Local\uv\cache\archive-v0\37HaYI3lXz50FumZkyysX\Lib\site-packages\edge_mesh.py
+
+Fresh installed run 3: exit=0
+State: 0
+State: 2
+State: 2
+State: 2
+INSTALLED_NATIVE_PASS Qt 6.11.2 PySide6 6.11.2 image (1488, 2276, 3) OpenCV_threads 32
+Installed module: C:\Users\aboog\AppData\Local\uv\cache\archive-v0\37HaYI3lXz50FumZkyysX\Lib\site-packages\edge_mesh.py
+

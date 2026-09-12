@@ -3,7 +3,7 @@
 Canonical instructions for every AI coding agent in this repo. `CLAUDE.md` and
 `GEMINI.md` import this file and add only tool-specific notes.
 
-EdgeMesh is a PyQt6 desktop app. It runs edge detection on images, estimates
+EdgeMesh is a PySide6 desktop app. It runs edge detection on images, estimates
 depth with torch models (MiDaS, DPT, ZoeDepth, Depth-Anything), and builds 3D
 meshes from the depth maps. `edge_mesh.py` is the entry point.
 

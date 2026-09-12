@@ -98,18 +98,23 @@ class DepthTests(unittest.TestCase):
                 self.assertEqual(result.shape, (5, 9))
                 loader.assert_not_called()
 
-    def test_hf_models_are_moved_to_device_and_eval(self):
+    def test_depth_loading_delegates_identity_download_and_cancellation_to_store(self):
         for model_type in ('depth_anything_v2', 'depth_pro'):
             self.pipeline.model_type = model_type
-            model = Mock()
-            model.to.return_value = model
-            model.eval.return_value = model
-            with patch('depth_to_3d.AutoModelForDepthEstimation.from_pretrained', return_value=model), patch('depth_to_3d.AutoImageProcessor.from_pretrained') as processor:
-                actual_model, actual_processor = self.pipeline.load_model()
-            model.to.assert_called_once_with(self.pipeline.device)
-            model.eval.assert_called_once()
+            model, processor = Mock(), Mock()
+            store = Mock()
+            metadata = {'revision': 'a' * 40, 'backend': 'huggingface'}
+            store.get_depth.return_value = model, processor, metadata
+            self.pipeline.model_store = store
+            self.pipeline.allow_download = False
+            self.pipeline.cancelled = Mock(return_value=False)
+            actual_model, actual_processor = self.pipeline.load_model()
+            store.get_depth.assert_called_once_with(
+                model_type, self.pipeline.device, allow_download=False,
+                cancelled=self.pipeline.cancelled)
             self.assertIs(actual_model, model)
-            self.assertIs(actual_processor, processor.return_value)
+            self.assertIs(actual_processor, processor)
+            self.assertEqual(self.pipeline.model_info, metadata)
 
     def test_prediction_flip_is_undone_for_color_alignment(self):
         self.pipeline.model_type = 'midas'

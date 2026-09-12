@@ -1,0 +1,195 @@
+{
+  "schema_version": 1,
+  "status": "ok",
+  "model": {
+    "backend": "huggingface",
+    "device": "cpu",
+    "license": "apache-2.0",
+    "model_card": "https://huggingface.co/LiheYoung/depth-anything-large-hf/tree/27ccb0920352c0c37b3a96441873c8d37bd52fb6",
+    "model_id": "LiheYoung/depth-anything-large-hf",
+    "model_type": "depth_anything_v1",
+    "preprocessing": {
+      "ensure_multiple_of": 14,
+      "keep_aspect_ratio": true,
+      "size": {
+        "height": 112,
+        "width": 112
+      }
+    },
+    "revision": "27ccb0920352c0c37b3a96441873c8d37bd52fb6",
+    "weight_files_sha256": {
+      "model.safetensors": "bc27360a3e6906e5ddd8f618e2dcde11362327361918b8f76793e42e25de31b3"
+    },
+    "license_policy": {
+      "model_type": "depth_anything_v1",
+      "model_id": "LiheYoung/depth-anything-large-hf",
+      "display_name": "Depth Anything V1 Large",
+      "license": "apache-2.0",
+      "usage_class": "permissive",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "source_url": "https://huggingface.co/LiheYoung/depth-anything-large-hf",
+      "guidance": "The weight license permits commercial and non-commercial use subject to its terms. Keep required copyright, license, and NOTICE material when distributing covered material; identify modifications and do not imply endorsement.",
+      "restriction": "",
+      "commercial_status": "included",
+      "commercial_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "commercial_info": "Commercial use is included under Apache 2.0; follow its conditions.",
+      "policy_version": 1,
+      "requires_acceptance": false,
+      "badge": "Permissive model license",
+      "notice": "General guidance, not legal advice. Read the linked weight license for your intended use. EdgeMesh being free or non-commercial does not change a model's terms. This label records the model used; it does not decide ownership or license of every output."
+    },
+    "policy_sha256": "e12196caaa8670bca234b03d8d28dcb9cf87e6472577afb9f4d8efe30cea2e00"
+  },
+  "input": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\Images\\example.png",
+  "input_shape": [
+    928,
+    1232,
+    3
+  ],
+  "output_shape": [
+    72,
+    96
+  ],
+  "processor_override": {
+    "size": {
+      "height": 112,
+      "width": 112
+    },
+    "keep_aspect_ratio": true,
+    "ensure_multiple_of": 14
+  },
+  "input_processing": {
+    "mode": "original",
+    "original_pixels_sha256": "1a017de1e6878c4fb7f43b16aafefeeb6540c8d7d7bced440bc86db11224e7e5",
+    "settings": null,
+    "inferred_pixels_sha256": "1a017de1e6878c4fb7f43b16aafefeeb6540c8d7d7bced440bc86db11224e7e5"
+  },
+  "device": "cpu",
+  "smoothing": "none",
+  "depth_amount": 1.0,
+  "raw_prediction": {
+    "shape": [
+      1,
+      112,
+      154
+    ],
+    "finite": true,
+    "minimum": 44.58732604980469,
+    "maximum": 96.01570129394531,
+    "standard_deviation": 11.576979637145996,
+    "percentiles_5_50_95": [
+      53.35697727203369,
+      84.90826797485352,
+      92.50109710693359
+    ]
+  },
+  "smoothed_normalized_depth": {
+    "shape": [
+      72,
+      96
+    ],
+    "finite": true,
+    "minimum": 0.0,
+    "maximum": 255.0,
+    "standard_deviation": 58.3265266418457,
+    "percentiles_5_50_95": [
+      40.52848072052002,
+      200.1484603881836,
+      238.3590072631836
+    ]
+  },
+  "mesh": {
+    "path": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\Notes\\depth-diagnostics\\da1-small\\example_D1_0_none-depth_anything_v1_R72x96_dyn20260911_084829.ply",
+    "vertices": 13822,
+    "faces": 27636,
+    "extents": [
+      95.0,
+      71.0,
+      47.5
+    ],
+    "depth_to_longest_side": 0.5,
+    "watertight": true
+  },
+  "provenance": {
+    "format": "edgemesh-provenance",
+    "payload": {
+      "geometry_sha256": "fa7506d01d717b6e241a5fd0d91d12546ce940dc9b415254de460299361b3636",
+      "models": [
+        {
+          "backend": "huggingface",
+          "device": "cpu",
+          "license": "apache-2.0",
+          "license_policy": {
+            "badge": "Permissive model license",
+            "commercial_info": "Commercial use is included under Apache 2.0; follow its conditions.",
+            "commercial_status": "included",
+            "commercial_url": "https://www.apache.org/licenses/LICENSE-2.0",
+            "display_name": "Depth Anything V1 Large",
+            "guidance": "The weight license permits commercial and non-commercial use subject to its terms. Keep required copyright, license, and NOTICE material when distributing covered material; identify modifications and do not imply endorsement.",
+            "license": "apache-2.0",
+            "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+            "model_id": "LiheYoung/depth-anything-large-hf",
+            "model_type": "depth_anything_v1",
+            "notice": "General guidance, not legal advice. Read the linked weight license for your intended use. EdgeMesh being free or non-commercial does not change a model's terms. This label records the model used; it does not decide ownership or license of every output.",
+            "policy_version": 1,
+            "requires_acceptance": false,
+            "restriction": "",
+            "source_url": "https://huggingface.co/LiheYoung/depth-anything-large-hf",
+            "usage_class": "permissive"
+          },
+          "model_card": "https://huggingface.co/LiheYoung/depth-anything-large-hf/tree/27ccb0920352c0c37b3a96441873c8d37bd52fb6",
+          "model_id": "LiheYoung/depth-anything-large-hf",
+          "model_type": "depth_anything_v1",
+          "policy_sha256": "e12196caaa8670bca234b03d8d28dcb9cf87e6472577afb9f4d8efe30cea2e00",
+          "preprocessing": {
+            "ensure_multiple_of": 14,
+            "keep_aspect_ratio": true,
+            "size": {
+              "height": 112,
+              "width": 112
+            }
+          },
+          "revision": "27ccb0920352c0c37b3a96441873c8d37bd52fb6",
+          "weight_files_sha256": {
+            "model.safetensors": "bc27360a3e6906e5ddd8f618e2dcde11362327361918b8f76793e42e25de31b3"
+          }
+        }
+      ],
+      "parameters": {
+        "depth_amount": 1.0,
+        "flat_back": true,
+        "input_processing": {
+          "inferred_pixels_sha256": "1a017de1e6878c4fb7f43b16aafefeeb6540c8d7d7bced440bc86db11224e7e5",
+          "mode": "original",
+          "original_pixels_sha256": "1a017de1e6878c4fb7f43b16aafefeeb6540c8d7d7bced440bc86db11224e7e5",
+          "settings": null
+        },
+        "output_shape": [
+          72,
+          96
+        ],
+        "processor_override": {
+          "ensure_multiple_of": 14,
+          "keep_aspect_ratio": true,
+          "size": {
+            "height": 112,
+            "width": 112
+          }
+        },
+        "smoothing": "none",
+        "subject_mask": null
+      },
+      "schema_version": 1
+    },
+    "algorithm": "hmac-sha256",
+    "key_id": "e0da4839ed03c7f3f8b0c33a",
+    "signature": "7997eea669e0c09761e51ad86041c204fcb4d0da8ec3e5a0fd4c20c0e1d0261f"
+  },
+  "seconds": {
+    "runtime_setup": 48.43142039998202,
+    "model_load": 1.6445852000033483,
+    "pipeline": 1.4075887000071816,
+    "total": 51.57326069998089
+  },
+  "offline": true
+}

@@ -1,0 +1,13 @@
+feat!: introduce the EdgeMesh desktop workspace and portable projects
+
+Add an integrated mask and mesh workspace, portable project autosave,
+persistent settings and history, model management and provenance, optional
+advisory assistants, and standard Python packaging with an edgemesh launcher.
+
+Preserve accepted results across cancelled generation jobs, add mesh-health
+and repair workflows, and correct resolution-dependent depth relief and
+native Windows startup behavior. Include regression coverage and user guides.
+
+BREAKING CHANGE: Regenerated depth relief now scales with the longest image
+extent. Older saved depth amounts can produce deeper geometry; review the
+depth amount before regenerating. The packaged desktop requires Python 3.12.

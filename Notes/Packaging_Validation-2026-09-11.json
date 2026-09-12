@@ -1,0 +1,148 @@
+{
+  "recorded_at_utc": "2026-09-11 14:50",
+  "platform": {
+    "os": "Windows",
+    "architecture": "x64",
+    "python": "3.12.10",
+    "uv": "0.11.7"
+  },
+  "version": "0.6.7",
+  "artifacts": [
+    {
+      "kind": "wheel",
+      "path": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\dist\\edgemesh-0.6.7-py3-none-any.whl",
+      "bytes": 1689272,
+      "sha256": "52abf638f0038c1929bd4d939a747882fff5c7b718e79ad626a63f36462e7c86",
+      "members": 72
+    },
+    {
+      "kind": "sdist",
+      "path": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\dist\\edgemesh-0.6.7.tar.gz",
+      "bytes": 1669598,
+      "sha256": "d11927383f46296306b1b49da0b3bfe23c24c259c971e03173ba9ad8c73334a7",
+      "members": 84
+    }
+  ],
+  "archive_checks": {
+    "application_modules": 45,
+    "meshtools_modules": 13,
+    "bootstrap_modules": 4,
+    "source_bytes_match": true,
+    "assets": [
+      "EdgeMesh.ico",
+      "Images/example.png"
+    ],
+    "licenses": [
+      "LICENSE",
+      "MeshTools/LICENSE"
+    ],
+    "license_expression": "0BSD AND CC0-1.0",
+    "readme_case": "ReadMe.md",
+    "excluded": [
+      "tests",
+      "Git metadata",
+      "caches",
+      "user state",
+      "model weights"
+    ],
+    "wheel_built_from_sdist": true
+  },
+  "tests": {
+    "prior_combined_passed": 325,
+    "packaging_tests_in_prior_combined_run": 7,
+    "final_focused_packaging_passed": 9,
+    "focused_seconds": 5.224,
+    "scoped_ruff": "passed",
+    "packaging_py_compile": "passed",
+    "note": "Two build-only regression tests were added after the combined run; the full suite was not rerun afterward."
+  },
+  "build_corrections": [
+    {
+      "problem": "PEP 517 runner did not include the source root on sys.path, so setup.py could not import _build_support.",
+      "fix": "Load the packaging helper explicitly from its file path.",
+      "regression": "test_setup_metadata_does_not_require_source_on_sys_path"
+    },
+    {
+      "problem": "Setuptools automatically included 33 root test files in the first completed source archive.",
+      "fix": "Explicitly prune the root tests tree and exclude the redundant README.md alias while preserving ReadMe.md.",
+      "regression": "test_source_manifest_preserves_readme_case_and_excludes_tests"
+    }
+  ],
+  "installed_environments": [
+    {
+      "profile": "base",
+      "path": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\.cache\\packaging-base-validation",
+      "packages": 87,
+      "pip_check": "passed",
+      "desktop_ready": true,
+      "error_log_empty": true,
+      "assistant_panel_present": true,
+      "installed_module_and_resource_paths_verified": true,
+      "optional_depth_and_sdk_distributions_absent": true
+    },
+    {
+      "profile": "depth,assistants",
+      "path": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\.cache\\packaging-validation",
+      "packages": 131,
+      "pip_check": "passed",
+      "desktop_ready": true,
+      "error_log_empty": true,
+      "assistant_panel_present": true,
+      "installed_module_and_resource_paths_verified": true
+    }
+  ],
+  "installed_cli_checks": {
+    "help": "passed",
+    "version": "EdgeMesh 0.6.7",
+    "diagnose_depth_help": "passed"
+  },
+  "installed_sdk_probe": {
+    "available": true,
+    "version": "0.1.16",
+    "inference_called": false,
+    "authentication_exercised": false
+  },
+  "uvx": {
+    "command": "uvx --verbose --no-config --cache-dir \"D:\\Documents\\Code\\GitHub\\EdgeMesh\\.cache\\packaging-uv\" --offline --python \"D:\\Documents\\Code\\GitHub\\EdgeMesh\\.venv\\Scripts\\python.exe\" --exclude-newer \"1 week\" --default-index \"https://pypi.org/simple\" --from \"edgemesh[depth,assistants] @ file:///D:/Documents/Code/GitHub/EdgeMesh/dist/edgemesh-0.6.7-py3-none-any.whl\" edgemesh --help",
+    "working_directory": "C:\\Users\\aboog\\AppData\\Local\\Temp",
+    "environment": {
+      "UV_TOOL_DIR": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\.cache\\packaging-tools",
+      "UV_CACHE_DIR": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\.cache\\packaging-uv",
+      "HF_HUB_OFFLINE": "1",
+      "TRANSFORMERS_OFFLINE": "1"
+    },
+    "removed_environment_keys": [
+      "PYTHONPATH",
+      "UV_INDEX_URL",
+      "UV_EXTRA_INDEX_URL",
+      "UV_INDEX",
+      "UV_DEFAULT_INDEX",
+      "PIP_INDEX_URL",
+      "PIP_EXTRA_INDEX_URL",
+      "UV_KEYRING_PROVIDER"
+    ],
+    "exit_code": 0,
+    "printed_edgemesh_help": true,
+    "packages": 131,
+    "resolve_seconds": 0.545,
+    "install_seconds": 141,
+    "sandbox_adjustments": "Default Roaming uv Python/tool state directories were inaccessible. Used an explicit existing Python, task-owned uv state/cache, --offline, --no-config, and the public PyPI index. An earlier 120-second harness limit was shorter than the measured 141-second installation.",
+    "generic_python_discovery_validated": false
+  },
+  "evidence": {
+    "artifact_report": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\.cache\\packaging-artifact-report.json",
+    "final_build": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\.cache\\packaging-build-verified.log",
+    "base_gui": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\.cache\\packaging-installed-base-smoke.log",
+    "full_gui": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\.cache\\packaging-installed-full-smoke.log",
+    "sdk_probe": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\.cache\\packaging-installed-sdk-probe.log",
+    "uvx_success": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\.cache\\packaging-uvx-debug.log",
+    "parent_combined_tests": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\Notes\\Desktop_Completion_Tests-2026-09-11.txt"
+  },
+  "limits": [
+    "Offscreen initialization only; no interactive GPU rendering validation.",
+    "No frozen executable or Linux/macOS validation.",
+    "Packaging validation did not download model weights or perform model inference/provider authentication.",
+    "Registered legacy MiDaS/DPT checkout-specific dependencies were not verified in these clean environments.",
+    "No PyPI or release-host publication, commit, version bump, or dependency changes to the pre-existing .venv."
+  ]
+}

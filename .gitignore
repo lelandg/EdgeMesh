@@ -207,6 +207,9 @@ pt_to_onnx.py
 py_oxidizer_config_generator.py
 pyoxidizer.bzl
 setup.py
+!setup.py
+!build-cx-Freeze.bat
+!Images/example.png
 torch_hub_model_list.py
 torch_info.txt
 build.bat

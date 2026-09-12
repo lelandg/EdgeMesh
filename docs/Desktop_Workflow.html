@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EdgeMesh · Desktop workflow</title>
+<style>
+:root{color-scheme:dark;--bg:#101819;--panel:#192728;--text:#edf6f2;--muted:#bbcec7;--line:#3b554d;--accent:#8fe2ba;--focus:#ffdf8c}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 system-ui,sans-serif}main{max-width:1120px;margin:auto;padding:48px 24px 72px}a{color:var(--accent);text-underline-offset:3px}a:hover{text-decoration-thickness:2px}h1{font-size:clamp(2.2rem,5vw,3.8rem);line-height:1.12;letter-spacing:-.035em;margin:12px 0 20px}h2{font-size:1.6rem;line-height:1.3;margin:0 0 18px}h3{font-size:1.08rem;margin:0 0 8px}p{margin:0 0 16px}li+li{margin-top:8px}.eyebrow{color:var(--accent);text-transform:uppercase;font-size:.8rem;font-weight:750;letter-spacing:.12em}.lede{font-size:1.17rem;color:var(--muted);max-width:840px}.skip{position:absolute;left:16px;top:-80px;background:var(--text);color:var(--bg);padding:10px 18px;z-index:2}.skip:focus{top:12px}:focus-visible{outline:3px solid var(--focus);outline-offset:4px}nav{display:flex;flex-wrap:wrap;gap:10px;margin:28px 0}nav a{border:1px solid var(--line);border-radius:999px;padding:7px 14px;text-decoration:none}.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px;margin:26px 0;scroll-margin-top:20px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.card{border:1px solid var(--line);border-radius:12px;padding:18px;min-width:0}.card p:last-child{margin-bottom:0}.muted,small{color:var(--muted)}.note{border-left:3px solid var(--accent);padding-left:16px}.steps{padding-left:24px}.steps li{padding-left:7px;margin:0 0 16px}.steps strong{display:block}.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin:16px 0 24px}table{width:100%;border-collapse:collapse;min-width:460px}caption{text-align:left;font-weight:700;padding:14px 16px;background:#203330}th,td{text-align:left;vertical-align:top;padding:12px 16px;border-top:1px solid var(--line)}th{color:var(--accent)}th[scope=row]{color:var(--text);font-weight:550;width:54%}.shortcut{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap}kbd{font:600 .86rem/1.6 ui-monospace,Consolas,monospace;border:1px solid #6b887b;border-bottom-width:3px;border-radius:5px;padding:3px 7px;background:#10201b;white-space:nowrap}button{font:600 .78rem/1.4 system-ui,sans-serif;color:var(--text);background:#275c47;border:1px solid #6baf89;border-radius:6px;padding:5px 9px;cursor:pointer}button:hover{background:#36795d}.tag{display:inline-block;padding:3px 9px;border:1px solid var(--line);border-radius:999px;font-size:.8rem;color:var(--accent);margin-bottom:12px}.flow{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:20px 0}.flow span{padding:8px 12px;border:1px solid var(--line);border-radius:8px}.flow b{color:var(--accent)}footer{border-top:1px solid var(--line);padding-top:24px;margin-top:36px;color:var(--muted)}#copy-status{position:fixed;right:16px;bottom:12px;max-width:calc(100vw - 32px);background:#edf6f2;color:#102019;border-radius:8px;padding:10px 16px;box-shadow:0 4px 20px #0005}#copy-status:empty{display:none}details{margin:18px 0}summary{cursor:pointer;font-weight:650;color:var(--accent)}@media(max-width:700px){main{padding:28px 16px 52px}.panel{padding:20px}.grid{grid-template-columns:1fr}th,td{padding:10px 12px}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}@media print{:root{color-scheme:light;--bg:white;--panel:white;--text:#111;--muted:#333;--line:#aaa;--accent:#164a36}main{max-width:none;padding:0}button,nav,.skip,#copy-status{display:none}.panel{break-inside:avoid}kbd{background:white;color:black}a{color:#164a36}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to workflow</a>
+<main id="main">
+<header>
+<div class="eyebrow">EdgeMesh · Desktop reference</div>
+<h1>From image to mesh,<br>with your work in view.</h1>
+<p class="lede">Open an image, refine its selection, generate a relief and inspect the result. The project folder, saved state and model terms stay visible as you work.</p>
+<nav aria-label="On this page"><a href="#start">Start</a><a href="#projects">Projects and autosave</a><a href="#workspace">Workspace</a><a href="#shortcuts">App shortcuts</a><a href="#viewer">3D controls</a><a href="#connections">AI connections</a><a href="#models">Models and depth</a></nav>
+<p>For the exact local launch command and installation choices, open <a href="Packaging.html">Launch EdgeMesh</a>. This guide does not assume that EdgeMesh has been published to PyPI.</p>
+</header>
+
+<section class="panel" id="start" aria-labelledby="start-title">
+<h2 id="start-title">Make your first mesh</h2>
+<ol class="steps">
+<li><strong>Open an image.</strong>Use Open Image, or begin with the example from Setup. Your source stays available for comparison.</li>
+<li><strong>Choose the subject.</strong>Open the mask editor. Add and remove foreground with brushes, or use SAM2 points and a box. Accept the selection to apply it to Depth Mesh.</li>
+<li><strong>Choose a mesh route.</strong>Depth Mesh uses an estimated depth surface. Contour Mesh uses image edges and does not use a learned model; its result has different geometry and mask semantics.</li>
+<li><strong>Generate and inspect.</strong>Inspect the embedded viewer, fit the mesh, switch standard views, and compare surface and wireframe display. Adjust depth amount and regenerate if needed.</li>
+<li><strong>Save the result.</strong>Check the displayed project folder and autosave status. Save a project copy for a separate destination; export a mesh when you need an OBJ or STL outside the project.</li>
+</ol>
+<p class="note">A depth mesh from one photograph is a relief. A full object reconstructed from several photographs, or an AI-generated guess at its hidden surfaces, is a separate workflow.</p>
+</section>
+
+<section class="panel" id="projects" aria-labelledby="projects-title">
+<h2 id="projects-title">Know where your work is saved</h2>
+<div class="grid">
+<article class="card"><h3>Visible project folder</h3><p>The app shows the current project folder and autosave state. A project folder is created automatically when needed; inspect the shown location rather than guessing where files went.</p></article>
+<article class="card"><h3>Change or save a copy</h3><p>Use the folder control to change where the project is saved. Save Copy writes a separate project copy to a destination you choose. Keep the original when comparing variants.</p></article>
+<article class="card"><h3>Save project versus image</h3><p>Project saving retains the workflow state and its associated data. Save Image writes an image file. Mesh export is a separate operation; choose it when another application needs the geometry.</p></article>
+<article class="card"><h3>Plain project data</h3><p>Project metadata is readable JSON. Provider credentials are kept out of project files. Readable metadata and local integrity checks serve different purposes; project files are not encrypted by those checks.</p></article>
+</div>
+<p class="muted" style="margin-top:18px">Check the autosave status if a destination is unavailable or a save fails. A chosen location is not evidence that its latest write succeeded.</p>
+</section>
+
+<section class="panel" id="workspace" aria-labelledby="workspace-title">
+<h2 id="workspace-title">One processed view, with an editable selection</h2>
+<p>The processed-image preview and accepted mask share a view. Use the overlay or mask display to inspect the selection alongside the processed result. There is no separate Processed page to manage.</p>
+<div class="grid">
+<article class="card"><h3>Make space for the image</h3><p>Resize the splitters between preview areas. Move, resize or detach the parameter dock; use View to restore a hidden panel or reset the layout.</p></article>
+<article class="card"><h3>Refine the mask</h3><p>Adjust display mode and opacity, then open the editor for points, a box or manual brush corrections. Accept applies the edit; Cancel preserves the previously accepted selection.</p></article>
+<article class="card"><h3>History</h3><p>Review saved states and processing choices, compare settings and restore the state you want to continue from. Regenerate when restored settings require a new mesh.</p></article>
+<article class="card"><h3>Setup and Assistant</h3><p>Setup holds model and local configuration controls. Assistant holds optional provider connections. Basic image, mask, contour and preview work does not require an AI account.</p></article>
+</div>
+</section>
+
+<section class="panel" id="shortcuts" aria-labelledby="shortcuts-title">
+<h2 id="shortcuts-title">Application shortcuts</h2>
+<p>These shortcuts distinguish project files from image files. Copy buttons copy the shortcut label for reference.</p>
+<div class="table-wrap"><table><caption>Projects and images</caption><thead><tr><th scope="col">Action</th><th scope="col">Shortcut</th></tr></thead><tbody>
+<tr><th scope="row">New project</th><td><span class="shortcut"><kbd>Ctrl+N</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">Open project</th><td><span class="shortcut"><kbd>Ctrl+Shift+O</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">Save project</th><td><span class="shortcut"><kbd>Ctrl+S</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">Save project copy</th><td><span class="shortcut"><kbd>Ctrl+Shift+S</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">Open image</th><td><span class="shortcut"><kbd>Ctrl+O</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">Save image</th><td><span class="shortcut"><kbd>Ctrl+Alt+S</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+</tbody></table></div>
+<div class="table-wrap"><table><caption>Selection, pages and confirmation</caption><thead><tr><th scope="col">Action</th><th scope="col">Shortcut</th></tr></thead><tbody>
+<tr><th scope="row">Edit subject mask</th><td><span class="shortcut"><kbd>Ctrl+M</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">Clear accepted mask</th><td><span class="shortcut"><kbd>Ctrl+Shift+M</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">Workspace page</th><td><span class="shortcut"><kbd>Ctrl+1</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">History page</th><td><span class="shortcut"><kbd>Ctrl+2</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">Setup page</th><td><span class="shortcut"><kbd>Ctrl+3</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">Assistant page</th><td><span class="shortcut"><kbd>Ctrl+4</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">Generate in Workspace; confirm the enabled accept action in a dialog</th><td><span class="shortcut"><kbd>Shift+Enter</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+</tbody></table></div>
+<p class="note">Dialog confirmation keeps the dialog's validation. A disabled confirmation button stays disabled; for example, accepting a mask still requires foreground pixels.</p>
+</section>
+
+<section class="panel" id="viewer" aria-labelledby="viewer-title">
+<h2 id="viewer-title">Inspect the mesh inside EdgeMesh</h2>
+<p>Click or tab into the viewer before using its shortcuts. Modifier-wheel movement follows the world X, Y and Z axes, so those directions remain consistent as you orbit. Ordinary widget controls retain their own keys when focused.</p>
+<div class="table-wrap"><table><caption>Mouse wheel with the viewer focused</caption><thead><tr><th scope="col">World-axis action</th><th scope="col">Control</th></tr></thead><tbody>
+<tr><th scope="row">Translate along X</th><td><span class="shortcut"><kbd>Shift+wheel</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">Translate along Y</th><td><span class="shortcut"><kbd>Ctrl+wheel</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">Translate along Z</th><td><span class="shortcut"><kbd>Alt+wheel</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">Rotate about X</th><td><span class="shortcut"><kbd>Ctrl+Shift+wheel</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">Rotate about Y</th><td><span class="shortcut"><kbd>Alt+Shift+wheel</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">Rotate about Z</th><td><span class="shortcut"><kbd>Ctrl+Alt+wheel</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+</tbody></table></div>
+<div class="table-wrap"><table><caption>Keyboard with the viewer focused</caption><thead><tr><th scope="col">Action</th><th scope="col">Shortcut</th></tr></thead><tbody>
+<tr><th scope="row">Translate along X, negative / positive</th><td><span class="shortcut"><kbd>Ctrl+Left / Ctrl+Right</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">Translate along Y, negative / positive</th><td><span class="shortcut"><kbd>Ctrl+Down / Ctrl+Up</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">Translate along Z, negative / positive</th><td><span class="shortcut"><kbd>Ctrl+PageDown / Ctrl+PageUp</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">Rotate about X, negative / positive</th><td><span class="shortcut"><kbd>Alt+Down / Alt+Up</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">Rotate about Y, negative / positive</th><td><span class="shortcut"><kbd>Alt+Left / Alt+Right</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">Rotate about Z, negative / positive</th><td><span class="shortcut"><kbd>Alt+PageDown / Alt+PageUp</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">Fit mesh in view</th><td><span class="shortcut"><kbd>F</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">Toggle projection</th><td><span class="shortcut"><kbd>O</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">Change display mode</th><td><span class="shortcut"><kbd>W</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">Toggle axes</th><td><span class="shortcut"><kbd>A</kbd><button type="button" data-copy>Copy</button></span></td></tr>
+<tr><th scope="row">Standard views: isometric, front, back, left, right, top, bottom</th><td><span class="shortcut"><kbd>1–7</kbd><button type="button" data-copy>Copy</button></span><br><small>Each number selects the corresponding view in this order. These are unmodified viewer keys; Ctrl+1–4 selects app pages.</small></td></tr>
+</tbody></table></div>
+<p>Axis rotation orbits through the camera target using the right-hand rule. Viewer controls change inspection, not the mesh's export geometry. Use mesh-generation settings when you want the generated shape itself to change. See <a href="Viewport_Controls.md">the detailed viewer reference</a> for further controls.</p>
+</section>
+
+<section class="panel" id="connections" aria-labelledby="connections-title">
+<h2 id="connections-title">Connect an AI provider when you choose</h2>
+<p>Configure optional connections in Assistant. Authentication belongs to the provider connection on this computer; project copies do not carry credentials.</p>
+<div class="grid">
+<article class="card"><h3>Codex</h3><p>Connect through the supported OAuth login or an API key. Provider authentication and model availability are separate from the local mask and mesh workflow.</p></article>
+<article class="card"><h3>Claude</h3><p>Use the supported OAuth login or an API key. Keep account and connection details in local settings, outside project metadata.</p></article>
+<article class="card"><h3>Antigravity</h3><p>Modern Antigravity supports the protected embedded OAuth connection. The older installed CLI can still own account login, but requires an upgrade for the protected embedded streaming route. An optional API-key connection uses the supported SDK worker and does not require that external CLI.</p></article>
+<article class="card"><h3>Understand what is connected</h3><p>A connected coding assistant is not automatically a separate image- or video-generation API entitlement. Use the capabilities the configured provider actually exposes.</p></article>
+</div>
+<p class="muted" style="margin-top:18px">This reference describes the connection choices. It does not report a successful live login, paid request or cloud-generation test.</p>
+</section>
+
+<section class="panel" id="models" aria-labelledby="models-title">
+<h2 id="models-title">Read model terms alongside the accepted mesh</h2>
+<p>Noncommercial, research-only and custom-license labels follow the model provenance of the accepted mesh. A later change in the model picker does not relabel an already accepted result.</p>
+<div class="grid">
+<article class="card"><h3>Terms are model-specific</h3><p>A badge summarizes the relevant upstream terms; it does not grant permission. Research-only and noncommercial are not interchangeable. Depth Pro's terms exclude product development; do not interpret an NC label as permission for any other use.</p></article>
+<article class="card"><h3>Contour has no learned model</h3><p>The contour route uses image processing rather than a learned model. Its provenance should say so instead of borrowing a license label from a previously selected depth model.</p></article>
+<article class="card"><h3>Local tamper evidence</h3><p>A source hash and HMAC record help detect changed provenance. On Windows, the local signing key is protected with DPAPI. The project JSON remains readable.</p></article>
+<article class="card"><h3>Portable means verifiable only where possible</h3><p>A project signed with a different computer's key is unverified locally. These checks are tamper evidence, not DRM, proof of licensing permission or encryption of the project.</p></article>
+</div>
+<h3 style="margin-top:24px">Depth amount and resolution</h3>
+<p>The flattening problem came from measuring X/Y in image pixels while leaving Z at a fixed size. Depth scaling now follows the image proportion: at Depth 1, the available depth range is half the longer image side. Changing processing resolution therefore does not, by itself, flatten the same relative depth shape.</p>
+<p class="muted">This scale is a relief setting, not a measured physical dimension. Actual cached DA1 and DA2 runs produced varied depth and watertight meshes with consistent proportions. See the <a href="Depth_Diagnosis.md">measured comparison</a> for revisions, settings and timings. These small CPU runs used an illustration; they do not establish model accuracy or a quality ranking.</p>
+<h3>Depth Anything 3 remains a research reference</h3>
+<p>DA3 is documented in <a href="Model_Options.md">Model options</a> and its <a href="https://github.com/ByteDance-Seed/Depth-Anything-3">official research repository</a>. It is not an integrated EdgeMesh backend. The report separates checkpoint licenses, runtime requirements and multiview output from the current relief workflow.</p>
+</section>
+
+<footer>
+<p><a href="Packaging.html">Launch and packaging reference</a> · <a href="Workspace_Refresh.html">Earlier workspace overview</a> · <a href="Model_Options.md">Model research</a> · <a href="AI_Product_Direction.md">AI product research</a></p>
+<p>This is a workflow reference. Consult the accompanying implementation notes for completed validation and outstanding limits; the presence of a control or guide is not a test result.</p>
+</footer>
+</main>
+<p id="copy-status" role="status" aria-live="polite" aria-atomic="true"></p>
+<script>
+const statusLine=document.getElementById('copy-status');
+let statusTimer;
+for(const button of document.querySelectorAll('[data-copy]')){
+  const text=button.closest('.shortcut').querySelector('kbd').textContent;
+  button.setAttribute('aria-label','Copy shortcut '+text);
+  button.addEventListener('click',async()=>{
+    let copied=false;
+    try{await navigator.clipboard.writeText(text);copied=true;}
+    catch(error){
+      const field=document.createElement('textarea');
+      field.value=text;field.setAttribute('aria-label','Shortcut to copy');
+      field.style.position='fixed';field.style.left='-10000px';document.body.append(field);field.select();
+      try{copied=document.execCommand('copy');}catch(fallbackError){copied=false;}
+      field.remove();button.focus();
+    }
+    statusLine.textContent=copied?'Copied: '+text:'Copy unavailable. Select the shortcut text and copy it manually.';
+    clearTimeout(statusTimer);statusTimer=setTimeout(()=>{statusLine.textContent='';},4000);
+  });
+}
+</script>
+</body>
+</html>

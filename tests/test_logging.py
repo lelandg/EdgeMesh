@@ -44,7 +44,11 @@ class LoggingTests(unittest.TestCase):
 
     def test_default_log_is_in_user_data_directory(self):
         with tempfile.TemporaryDirectory() as folder:
-            with patch.dict('os.environ', {'LOCALAPPDATA': folder, 'XDG_STATE_HOME': folder}):
+            # Test platform defaults independently of an explicit profile set
+            # by the caller, and keep the fallback home inside this fixture.
+            with patch.dict('os.environ', {
+                'EDGEMESH_DATA_DIR': '', 'LOCALAPPDATA': folder, 'XDG_STATE_HOME': folder,
+            }), patch('pathlib.Path.home', return_value=Path(folder)):
                 logger = log_utils.get_logger('test.edgemesh')
             self.assertTrue(Path(logger.handlers[0].baseFilename).is_relative_to(folder))
             self.tearDown()

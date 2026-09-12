@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "hf": {
+    "depth-anything/Depth-Anything-V2-Large-hf": {
+      "revision": "7581137eff8d4e94f6e796d3baea0e9fa79b22d2"
+    }
+  },
+  "midas": {}
+}

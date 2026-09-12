@@ -103,6 +103,8 @@ class SmoothingDepthMapUtils:
         :param kwargs: Additional parameters for the chosen smoothing method.
         :return: Smoothed depth map.
         """
+        if method in (None, "none", "(none)"):
+            return np.array(depth_map, copy=True)
         if method == "gaussian":
             return self.gaussian_smoothing(depth_map, **kwargs)
         elif method == "bilateral":

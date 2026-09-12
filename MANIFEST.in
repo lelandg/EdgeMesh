@@ -1,0 +1,8 @@
+include pyproject.toml setup.py _build_support.py README.md LICENSE
+include EdgeMesh.ico Images/example.png
+include MeshTools/LICENSE MeshTools/*.py
+recursive-include edgemesh_bootstrap *.py
+prune tests
+prune MeshTools/.git
+prune MeshTools/tests
+global-exclude __pycache__ *.py[cod] *.log *.pth *.pt *.safetensors *.onnx

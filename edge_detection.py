@@ -1,6 +1,7 @@
 # Python | edge_detection.py
 import cv2
 import numpy as np
+from data_contracts import as_bgr
 
 def detect_and_project_edges(image, low_threshold, high_threshold, thickness=1, project_on_original=False):
     """
@@ -22,14 +23,7 @@ def detect_and_project_edges(image, low_threshold, high_threshold, thickness=1, 
     if original_image is None:
         raise ValueError("Could not read image. Check the image path.")
 
-    if original_image.ndim == 2:
-        bgr_image = cv2.cvtColor(original_image, cv2.COLOR_GRAY2BGR)
-    elif original_image.ndim == 3 and original_image.shape[2] == 3:
-        bgr_image = original_image
-    elif original_image.ndim == 3 and original_image.shape[2] == 4:
-        bgr_image = cv2.cvtColor(original_image, cv2.COLOR_BGRA2BGR)
-    else:
-        raise ValueError("Invalid image format. Provide a BGR, BGRA or grayscale image.")
+    bgr_image = as_bgr(original_image)
 
     # Convert to grayscale for edge detection
     grayscale_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2GRAY)

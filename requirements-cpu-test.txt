@@ -1,0 +1,4 @@
+# Supported target: Windows x64 / CPython 3.12 / CPU-only regression tests.
+# This is the complete selected dependency closure, not application/GPU extras.
+# Version provenance and unverified platforms: docs/Dependency_Validation.md.
+-r constraints/windows-py312.txt

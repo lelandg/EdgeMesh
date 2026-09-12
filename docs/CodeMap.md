@@ -1,533 +1,332 @@
 # EdgeMesh Code Map
 
-*Last Updated: 2025-09-17 11:48:26*
-
-## Table of Contents
-
-| Section | Line Number |
-|---------|-------------|
-| [Quick Navigation](#quick-navigation) | 25 |
-| [Visual Architecture Overview](#visual-architecture-overview) | 40 |
-| [Project Structure](#project-structure) | 75 |
-| [Core Configuration Files](#core-configuration-files) | 142 |
-| [Core Application](#core-application) | 158 |
-| [Image Processing Modules](#image-processing-modules) | 208 |
-| [Depth Processing Modules](#depth-processing-modules) | 232 |
-| [3D Mesh Generation](#3d-mesh-generation) | 280 |
-| [MeshTools Library](#meshtools-library) | 292 |
-| [UI Components and Extensions](#ui-components-and-extensions) | 345 |
-| [Utility Modules](#utility-modules) | 360 |
-| [Cross-File Dependencies](#cross-file-dependencies) | 382 |
-| [Architecture Patterns](#architecture-patterns) | 432 |
-| [Development Guidelines](#development-guidelines) | 467 |
-| [Performance Considerations](#performance-considerations) | 501 |
-
-## Quick Navigation
-
-### Primary Entry Points
-- **Main Application**: `edge_mesh.py:1544` - Main PyQt6 application entry
-- **Depth Processing**: `depth_to_3d.py:25` - DepthTo3D class for depth map generation
-- **Edge Detection**: `edge_detection.py:5` - Edge detection algorithms
-- **Mesh Generator**: `mesh_generator.py:1` - 3D mesh generation from images
-- **3D Viewport**: `MeshTools/viewport_3d.py:1` - 3D visualization component
-
-### Key Components
-- **Image Processing**: `image_processor.py:11` - ImageProcessor class
-- **Qt Extensions**: `qt_extensions.py:1` - Custom Qt widgets and utilities
-- **MeshTools**: `MeshTools/mesh_tools.py:66` - MeshTools class for 3D operations
-- **Configuration**: `config.ini` - Application settings persistence
-
-## Visual Architecture Overview
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│                    EdgeMesh Application                       │
-│                    edge_mesh.py (PyQt6)                      │
-└──────────────────────────────────────────────────────────────┘
-                                │
-          ┌─────────────────────┴─────────────────────┐
-          ▼                                           ▼
-┌──────────────────────────┐          ┌──────────────────────────┐
-│   Image Processing       │          │   UI Components          │
-│   - edge_detection       │◄─────────►   - MainWindow          │
-│   - image_processor      │          │   - Qt Extensions        │
-│   - smoothing_utils      │          │   - Flow Layout         │
-└──────────────────────────┘          └──────────────────────────┘
-          ▲                                           ▲
-          └─────────────────────┬─────────────────────┘
-                                ▼
-          ┌──────────────────────────────────────────┐
-          │         Depth Processing                 │
-          │   - depth_to_3d                         │
-          │   - depth_cue_estimator                 │
-          │   - smoothing_depth_map_utils           │
-          └──────────────────────────────────────────┘
-                                │
-                                ▼
-          ┌──────────────────────────────────────────┐
-          │         3D Mesh Generation               │
-          │   - mesh_generator                       │
-          │   - MeshTools/mesh_tools                │
-          │   - MeshTools/viewport_3d               │
-          └──────────────────────────────────────────┘
-```
-
-## Project Structure
-
-```
-EdgeMesh/
-├── edge_mesh.py                    # Main application (1546 lines)
-├── depth_to_3d.py                  # Depth map to 3D conversion
-├── edge_detection.py               # Edge detection algorithms
-├── mesh_generator.py               # 2D to 3D mesh generation
-├── image_processor.py              # Image processing utilities
-├── qt_extensions.py                # Custom Qt widgets
-├── flow_layout.py                  # Flow layout for Qt
-│
-├── Depth Processing/
-│   ├── depth_cue_estimator_util.py    # Depth estimation utilities
-│   ├── depth_based3d_reconstruction.py # 3D reconstruction
-│   ├── smoothing_depth_map_utils.py   # Depth map smoothing
-│   └── depth_anything.py              # Depth Anything model integration
-│
-├── MeshTools/                      # 3D mesh manipulation library
-│   ├── mesh_tools.py              # Core mesh operations
-│   ├── viewport_3d.py             # 3D visualization viewport
-│   ├── mesh_manipulation.py       # Mesh manipulation utilities
-│   ├── mesh_gradient_colorizer.py # Mesh coloring utilities
-│   ├── measurement_grid_visualizer.py # Grid visualization
-│   ├── text_3d.py                # 3D text rendering
-│   ├── space_mouse_controller.py  # SpaceMouse integration
-│   ├── space_mouse_event_handler.py # SpaceMouse events
-│   └── file_tools.py             # File management utilities
-│
-├── Depth Models/                  # Depth estimation models
-│   ├── depth_estimation_model.py
-│   └── estimate_depth.py
-│
-├── Utils/
-│   ├── spinner.py                 # Progress spinner
-│   ├── file_tools.py             # File utilities
-│   ├── torch_utils.py            # PyTorch utilities
-│   └── log_utils.py              # Logging utilities
-│
-├── Analysis/
-│   ├── edge_clustering_analyzer.py # Edge clustering analysis
-│   ├── shape_analyzer.py          # Shape analysis
-│   └── surface_partitioning.py    # Surface partitioning
-│
-├── Configuration/
-│   ├── config.ini                 # User settings
-│   ├── _version.py               # Version information
-│   └── python_requirements.txt   # Python dependencies
-│
-├── Build/
-│   ├── setup.py                  # Setup script
-│   ├── install_requirements.py   # Requirements installer
-│   ├── install_open3d.py        # Open3D installer
-│   └── build.bat                 # Windows build script
-│
-├── Documentation/
-│   ├── README.md                 # Main documentation
-│   ├── Docs/                     # Additional documentation
-│   │   └── CodeMap.md           # This file
-│   └── docs/
-│       ├── 3D_Mesh_Creation_Flow.md
-│       └── CHANGELOG.md
-│
-└── Images/                       # Sample images
-    └── example.png              # Example image for testing
-```
-
-## Core Configuration Files
-
-### Build Configuration
-- `setup.py` - Python package setup configuration
-- `python_requirements.txt` - Python package dependencies
-- `build.bat` - Windows build automation script
-- `run.bat` - Windows run script
-
-### Application Configuration
-- `config.ini` - User preferences and UI settings persistence
-- `_version.py` - Version tracking (current: defined in file)
-
-### Development Configuration
-- `.gitignore` - Git ignore patterns
-- `LICENSE` - License information
-
-## Core Application
-
-### MainWindowImageProcessing
-**Path**: `edge_mesh.py` - 1546 lines
-**Purpose**: Main application window managing UI and workflow orchestration
-**Language**: Python (PyQt6)
-
-#### Table of Contents
-| Section | Line Number |
-|---------|-------------|
-| Imports and Configuration | 1 |
-| Helper Functions | 73 |
-| Class Definition | 101 |
-| UI Initialization | 172 |
-| Event Handlers | 688 |
-| Image Processing | 935 |
-| 3D Viewport Management | 1140 |
-| Configuration Management | 1331 |
-| Main Entry Point | 1531 |
-
-#### Properties
-| Name | Line | Type | Access | Description |
-|------|------|------|--------|-------------|
-| verbose | 104 | bool | public | Enable verbose logging |
-| depth_to_3d | 105 | DepthTo3D | public | Depth processing instance |
-| mesh_3d | 108 | Trimesh | public | Generated 3D mesh |
-| mesh_from_2d | 109 | Trimesh | public | 2D edge-based mesh |
-| image | 117 | np.ndarray | public | Original loaded image |
-| processed_image | 119 | np.ndarray | public | Processed image result |
-| image_path | 118 | str | public | Path to current image |
-| three_d_viewport | 115 | ThreeDViewport | public | 3D visualization viewport |
-
-#### Key Methods
-| Method | Line | Access | Returns | Async | Description |
-|--------|------|--------|---------|-------|-------------|
-| __init__() | 102 | public | None | No | Initialize main window |
-| _init_ui() | 172 | private | None | No | Setup UI components |
-| load_image() | 1253 | public | None | No | Load image from file |
-| process_image() | 935 | public | None | No | Generate 3D mesh from depth |
-| generate_mesh() | 1090 | public | None | No | Generate mesh from edges |
-| update_preview() | 1189 | public | None | No | Update processed image preview |
-| update_3d_viewport() | 1140 | public | None | No | Refresh 3D visualization |
-| export_mesh() | 1165 | public | None | No | Export mesh to file |
-| save_image() | 1318 | public | None | No | Save processed image |
-| toggle_grayscale() | 850 | public | None | No | Toggle grayscale mode |
-| toggle_edge_detection() | 857 | public | None | No | Toggle edge detection |
-| toggle_invert_colors() | 1116 | public | None | No | Toggle color inversion |
-| enable_color_picker_mode() | 694 | public | None | No | Enable color picker |
-| reset_defaults() | 1390 | public | None | No | Reset all settings |
-
-## Image Processing Modules
-
-### ImageProcessor
-**Path**: `image_processor.py` - ~100 lines
-**Purpose**: Core image processing operations including blending and filters
-**Language**: Python
-
-#### Methods
-| Method | Line | Access | Returns | Description |
-|--------|------|--------|---------|-------------|
-| blend_images() | 17 | static | np.ndarray | Blend two images with percentage |
-| process_with_edge_detection() | - | public | np.ndarray | Apply edge detection |
-| apply_smoothing() | - | public | np.ndarray | Apply smoothing filters |
-
-### Edge Detection Module
-**Path**: `edge_detection.py` - 82 lines
-**Purpose**: Edge detection algorithms using OpenCV Canny
-
-#### Functions
-| Function | Line | Returns | Description |
-|----------|------|---------|-------------|
-| detect_and_project_edges() | 5 | np.ndarray | Detect and project edges |
-| detect_edges() | 70 | np.ndarray | Simplified edge detection wrapper |
-
-## Depth Processing Modules
-
-### DepthTo3D
-**Path**: `depth_to_3d.py` - ~500+ lines
-**Purpose**: Convert images to depth maps and generate 3D meshes
-**Language**: Python
-
-#### Table of Contents
-| Section | Line Number |
-|---------|-------------|
-| Imports and Configuration | 1 |
-| Model Names Dictionary | 21 |
-| Class Definition | 25 |
-| Model Loading | 43 |
-| Depth Estimation | - |
-| Mesh Generation | - |
-
-#### Properties
-| Name | Line | Type | Access | Description |
-|------|------|------|--------|-------------|
-| verbose | 31 | bool | public | Enable verbose output |
-| mesh_tools | 32 | MeshTools | public | Mesh manipulation tools |
-| depth_map | 33 | np.ndarray | public | Generated depth map |
-| model_type | 37 | str | public | Depth model type |
-| device | 38 | torch.device | public | Compute device (CPU/GPU) |
-| model | 39 | torch.nn.Module | public | Loaded depth model |
-
-#### Methods
-| Method | Line | Access | Returns | Description |
-|--------|------|--------|---------|-------------|
-| load_model() | 43 | public | tuple | Load depth estimation model |
-| process_image() | - | public | tuple | Process image to 3D mesh |
-| estimate_depth() | - | private | np.ndarray | Generate depth map |
-
-### Depth Cue Estimator
-**Path**: `depth_cue_estimator_util.py`
-**Purpose**: Estimate depth cues from 2D images
-
-### Smoothing Depth Map Utils
-**Path**: `smoothing_depth_map_utils.py`
-**Purpose**: Apply smoothing algorithms to depth maps
-
-#### Smoothing Methods
-- Anisotropic diffusion (edge-preserving)
-- Gaussian smoothing
-- Bilateral filtering
-- Median filtering
-
-## 3D Mesh Generation
-
-### MeshGenerator
-**Path**: `mesh_generator.py`
-**Purpose**: Generate 3D meshes from 2D edge-detected images
-
-#### Key Methods
-- `generate()` - Main mesh generation pipeline
-- Edge clustering analysis
-- Surface partitioning
-- Mesh triangulation
-
-## MeshTools Library
-
-### MeshTools Class
-**Path**: `MeshTools/mesh_tools.py` - ~500+ lines
-**Purpose**: Core 3D mesh manipulation operations
-**Language**: Python
-
-#### Table of Contents
-| Section | Line Number |
-|---------|-------------|
-| Documentation Header | 1 |
-| Imports | 49 |
-| Class Definition | 66 |
-| Mesh Operations | 100+ |
-
-#### Properties
-| Name | Line | Type | Access | Description |
-|------|------|------|--------|-------------|
-| mesh | 81 | Trimesh | public | Current mesh object |
-| verbose | 82 | bool | public | Verbose output flag |
-| input_mesh | 85 | str | public | Input mesh filename |
-
-#### Methods
-| Method | Line | Access | Returns | Description |
-|--------|------|--------|---------|-------------|
-| __init__() | 73 | public | None | Initialize with mesh |
-| rotate_mesh() | - | public | Trimesh | Rotate mesh by angles |
-| mirror_mesh() | - | public | Trimesh | Mirror across axis |
-| fix_mesh() | - | public | Trimesh | Fix mesh issues |
-| solidify_mesh() | - | public | Trimesh | Make mesh solid |
-
-### ThreeDViewport
-**Path**: `MeshTools/viewport_3d.py`
-**Purpose**: 3D visualization viewport using Open3D
-**Language**: Python
-
-#### Key Features
-- Real-time 3D mesh visualization
-- Camera controls and navigation
-- Mesh coloring and texturing
-- Export functionality
-- SpaceMouse support (optional)
-
-#### Methods
-| Method | Line | Access | Returns | Description |
-|--------|------|--------|---------|-------------|
-| __init__() | - | public | None | Initialize viewport |
-| load_mesh() | - | public | None | Load mesh for display |
-| clear_geometries() | - | public | None | Clear displayed meshes |
-| run() | - | public | None | Start visualization loop |
-| export_mesh_as_obj() | - | public | None | Export as OBJ file |
-| export_mesh_as_stl() | - | public | None | Export as STL file |
-
-## UI Components and Extensions
-
-### Qt Extensions Module
-**Path**: `qt_extensions.py`
-**Purpose**: Custom Qt widgets and utility functions
-
-#### Components
-- `FlowLayout` - Custom flow layout widget
-- `state_to_bool()` - Convert checkbox state to boolean
-- Custom validators and widgets
-
-### Flow Layout
-**Path**: `flow_layout.py`
-**Purpose**: Implement flow layout for dynamic UI arrangement
-
-## Utility Modules
-
-### File Tools
-**Path**: `file_tools.py` & `MeshTools/file_tools.py`
-**Purpose**: File management utilities
-
-#### Functions
-- `find_newest_file_in_directory()` - Find most recent file
-- `get_matching_files()` - Get files matching pattern
-
-### Spinner
-**Path**: `spinner.py` & `MeshTools/spinner.py`
-**Purpose**: Console progress spinner for long operations
-
-### Torch Utils
-**Path**: `torch_utils.py`
-**Purpose**: PyTorch utility functions and helpers
-
-### Log Utils
-**Path**: `log_utils.py`
-**Purpose**: Logging configuration and utilities
-
-## Cross-File Dependencies
-
-### Core Dependency Flows
-
-#### Image Processing Pipeline
-**Flow**: User Input → Image Loading → Processing → Preview
-- `edge_mesh.py:load_image()` → loads image
-- `edge_mesh.py:update_preview()` → calls processing
-- `edge_detection.py:detect_edges()` → edge detection
-- `image_processor.py:blend_images()` → blending
-- `edge_mesh.py:display_processed_image()` → display result
-
-#### Depth Estimation Pipeline
-**Flow**: Image → Depth Model → Depth Map → 3D Mesh
-- `edge_mesh.py:process_image()` → initiates depth processing
-- `depth_to_3d.py:DepthTo3D()` → manages depth pipeline
-- `depth_to_3d.py:load_model()` → loads AI model
-- `depth_to_3d.py:process_image()` → generates depth map
-- `MeshTools/mesh_tools.py` → mesh manipulation
-- `MeshTools/viewport_3d.py` → 3D visualization
-
-#### Configuration Management
-**Managed by**: `edge_mesh.py` configuration methods
-**Consumed by**:
-- `edge_mesh.py:load_ui_settings()` (line 1419) - Load saved preferences
-- `edge_mesh.py:save_ui_settings()` (line 1355) - Save preferences
-- All UI components for state persistence
-
-### Module Import Dependencies
-
-#### edge_mesh.py imports:
-- `_version` - Version information
-- `image_processor` - Image processing
-- `depth_to_3d` - Depth processing
-- `edge_detection` - Edge detection
-- `mesh_generator` - Mesh generation
-- `MeshTools.viewport_3d` - 3D visualization
-- `qt_extensions` - Custom Qt widgets
-- PyQt6 modules - GUI framework
-- OpenCV (cv2) - Image operations
-- NumPy - Array operations
-- Open3D - 3D operations
-
-#### depth_to_3d.py imports:
-- PyTorch - Deep learning models
-- Transformers - AI models
-- `MeshTools.mesh_tools` - Mesh operations
-- `smoothing_depth_map_utils` - Depth smoothing
-- `spinner` - Progress indication
-
-## Architecture Patterns
-
-### Design Patterns Used
-
-#### Model-View Pattern
-- **Model**: Image data, depth maps, 3D meshes
-- **View**: Qt UI components, 3D viewport
-- **Implementation**: Separation between data processing and UI
-
-#### Factory Pattern
-- **Implementation**: `depth_to_3d.py:load_model()`
-- **Purpose**: Dynamic model loading based on type
-
-#### Observer Pattern
-- **Implementation**: Qt signals and slots
-- **Purpose**: Event-driven UI updates
-
-#### Strategy Pattern
-- **Implementation**: Multiple depth models and smoothing methods
-- **Purpose**: Interchangeable algorithms
-
-### Architectural Style
-- **Style**: Modular Pipeline Architecture
-- **Rationale**: Clear separation of processing stages
-- **Benefits**: Easy to extend and maintain
-
-### Processing Pipeline Stages
-1. **Input Stage**: Image loading and validation
-2. **Preprocessing**: Grayscale, edge detection, color operations
-3. **Depth Estimation**: AI model inference
-4. **Smoothing**: Depth map refinement
-5. **Mesh Generation**: 3D reconstruction
-6. **Visualization**: Real-time 3D display
-7. **Export**: File output in various formats
-
-## Development Guidelines
-
-### Adding New Features
-
-#### Adding a New Depth Model
-1. Add model name to `model_names` dict in `depth_to_3d.py`
-2. Implement loading logic in `load_model()` method
-3. Add UI dropdown option in `edge_mesh.py`
-4. Test with sample images
-
-#### Adding Image Filters
-1. Implement filter in `image_processor.py`
-2. Add UI controls in `edge_mesh.py:_init_ui()`
-3. Connect to `update_preview()` pipeline
-4. Update configuration save/load methods
-
-### Code Standards
-
-#### Naming Conventions
-- Classes: PascalCase (e.g., `MainWindowImageProcessing`)
-- Functions/Methods: snake_case (e.g., `process_image`)
-- Constants: UPPER_SNAKE_CASE
-- Private methods: Leading underscore (e.g., `_init_ui`)
-
-#### File Organization
-- One main class per file
-- Related utilities grouped in modules
-- Separate UI from processing logic
-
-#### Documentation Standards
-- Docstrings for all public methods
-- Type hints where applicable
-- Comments for complex algorithms
-
-## Performance Considerations
-
-### Optimization Strategies
-
-#### Image Processing
-- Resolution limiting (default: 700px)
-- Cached processed images
-- Efficient NumPy operations
-- GPU acceleration when available
-
-#### Depth Estimation
-- Model caching after first load
-- Batch processing support
-- Configurable resolution
-- Device selection (CPU/GPU)
-
-#### 3D Rendering
-- Level-of-detail for large meshes
-- Viewport culling
-- Efficient mesh formats
-- Texture optimization
-
-### Known Performance Considerations
-- Large images (>4K): Use resolution limiting
-- Complex meshes: Enable mesh simplification
-- Memory usage: Clear unused meshes
-- GPU memory: Monitor VRAM usage
-
-### Recommended Settings
-- Default resolution: 700px for real-time preview
-- Depth models: DepthAnythingV2 for quality/speed balance
-- Smoothing: Anisotropic for best quality
-- Export format: PLY for compatibility, STL for 3D printing
+Last updated: 2026-09-11 14:32 (America/Chicago).
+
+This map describes the current source, including the selected workflow improvements.
+The application uses **PySide6**, OpenCV, PyTorch, Trimesh and Open3D. Python 3.12
+is the packaging baseline for native wheels. Paths below are real repository paths; logical groupings
+are not additional directories.
+
+## Application and orchestration
+
+| Module | Verified entry points | Responsibility |
+|---|---|---|
+| [edge_mesh.py](../edge_mesh.py) | `main`, `MainWindowImageProcessing` | Qt application, image controls, preview, viewport creation and explicit export. |
+| [workspace_ui.py](../workspace_ui.py) | `WorkspaceMixin`, `ImagePreviewLabel` | Resizable workspace, detachable parameter panel, visible mask, Setup and History integration, layout persistence. |
+| [project_workflows.py](../project_workflows.py) | `ProjectWorkflowMixin` | Project menus, visible project location, autosave and project save/open/copy orchestration. |
+| [model_compliance_ui.py](../model_compliance_ui.py) | `ModelComplianceMixin`, `ModelLicenseDialog` | Model consent UI, separate selected/accepted model labels and bindings between accepted mesh provenance and export. |
+| [history_panel.py](../history_panel.py) | `HistoryPanel` | Metadata-only history browser, setting comparisons and explicit snapshot restore requests. |
+| [embedded_viewport.py](../embedded_viewport.py) | `EmbeddedMeshViewport`, `validated_mesh`, `mesh_to_polydata` | Lazy Qt/VTK viewer with independent display buffers and Open3D geometry for health/export. |
+| [feature_workflows.py](../feature_workflows.py) | `WorkflowMixin`, `preview_image`, `pixmap` | Session/AI/model/mesh menus, immutable job inputs, cancellation, result acceptance and optional previews. |
+| [generation_jobs.py](../generation_jobs.py) | `JobController`, `Cancellation`, `JobCancelled` | One cooperative `QThread` job per controller; result/progress/error/cancellation signals. |
+| [data_contracts.py](../data_contracts.py) | `as_bgr`, `output_shape`, `proportional_shape`, `normalized_depth`, `foreground_mask` | Shared image, dimension, depth and foreground-mask validation. |
+| [qt_extensions.py](../qt_extensions.py) | `FlowLayout`, `ExpandableLineEdit`, `state_to_bool` | Layout helpers and Qt checkbox-state conversion. |
+
+`MainWindowImageProcessing` inherits `ProjectWorkflowMixin`, `ModelComplianceMixin`,
+`WorkspaceMixin` and `WorkflowMixin`. `process_image` starts the
+depth route; `generate_mesh` starts the contour route. Both delegate to
+`WorkflowMixin._start_generation`. The UI remains responsible for widgets,
+status, accepted settings/mask, and installing the resulting mesh in the viewport.
+
+Workspace combines the processed image and accepted-mask display, alongside the
+source preview and embedded mesh area. There is no separate Processed page.
+The four main pages are Workspace, History, Setup and Assistant. Splitters resize; the
+Parameters dock can move, float or close. View restores hidden panels or resets
+the layout. Splitter and dock states are saved per user. Setup provides offline
+and depth-model starting paths using package metadata without importing PyTorch
+or loading weights. Depth and mesh pipelines import inside requested worker
+operations; Open3D and VTK rendering are not initialized by the initial window.
+History lists bounded
+current-session snapshots without decoding every mask, compares their settings,
+and advances the history cursor only after restoration succeeds. Saved sessions
+preserve the current state and processing metadata; the full in-memory undo
+timeline is not persisted across launches. Restoring settings or masks can require
+regenerating geometry; portable project assets are described below.
+
+## Image and mesh routes
+
+1. `MainWindowImageProcessing.load_image` decodes an image, validates it with
+   `as_bgr`, cancels obsolete work and refreshes proportional previews.
+2. `_start_generation` copies the image, mask and validated settings before
+   creating a worker. A worker never reads widget values or changes widgets.
+3. The depth route constructs `DepthTo3D` with the shared `ModelStore` and calls
+   `process_image`. Depth estimation, attenuation, smoothing and mesh generation
+   report progress and check cancellation between stages.
+4. The contour route calls `MeshGenerator.generate` with visualization disabled.
+   `mesh_from_shapes` makes both triangles of each lateral contour wall, closes
+   each contour independently and excludes zero-area projected faces. It does
+   not generate top/bottom caps.
+5. `_generation_succeeded` installs a current result on the UI thread through
+   `update_3d_viewport`. A reported viewport failure restores prior state and
+   discards the new output. Accepted results update identity/processing history,
+   clear repair undo state and release the previous accepted work folder.
+   Explicit Export Mesh writes the user's selected file.
+
+| Module | Verified symbols | Role |
+|---|---|---|
+| [edge_detection.py](../edge_detection.py) | `detect_edges`, `detect_and_project_edges` | Canny edges, thickness and source-image overlays. |
+| [depth_to_3d.py](../depth_to_3d.py) | `DepthTo3D.estimate_depth`, `process_image`, `create_3d_mesh`, `create_background_mask` | Model preprocessing/inference, normalized depth, background/subject masking, colored mesh construction and staged output. |
+| [smoothing_depth_map_utils.py](../smoothing_depth_map_utils.py) | `SmoothingDepthMapUtils.apply_smoothing`, `anisotropic_diffusion` | Gaussian, bilateral, median and anisotropic depth smoothing. |
+| [mesh_generator.py](../mesh_generator.py) | `MeshGenerator.generate`, `mesh_from_shapes` | Contour-based reconstruction without a depth model. |
+| [depth_based3d_reconstruction.py](../depth_based3d_reconstruction.py) | `ExtrusionProjectionReconstruction.extrude`, `project` | Lower/upper vertex pairs per contour point. |
+| [edge_clustering_analyzer.py](../edge_clustering_analyzer.py) | `EdgeClustering.analyze_edges` | Contours, Hough lines and DBSCAN edge clusters. |
+| [shape_analyzer.py](../shape_analyzer.py) | `ShapeAnalysis.extract_geometric_primitives` | Polygon/ellipse analysis used by the contour route. |
+| [surface_partitioning.py](../surface_partitioning.py) | `SurfacePartitioning.apply` | Edge-region and convex-hull analysis in the contour route. |
+| [depth_cue_estimator_util.py](../depth_cue_estimator_util.py) | `DepthCueEstimator` | Light/shading cues used by contour analysis and `image_processor.py`. |
+
+Images remain contiguous BGR `uint8` arrays internally. `as_bgr` copies input,
+converts grayscale, and composites BGRA transparency over white. Conversion to
+RGB happens at model/display boundaries. Shared shapes use `(height, width)`;
+OpenCV resize calls convert to `(width, height)`. Normalized depth is finite 2D
+`float32` in 0–255. Foreground masks are 2D boolean arrays; resizing uses nearest
+neighbors. Width-based UI resolution preserves image proportions, with zero
+requesting source dimensions. A depth amount of zero produces an explicitly flat
+open plane using the foreground mask, rather than extruding a solid back.
+
+`DepthTo3D.create_3d_mesh` scales relief Z using the longest X/Y span:
+`normalized_depth * depth_amount * (max(height, width) - 1) / (2 * 255)`.
+At depth amount 1 the available front relief is half that span, preserving
+relative proportions as output resolution changes. This is relative relief
+geometry, not a conversion to physical units.
+
+## State ownership and cancellation
+
+| Owner | State and lifecycle |
+|---|---|
+| Main window / `WorkflowMixin` | Source image/path, processed preview, settings, accepted `_subject_mask`, `_last_model_info`, mesh references, `_accepted_job_folder` and `_mesh_before_repair`. |
+| `JobController` | Worker, thread and cancellation token until `QThread.finished`; controls return to idle only after thread cleanup. |
+| Worker closure | Independent input snapshots and one `job-*` output folder under `UserPaths.work_dir`. Unfinished or discarded jobs remove their own staged folder. |
+| `_source_generation` / `_job_source_generation` | Reject results from an older source, mask or edited processing settings; cancellation and pending window close also prevent acceptance. |
+| `ModelStore` | Shared prepared model/processor pairs, immutable identity manifest and synchronized access. |
+| `SessionHistory` | Bounded in-memory settings/mask snapshots with undo/redo; mesh repair has a separate single backup. |
+| `ProjectStore` / `ProjectWorkflowMixin` | Portable source/mesh assets, project metadata and visible autosave destination; project writes are separate from image and mesh export commands. |
+| `ProvenanceStore` / `ModelComplianceMixin` | Policy/consent records and accepted-mesh provenance. Changing the selected model does not rewrite the accepted result's identity. |
+| `AgentRuntime` / `OwnedProcessTree` | Optional provider process, protocol output and cancellation ownership, independent of mesh-generation workers. |
+
+Cancellation is cooperative. `_Worker.run` checks before work and before
+publishing a result. `DepthTo3D.process_image` and mesh construction check between
+stages; native inference/download operations may finish their current stage.
+Cancelled results never become the active mesh. Closing the main window while a
+generation job or retained subject-model task runs requests cancellation and
+defers closing until workers finish. The accepted work folder is released at
+close. `WorkflowMixin._model_work_active` guards restore/unload/register/new work
+while either type of worker is active, so the GUI does not wait on a model-store
+lock held by a loading worker.
+The embedded VTK interactor uses Qt's event loop. Rendering initializes on the
+first valid mesh, and `shutdown` finalizes its native window during application
+close. A candidate mesh is validated and rendered before it replaces accepted
+geometry; viewport buffers are independent from export geometry. The old
+`_poll_viewport` compatibility timer is not started by the embedded workflow.
+
+## Models and optional AI assistance
+
+[model_store.py](../model_store.py) owns `ModelStore.get_depth`, `get_sam2`,
+`pin_revision`, `register_midas`, `clear` and `identities`. The GUI passes one
+shared store and defaults model downloads off. Hugging Face entries resolve to
+full commit SHAs recorded in `models/manifest.json`; loading passes the selected
+revision, offline policy and `trust_remote_code=False`. Cache keys include model,
+revision, device and preprocessing. Local MiDaS/DPT registration records a clean
+git source revision plus checkpoint SHA-256 and verifies them before loading.
+The exposed GUI depth choices come from `depth_to_3d.model_names`; additional
+store capabilities do not automatically create dropdown options.
+
+`DepthTo3D.load_model` delegates to `ModelStore.get_depth` for GUI and direct
+Python/CLI callers. Construction without an injected store creates a per-user
+store; it does not bypass the offline/revision policy. Constructor cancellation
+is passed through to preparation checks. `model_names` exposes MiDaS, DPT, Depth
+Anything V2 and Depth Pro. The local MiDaS adapter uses the torchvision ResNeXt
+backbone with registered checkpoint weights instead of an upstream nested moving
+WSL-Images download; adapter/version details are recorded in model metadata.
+
+[subject_mask.py](../subject_mask.py) contains `SubjectMaskDialog`, `MaskCanvas`,
+`infer_subject_mask` and `MiDaSSetupDialog`. Subject selection supports positive
+and negative points, a box and manual foreground/background brushes. SAM2 runs
+in a retained task thread; prompt revisions reject stale results. A mask reaches
+`WorkflowMixin._subject_mask` only after explicit dialog acceptance. Clearing,
+accepting or restoring a mask updates source-generation state.
+
+[parameter_suggestions.py](../parameter_suggestions.py) exposes
+`suggest_parameters` and immutable `ParameterSuggestion` records. Suggestions use
+local image statistics and explain each setting change. The UI shows current and
+proposed previews before Apply; generating a new mesh remains a separate action.
+
+### Model policy and accepted result provenance
+
+[model_licensing.py](../model_licensing.py) defines `ModelPolicy`, `policy_for`,
+`canonical_model_identity`, `geometry_sha256` and `ProvenanceStore`. It supplies
+model-specific policy and consent records plus HMAC tamper evidence. Source and
+geometry hashes bind records to the relevant input and accepted result. The
+local key is protected with DPAPI on Windows; project JSON remains readable.
+Foreign or unavailable keys make a record unverified locally, not forbidden by
+DRM. A signature is not permission to use a model or its output.
+
+[model_compliance_ui.py](../model_compliance_ui.py) consumes that policy layer.
+`ModelLicenseDialog` presents terms and consent; `ModelComplianceMixin` keeps the
+picker's selected model separate from the accepted mesh's model. Project and
+export bindings carry the accepted result's provenance. Contour generation has
+no learned model and must not inherit a previous depth-model restriction label.
+Research-only, noncommercial and custom terms are distinct; Depth Pro's
+product-development exclusion is not represented as unrestricted use.
+
+### Optional provider connections
+
+[assistant_panel.py](../assistant_panel.py) defines `AssistantPanel` and
+`PromptEdit`. The panel calls `AgentRuntime` for connection status, authentication,
+streaming output and cancellation. A context-provider callback is invoked for
+an explicit context preview/inclusion request; nonsecret preferences use
+`UserPaths` and `atomic_write`. Provider credentials are not project fields.
+
+[agent_runtime.py](../agent_runtime.py) defines `RuntimeConfig`, `AgentRuntime`
+and `validate_proposal`, and imports `OwnedProcessTree` from the subprocess
+supervisor described below. Its provider edges are:
+
+- Codex app-server JSON-RPC for account login and requests; an OAuth URL or API
+  key is handled through the provider protocol with isolated runtime storage.
+- Claude native CLI authentication and streamed responses, with an API-key
+  environment for that mode.
+- Antigravity account-mode CLI streaming and native OAuth sign-in. An older CLI
+  can lack the capabilities required for the protected embedded connection.
+- [agent_sdk_worker.py](../agent_sdk_worker.py) for Antigravity API-key mode.
+  Its `load_sdk`, `build_config` and `main` use the optional Google Antigravity
+  SDK/native runtime without requiring the external account-mode CLI.
+
+[agent_process_worker.py](../agent_process_worker.py) defines `OwnedProcessTree`
+and `main`. For Windows non-login provider runs, `AgentRuntime` launches this
+standard-library-only supervisor with the base Python interpreter and isolated
+startup. The supervisor joins a Windows Job Object before starting the selected
+provider CLI or SDK worker, establishing descendant ownership before provider
+code runs. Provider input/output streams pass through the supervisor.
+
+`OwnedProcessTree` uses a Windows Job Object or a POSIX process group to own
+cancellation. `validate_proposal` accepts data-only JSON proposals; receiving a
+proposal does not automatically apply settings. Context, file access and host
+tool approvals are not enabled by default. These source relationships do not
+establish a successful live provider login or inference run.
+
+## Projects, sessions, user storage and diagnostics
+
+[project_store.py](../project_store.py) defines `ProjectStore` and
+`ProjectSnapshot`. It layers portable project assets over `SessionDocument`,
+imports source and accepted mesh assets into the project, records relative asset
+references and hashes, validates asset boundaries, and rejects credential fields.
+The project's JSON remains inspectable; weights and provider credentials do not
+become portable project assets.
+
+[project_workflows.py](../project_workflows.py) connects `ProjectStore`,
+`SessionDocument`, `SettingsStore` and `DialogPersistence` to the main window.
+`ProjectWorkflowMixin` owns project new/open/save/copy commands, the visible
+project-folder controls and autosave scheduling. Project saving remains distinct
+from saving an image or exporting a mesh.
+
+[ui_persistence.py](../ui_persistence.py) defines `SettingsStore`,
+`DialogPersistence` and `get_dialog_service`. It validates per-user JSON settings
+and remembers purpose-specific dialog locations and eligible UI state. Mask
+editor preferences include tools and display choices; masks, prompts, checkpoint
+paths and download permission are not implicitly restored as those preferences.
+
+[session_state.py](../session_state.py) defines `SessionDocument`,
+`SessionHistory`, `validate_settings`, `save_session`, `load_session`,
+`save_preset` and `load_preset`. Legacy versioned sessions contain source path, validated
+settings, accepted mask, model metadata and bounded successful-generation history.
+They do not embed source images,
+weights or generated meshes. Presets contain settings only. UI restoration uses
+signal-blocked widget updates and can request a relocated source image.
+
+[user_state.py](../user_state.py) defines `UserPaths.discover`, `atomic_write`,
+`migrate_config` and `export_diagnostics`. `EDGEMESH_DATA_DIR` overrides the
+per-user root; otherwise Windows uses LocalAppData, macOS Application Support,
+and Linux XDG state storage. Config, presets, work folders and logs live below
+that root. GUI viewport settings use its `viewport.ini`.
+[log_utils.py](../log_utils.py) exposes `setup_logger` and `get_logger` for
+rotating per-user logs. The error dock shows UI failures; exported diagnostics
+contain metadata and severity counts, excluding raw messages, paths and images.
+
+[depth_diagnostics.py](../depth_diagnostics.py) exposes `main` and `statistics`.
+The diagnostic CLI parses arguments before optional imports and defaults to
+CPU/offline model loading through `ModelStore`. It follows original BGR input
+through the processor, normalized/smoothed depth and a real PLY export, producing
+JSON with model identity/license metadata, depth statistics, mesh extents/relief
+ratio/closure and load/pipeline timings. An output directory is explicit.
+[scripts/depth_diagnostics.py](../scripts/depth_diagnostics.py) is the checkout
+wrapper that imports this module's `main`. Comparative trained-model measurements
+belong in the run reports; this code map does not infer them from synthetic tests.
+
+## Packaged launcher and resources
+
+[pyproject.toml](../pyproject.toml) maps the `edgemesh` console entry point to
+`edgemesh_bootstrap.cli:main` and declares package dependencies/extras.
+[edgemesh_bootstrap/cli.py](../edgemesh_bootstrap/cli.py) supplies that parser and
+desktop launch entry; [__main__.py](../edgemesh_bootstrap/__main__.py) supplies the
+module entry. [resources.py](../edgemesh_bootstrap/resources.py) defines
+`resource_path`, used by the GUI to resolve packaged resources.
+[runtime.py](../edgemesh_bootstrap/runtime.py) defines `initialize_platform_runtime`,
+called before scientific imports by the desktop and diagnostic launchers and
+the separate SDK worker. On CPython 3.12 Windows it uses the standard library's
+non-WMI platform fallback to avoid delayed native handle corruption from a
+timed-out WMI query. It also defines `initialize_opencv_runtime`,
+called by the main window before image loading or background work. It probes
+OpenCV's native parallel scheduler and logs a single-thread fallback if that
+scheduler cannot initialize; healthy runtimes retain their thread settings.
+The package and Windows constraints pin PySide6/Qt 6.11.2. Cold subprocess
+coverage lives in `tests/test_platform_startup.py`; `tests/test_native_startup.py`
+opts into a real Windows event loop with `EDGEMESH_TEST_NATIVE_GUI=1`.
+[_build_support.py](../_build_support.py) defines `application_modules` and
+`BuildApplication` for the setuptools build. The launcher/resources/build layer
+packages the existing app rather than introducing a second GUI implementation.
+
+Use [Packaging.html](Packaging.html) for copyable local launch commands and
+[Packaging.md](Packaging.md) for the standard launcher and packaging boundaries.
+[Desktop_Workflow.html](Desktop_Workflow.html) describes the user-facing workflow
+and keyboard controls. These entry points do not imply PyPI publication.
+
+## Optional mesh health, repair and export
+
+[mesh_health.py](../mesh_health.py) exposes `inspect_mesh` returning `MeshHealth`
+and `repair_preview` returning a new mesh. Inputs may be Open3D, Trimesh or a
+local mesh path. Reports cover finite geometry, invalid/degenerate/duplicate
+faces, boundary/non-manifold edges, closure and winding. They do not certify
+self-intersections, physical scale or printability.
+
+`WorkflowMixin.inspect_current_mesh` displays an advisory report. The
+`health_action` export check is optional and defaults off. `preview_mesh_repair`
+shows before/after counts and requires Apply; `undo_mesh_repair` restores the
+single previous mesh. Cleanup removes bad/duplicate/zero-area faces and unused
+vertices while preserving remaining appearance. It does not fill holes, weld
+vertices, simplify geometry or export automatically.
+
+`MainWindowImageProcessing.export_mesh` chooses OBJ/STL, respects an explicitly
+typed extension, and catches propagated writer failures. Binary STL export
+computes normals first. Repair and pre-export checks reject active generation and
+recheck mesh identity after modal dialogs, so an outdated report or repair cannot
+replace a newer mesh delivered during modal events.
+
+## Separate MeshTools repository
+
+`MeshTools/` is a git submodule with its own history and tests. Parent and
+submodule changes are separate commits; the parent tracks a submodule revision.
+Do not treat edits there as ordinary parent-repository files.
+
+| Module | Verified symbols | Responsibility |
+|---|---|---|
+| [MeshTools/mesh_tools.py](../MeshTools/mesh_tools.py) | `MeshTools.solidify_mesh_with_flat_back`, `add_mirror_mesh`, `_boundary_edges`, `_stitch_back`, `fix_mesh` | Trimesh operations; boundary-only back stitching, winding, duplicate cleanup. |
+| [MeshTools/viewport_3d.py](../MeshTools/viewport_3d.py) | `ThreeDViewport.load_mesh`, `run`, `_export_mesh` | Open3D display, mesh loading, standalone event loop and checked OBJ/STL export. |
+| [MeshTools/mesh_manipulation.py](../MeshTools/mesh_manipulation.py) | `MeshManipulation` | Interactive geometry transformations. |
+| [MeshTools/measurement_grid_visualizer.py](../MeshTools/measurement_grid_visualizer.py) | `MeasurementGrid` | Depth/percentage measurement overlays. |
+| [MeshTools/mesh_gradient_colorizer.py](../MeshTools/mesh_gradient_colorizer.py) | `MeshColorizer` | Depth-based vertex coloring. |
+
+## Validation and dependency boundaries
+
+Root `tests/` covers contracts, depth/edges, generation jobs, actual offscreen Qt
+workflows, sessions/user storage, model-store and SAM2 provider contracts,
+suggestions, mesh health, contour generation, smoothing, logging and installer
+paths/checksums. `MeshTools/tests/test_mesh_topology.py` covers topology, rotation
+rebinding and real STL round-trip export. Model-provider tests use doubles;
+passing them does not establish checkpoint quality or live GPU compatibility.
+
+[requirements-cpu-test.txt](../requirements-cpu-test.txt),
+[constraints/windows-py312.txt](../constraints/windows-py312.txt) and
+[.github/workflows/tests.yml](../.github/workflows/tests.yml) define the selected
+Windows/Python 3.12 CPU test profile. See
+[Dependency_Validation.md](Dependency_Validation.md) for exact coverage and fresh
+CI-install limitations. [install_open3d.py](../install_open3d.py) verifies selected
+local wheels with `verify_pinned_wheel` before installation.
