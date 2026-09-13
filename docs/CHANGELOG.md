@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-09-12
+
+### Changed
+- Every PyQt6 and Qt reference now says PySide6. The Nuitka build scripts enable the `pyside6` plugin, the conda environment file pins PySide6, and `qt_extensions.py` is renamed to `pyside6_extensions.py`. Docs, plans, docstrings, comments, and error strings use the same term.
+- The agent guidance in `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md` now covers project structure, environments, testing, documentation standards, review flow, and release expectations. `docs/CodeMap.md` matches the current module layout.
+- Reference screenshots for the Assistant panel, Depth Anything V2 mesh generation, masking, and a PrusaSlicer import of an EdgeMesh export live in `Screenshots/`.
+
+### Fixed
+- A workflow test now exercises mesh export without loading a depth model, so the export path stays covered in offline CI.
+
 ## [1.0.0] - 2026-09-12
 
 ### Compatibility changes
