@@ -1,6 +1,6 @@
 # EdgeMesh Code Map
 
-Last updated: 2026-09-11 14:32 (America/Chicago).
+Last updated: 2026-09-13 12:10 (America/Chicago).
 
 This map describes the current source, including the selected workflow improvements.
 The application uses **PySide6**, OpenCV, PyTorch, Trimesh and Open3D. Python 3.12
@@ -8,6 +8,13 @@ is the packaging baseline for native wheels. Paths below are real repository pat
 are not additional directories.
 
 ## Application and orchestration
+
+DA3 uses an optional separate Python runtime. `da3_backend.py` defines its
+catalog, `load_da3`, and cancellable `DA3DepthModel` proxy. `da3_worker.py`
+prepares immutable snapshots, checks hashes, and runs proportional single-image
+inference. `da3_setup.py` installs the pinned upstream source into an isolated
+per-user environment with a seven-day package age limit. Setup instructions:
+[Depth Anything 3](Depth_Anything_3.html).
 
 | Module                                              | Verified entry points                                                                 | Responsibility                                                                                                      |
 |-----------------------------------------------------|---------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
@@ -19,7 +26,7 @@ are not additional directories.
 | [embedded_viewport.py](../embedded_viewport.py)     | `EmbeddedMeshViewport`, `validated_mesh`, `mesh_to_polydata`                          | Lazy PySide6/VTK viewer with independent display buffers and Open3D geometry for health/export.                     |
 | [feature_workflows.py](../feature_workflows.py)     | `WorkflowMixin`, `preview_image`, `pixmap`                                            | Session/AI/model/mesh menus, immutable job inputs, cancellation, result acceptance and optional previews.           |
 | [generation_jobs.py](../generation_jobs.py)         | `JobController`, `Cancellation`, `JobCancelled`                                       | One cooperative `QThread` job per controller; result/progress/error/cancellation signals.                           |
-| [data_contracts.py](../data_contracts.py)           | `as_bgr`, `output_shape`, `proportional_shape`, `normalized_depth`, `foreground_mask` | Shared image, dimension, depth and foreground-mask validation.                                                      |
+| [data_contracts.py](../data_contracts.py)           | `as_bgr`, `output_shape`, `proportional_shape`, `normalized_depth`, `normalized_inverse_depth`, `foreground_mask` | Shared image, dimension, depth and foreground-mask validation.                                                      |
 | [pyside6_extensions.py](../pyside6_extensions.py)   | `FlowLayout`, `ExpandableLineEdit`, `state_to_bool`                                   | Layout helpers and PySide6 checkbox-state conversion.                                                               |
 
 `MainWindowImageProcessing` inherits `ProjectWorkflowMixin`, `ModelComplianceMixin`,
@@ -32,7 +39,7 @@ Workspace combines the processed image and accepted-mask display, alongside the
 source preview and embedded mesh area. There is no separate Processed page.
 The four main pages are Workspace, History, Setup and Assistant. Splitters resize; the
 Parameters dock can move, float or close. View restores hidden panels or resets
-the layout. Splitter and dock states are saved per user. Setup provides offline
+the layout. Splitter and dock states are saved per user. The main window restores its config.ini layout once after all docks and toolbars exist; dialog persistence does not restore the main window during Show. Setup provides offline
 and depth-model starting paths using package metadata without importing PyTorch
 or loading weights. Depth and mesh pipelines import inside requested worker
 operations; Open3D and VTK rendering are not initialized by the initial window.

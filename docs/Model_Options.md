@@ -50,6 +50,11 @@ must remain available independently of any model.
 
 ## Depth Anything 3
 
+Implementation update: EdgeMesh now includes an optional isolated-runtime adapter
+for Small, Base, Mono-Large, and Metric-Large. See the
+[DA3 setup guide](Depth_Anything_3.html). The multiview and metric-preserving
+workflows below remain future work.
+
 DA3 supports monocular and consistent multiview depth, with optional camera
 parameters. License and output capabilities vary by checkpoint:
 

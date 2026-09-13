@@ -10,6 +10,7 @@ import zlib
 import numpy as np
 
 from user_state import atomic_write
+from da3_backend import DA3_ALIASES
 
 VERSION = 1
 MAX_PIXELS = 50_000_000
@@ -21,7 +22,7 @@ RANGES = {"resolution": (0, 10000), "depth_amount": (0, 100), "depth_drop_percen
     "sensitivity": (1, 200), "line_thickness": (1, 10), "blend_amount": (0, 100), "background_tolerance": (0, 255)}
 INTEGER_KEYS = {"resolution", "sensitivity", "line_thickness", "blend_amount"}
 SMOOTHING = {"anisotropic", "gaussian", "bilateral", "median", "(none)", "none"}
-DEPTH_MODELS = frozenset({"MiDaS", "DPT", "DepthAnythingV2", "Depth Pro"})
+DEPTH_MODELS = frozenset({"MiDaS", "DPT", "DepthAnythingV2", "Depth Pro", *DA3_ALIASES})
 
 
 def validate_settings(settings):

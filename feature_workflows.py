@@ -150,11 +150,11 @@ class WorkflowMixin:
         self._schedule_history()
 
     def model_details(self):
-        from model_store import HF_MODELS
+        from model_store import HF_MODELS, DA3_MODELS
         box = QMessageBox(self)
         box.setWindowTitle('Model downloads and licenses')
-        box.setText('Downloads are optional and may be large. Review the license of each model for your intended use. Preparation records an immutable model revision. MiDaS/DPT use registered local source and checkpoint files.')
-        box.setDetailedText('\n\n'.join(f'{key}: {model_id}\nLicense: {license_name}\nhttps://huggingface.co/{model_id}' for key, (model_id, license_name) in HF_MODELS.items()))
+        box.setText('Downloads are optional and may be large. Review the license of each model for your intended use. Preparation records an immutable model revision. Depth Anything 3 requires the optional runtime described in Setup. MiDaS/DPT use registered local source and checkpoint files.')
+        box.setDetailedText('\n\n'.join(f'{key}: {model_id}\nLicense: {license_name}\nhttps://huggingface.co/{model_id}' for key, (model_id, license_name) in {**HF_MODELS, **DA3_MODELS}.items()))
         box.exec()
 
     def _settings_snapshot(self):

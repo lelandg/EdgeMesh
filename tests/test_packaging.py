@@ -35,6 +35,7 @@ assert not any(name.split('.')[0] in {'torch', 'PySide6', 'transformers'} for na
     def test_resources_exist_and_reject_escape_paths(self):
         self.assertTrue(resource_path("Images/example.png").is_file())
         self.assertTrue(resource_path("EdgeMesh.ico").is_file())
+        self.assertTrue(resource_path("docs/Depth_Anything_3.html").is_file())
         with self.assertRaises(ValueError):
             resource_path("../version.py")
         with self.assertRaises(ValueError):
@@ -89,12 +90,14 @@ assert not any(name.split('.')[0] in {'torch', 'PySide6', 'transformers'} for na
         self.assertFalse(any(name.startswith("tests/") for name in manifest))
         self.assertIn("MeshTools/LICENSE", manifest)
         self.assertIn("Images/example.png", manifest)
+        self.assertIn("docs/Depth_Anything_3.html", manifest)
 
     def test_packaging_excludes_developer_scripts(self):
         from _build_support import application_modules
         modules = application_modules()
         self.assertIn("edge_mesh", modules)
         self.assertIn("model_store", modules)
+        self.assertTrue({"da3_backend", "da3_worker", "da3_setup"}.issubset(modules))
         self.assertIn("depth_diagnostics", modules)
         self.assertNotIn("setup", modules)
         self.assertNotIn("torch_test", modules)

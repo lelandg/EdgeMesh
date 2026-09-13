@@ -1,0 +1,10 @@
+{
+  "source": ".da3-validation\\relief_D1_0_none-depth_anything_3_small_R60x8020260913_102844.ply",
+  "vertices": 9600,
+  "faces": 19196,
+  "finite": true,
+  "obj_vertices": 9600,
+  "obj_faces": 19196,
+  "stl_exists": true,
+  "offline_generation": true
+}

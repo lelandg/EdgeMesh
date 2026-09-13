@@ -1,0 +1,6 @@
+{
+  "parsed_files": 16,
+  "wheel": "dist\\edgemesh-1.0.1-py3-none-any.whl",
+  "required_contents_present": true,
+  "model_weights_bundled": false
+}

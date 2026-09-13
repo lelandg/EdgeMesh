@@ -1,0 +1,42 @@
+test_background_mask_preserves_enclosed_foreground (test_depth_and_edges.DepthTests.test_background_mask_preserves_enclosed_foreground) ... ok
+test_background_tolerance_does_not_wrap_black_or_white (test_depth_and_edges.DepthTests.test_background_tolerance_does_not_wrap_black_or_white) ... ok
+test_depth_loading_delegates_identity_download_and_cancellation_to_store (test_depth_and_edges.DepthTests.test_depth_loading_delegates_identity_download_and_cancellation_to_store) ... ok
+test_dpt_and_midas_restore_original_dimensions (test_depth_and_edges.DepthTests.test_dpt_and_midas_restore_original_dimensions) ... ok
+test_exact_automatic_background_and_isolated_pixel (test_depth_and_edges.DepthTests.test_exact_automatic_background_and_isolated_pixel) ... ok
+test_hf_models_use_rgb_flip_and_requested_shape (test_depth_and_edges.DepthTests.test_hf_models_use_rgb_flip_and_requested_shape) ... ok
+test_missing_image_has_actionable_error (test_depth_and_edges.DepthTests.test_missing_image_has_actionable_error) ... ok
+test_prediction_flip_is_undone_for_color_alignment (test_depth_and_edges.DepthTests.test_prediction_flip_is_undone_for_color_alignment) ... ok
+test_qcolor_and_rgb_tuple_match_bgr_pixels (test_depth_and_edges.DepthTests.test_qcolor_and_rgb_tuple_match_bgr_pixels) ... ok
+test_real_mesh_pipeline_exports_watertight_flat_and_mirror (test_depth_and_edges.DepthTests.test_real_mesh_pipeline_exports_watertight_flat_and_mirror) ... ok
+test_bgr_channels_use_opencv_luminance (test_depth_and_edges.EdgeTests.test_bgr_channels_use_opencv_luminance) ... ok
+test_grayscale_works_on_canvas_and_overlay (test_depth_and_edges.EdgeTests.test_grayscale_works_on_canvas_and_overlay) ... ok
+test_decompression_size_mismatch_rejected (test_session_state.SessionTests.test_decompression_size_mismatch_rejected) ... ok
+test_history_is_bounded_deep_copied_and_branches_after_undo (test_session_state.SessionTests.test_history_is_bounded_deep_copied_and_branches_after_undo) ... ok
+test_invalid_settings_and_nonfinite_metadata_rejected (test_session_state.SessionTests.test_invalid_settings_and_nonfinite_metadata_rejected) ... ok
+test_old_schema_migration_and_future_rejection (test_session_state.SessionTests.test_old_schema_migration_and_future_rejection) ... ok
+test_presets_never_include_source_or_mask (test_session_state.SessionTests.test_presets_never_include_source_or_mask) ... ok
+test_roundtrip_missing_source_mask_and_model_identity (test_session_state.SessionTests.test_roundtrip_missing_source_mask_and_model_identity) ... ok
+test_ui_supported_values_are_normalized_and_unknown_model_rejected (test_session_state.SessionTests.test_ui_supported_values_are_normalized_and_unknown_model_rejected) ... ok
+test_catalog_identity_wins_over_editable_license (test_model_licensing.LicensingTests.test_catalog_identity_wins_over_editable_license) ... ok
+test_model_families_keep_their_checkpoint_specific_terms (test_model_licensing.LicensingTests.test_model_families_keep_their_checkpoint_specific_terms) ... ok
+test_unknown_checkpoint_cannot_borrow_known_model_type_license (test_model_licensing.LicensingTests.test_unknown_checkpoint_cannot_borrow_known_model_type_license) ... ok
+test_concurrent_first_seals_share_one_complete_key (test_model_licensing.ProvenanceTests.test_concurrent_first_seals_share_one_complete_key) ... ok
+test_editing_license_or_geometry_breaks_binding (test_model_licensing.ProvenanceTests.test_editing_license_or_geometry_breaks_binding) ... ok
+test_hash_is_stable_across_array_endian_and_memory_layout (test_model_licensing.ProvenanceTests.test_hash_is_stable_across_array_endian_and_memory_layout) ... ok
+test_key_storage_failure_retains_unsigned_unverified_metadata (test_model_licensing.ProvenanceTests.test_key_storage_failure_retains_unsigned_unverified_metadata) ... ok
+test_malformed_geometry_and_metadata_return_unverified (test_model_licensing.ProvenanceTests.test_malformed_geometry_and_metadata_return_unverified) ... ok
+test_missing_or_different_profile_key_is_unverified (test_model_licensing.ProvenanceTests.test_missing_or_different_profile_key_is_unverified) ... ok
+test_round_trip_is_plain_json_and_binds_both_model_stages (test_model_licensing.ProvenanceTests.test_round_trip_is_plain_json_and_binds_both_model_stages) ... ok
+
+----------------------------------------------------------------------
+Ran 29 tests in 3.948s
+
+OK
+Creating 3D mesh with depth amount: 1.0...
+Image size: 3x4, target_size: (3, 4)
+Image size: (3, 4, 3), depth size: (3, 4), mask size: (3, 4)
+3D mesh saved to C:\Users\aboog\AppData\Local\Temp\tmpikek9j4d\input_D1_0_gaussian-midas_R3x420260913_101636.ply
+Creating 3D mesh with depth amount: 1.0...
+Image size: 3x4, target_size: (3, 4)
+Image size: (3, 4, 3), depth size: (3, 4), mask size: (3, 4)
+3D mesh saved to C:\Users\aboog\AppData\Local\Temp\tmpikek9j4d\input_D1_0_gaussian-midas_R3x4_dyn20260913_101636.ply

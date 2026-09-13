@@ -62,7 +62,12 @@ def _scroll(widget):
 class WorkspaceMixin:
     def _build_workspace(self, image_controls, mesh_controls):
         self._workspace_ready = False
-        self._pending_window_state = self.config.get('UI_Settings', 'windowState', fallback='')
+        # Loading the initial image can save settings before construction ends.
+        # Keep the user's original layout until the final restoration.
+        self._startup_window_layout = {
+            key: self.config.get('UI_Settings', key, fallback='')
+            for key in ('windowGeometry', 'windowState')
+        }
         self.setDockOptions(self.DockOption.AllowNestedDocks | self.DockOption.AllowTabbedDocks)
         self.workspace_tabs = QTabWidget()
         self.workspace_tabs.setObjectName('workspaceTabs')
@@ -185,9 +190,6 @@ class WorkspaceMixin:
         view_menu.addAction('Reset workspace layout', self.reset_workspace_layout)
         for label, index in [('Workspace', 0), ('History', 1), ('Setup', 2)]:
             view_menu.addAction(label, lambda checked=False, i=index: self.workspace_tabs.setCurrentIndex(i))
-        saved = self._pending_window_state
-        if saved:
-            self.restoreState(QByteArray.fromHex(saved.encode()))
         for name, splitter in [('workspace_splitter', self.workspace_splitter), ('image_splitter', self.image_splitter)]:
             saved = self.config.get('Workspace', name, fallback='')
             if saved:
@@ -224,6 +226,7 @@ class WorkspaceMixin:
         local = QGroupBox('Local models')
         form = QVBoxLayout(local)
         form.addWidget(_text(
+            'Depth Anything 3 Small, Base, Mono-Large and Metric-Large are available with Apache 2.0 weights after optional runtime setup. '
             'DepthAnythingV2 creates detailed photo reliefs under noncommercial terms. Depth Pro weights are restricted to research use. '
             'SAM2 selects subjects from clicks and boxes; manual brushes work immediately without model weights. '
             'MiDaS and DPT require registered local source and checkpoints.'
@@ -238,7 +241,9 @@ class WorkspaceMixin:
         self.model_license_status.setAccessibleName('Selected model use restrictions')
         form.addWidget(self.model_license_status)
         form.addWidget(_text('Model files can be large. Downloads contact the model host; local inference keeps the image on this computer.'))
-        depth_help = QLabel('<a href="https://depth-anything-3.github.io/">Depth Anything 3 research</a> · See the model guide for checkpoint licenses and reconstruction options.')
+        from edgemesh_bootstrap.resources import resource_path
+        da3_setup_url = resource_path('docs/Depth_Anything_3.html').resolve().as_uri()
+        depth_help = QLabel(f'<a href="{da3_setup_url}">Set up Depth Anything 3</a> · After setup, choose a Depth Anything 3 model and generate a depth mesh. Metric-Large depth is normalized to relief scale.')
         depth_help.setWordWrap(True)
         depth_help.setOpenExternalLinks(True)
         depth_help.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)

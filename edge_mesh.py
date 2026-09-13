@@ -133,6 +133,9 @@ class MainWindowImageProcessing(ProjectWorkflowMixin, ModelComplianceMixin, Work
             self._explicit_startup_image = bool(image_path)
             self._restore_last_project = bool(restore_last_project)
             self.setObjectName('edgeMeshMainWindow')
+            # This window owns its layout in config.ini. Restoring another
+            # layout from DialogPersistence during Show can abort native Qt.
+            self.setProperty('edgemeshSkipPersistence', True)
             self._init_product_state()
 
             # Set the icon for the main window
@@ -306,7 +309,8 @@ class MainWindowImageProcessing(ProjectWorkflowMixin, ModelComplianceMixin, Work
 
         # Create ComboBox
         self.depth_method_dropdown = QComboBox()
-        self.depth_method_dropdown.addItems(["DepthAnythingV2", "Depth Pro", "DPT", "MiDaS"])  # Add items
+        from da3_backend import DA3_ALIASES
+        self.depth_method_dropdown.addItems(["DepthAnythingV2", "Depth Pro", "DPT", "MiDaS", *DA3_ALIASES])
         self.depth_method_dropdown.setCurrentIndex(0)
 
         self.depth_method_dropdown.setItemData(0, "DepthAnythingV2 is usually better for most images.",
@@ -314,7 +318,8 @@ class MainWindowImageProcessing(ProjectWorkflowMixin, ModelComplianceMixin, Work
         self.depth_method_dropdown.setItemData(1, "Depth Pro is good for general depth.", Qt.ItemDataRole.ToolTipRole)
         self.depth_method_dropdown.setItemData(2, "DPT can be good for architecture and hard surfaces.", Qt.ItemDataRole.ToolTipRole)
         self.depth_method_dropdown.setItemData(3, "MiDaS is sometimes good for general depth.", Qt.ItemDataRole.ToolTipRole)
-        self.depth_method_dropdown.setItemData(4, "Custom depth model using a file in your Depth Models folder.", Qt.ItemDataRole.ToolTipRole)
+        for index in range(4, self.depth_method_dropdown.count()):
+            self.depth_method_dropdown.setItemData(index, "Depth Anything 3 uses an optional local runtime. See Setup.", Qt.ItemDataRole.ToolTipRole)
         self.depth_method_dropdown.setToolTip(depth_method_tooltip)
         # self.depth_method_dropdown.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignBaseline)
 
@@ -1358,15 +1363,7 @@ class MainWindowImageProcessing(ProjectWorkflowMixin, ModelComplianceMixin, Work
             self.config.read(self.CONFIG_FILE_PATH)
 
             if self.config.has_section("UI_Settings"):
-                # Load settings
-                geometry = self.config.get("UI_Settings", "windowGeometry", fallback=None)
-                # Decode the string to QByteArray
-                if geometry:
-                    self.restoreGeometry(QByteArray.fromHex(geometry.encode()))
-                # Convert the state string to bytes before passing to restoreState
-                state = self.config.get("UI_Settings", "windowState", fallback=None)
-                if state:
-                    self.restoreState(QByteArray.fromHex(state.encode()))
+                # Restore geometry and docks once, after all toolbars exist.
                 self.invert_colors_enabled = self.config.getboolean("UI_Settings", "invert_colors", fallback=False)
                 self.grayscale_enabled = self.config.getboolean("UI_Settings", "grayscale", fallback=False)
                 self.drop_background_enabled = self.config.getboolean("UI_Settings", "drop_background", fallback=False)

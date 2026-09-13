@@ -1,0 +1,7 @@
+test_console_launcher_displays_window_and_survives_delayed_processing (test_native_startup.NativeStartupTests.test_console_launcher_displays_window_and_survives_delayed_processing) ... ok
+test_source_launcher_restores_saved_geometry_and_docks_without_aborting (test_native_startup.NativeStartupTests.test_source_launcher_restores_saved_geometry_and_docks_without_aborting) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 33.667s
+
+OK

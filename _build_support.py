@@ -7,7 +7,7 @@ from setuptools.command.build_py import build_py
 
 
 ROOT = Path(__file__).resolve().parent
-ASSETS = ("EdgeMesh.ico", "Images/example.png")
+ASSETS = ("EdgeMesh.ico", "Images/example.png", "docs/Depth_Anything_3.html", "docs/Depth_Anything_3.md")
 # These are development scripts, diagnostics, or alternate standalone applications.
 # Other root Python files are application modules, including optional integrations.
 EXCLUDED_MODULES = {

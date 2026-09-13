@@ -1,0 +1,51 @@
+{
+  "backend": "depth_anything_3",
+  "depth_semantics": "relative_relief; metric scale is not retained",
+  "device": "cpu",
+  "license": "apache-2.0",
+  "model_card": "https://huggingface.co/depth-anything/DA3-SMALL/tree/e08cab65ca0ec38e7826075418411ab90cab4da3",
+  "model_id": "depth-anything/DA3-SMALL",
+  "model_type": "depth_anything_3_small",
+  "preprocessing": {
+    "aspect_ratio": "resize_and_pad",
+    "process_res": 504
+  },
+  "revision": "e08cab65ca0ec38e7826075418411ab90cab4da3",
+  "weight_files_sha256": {
+    "config.json": "a486e29e82b7ab4a7d4cefc1ea4526cfe2ae438a572c8ca98917cfbcde7447d2",
+    "model.safetensors": "364492e38a3a06d221ac75da7f6621ada3f2361cd24fde11ba79091e9f40efcf"
+  },
+  "license_policy": {
+    "model_type": "depth_anything_3_small",
+    "model_id": "depth-anything/DA3-SMALL",
+    "display_name": "DA3 SMALL",
+    "license": "apache-2.0",
+    "usage_class": "permissive",
+    "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+    "source_url": "https://github.com/ByteDance-Seed/Depth-Anything-3#-model-cards",
+    "guidance": "The weight license permits commercial and non-commercial use subject to its terms. Keep required copyright, license, and NOTICE material when distributing covered material; identify modifications and do not imply endorsement.",
+    "restriction": "",
+    "commercial_status": "included",
+    "commercial_url": "https://www.apache.org/licenses/LICENSE-2.0",
+    "commercial_info": "Commercial use is included under Apache 2.0; follow its conditions.",
+    "policy_version": 1,
+    "requires_acceptance": false,
+    "badge": "Permissive model license",
+    "notice": "General guidance, not legal advice. Read the linked weight license for your intended use. EdgeMesh being free or non-commercial does not change a model's terms. This label records the model used; it does not decide ownership or license of every output."
+  },
+  "policy_sha256": "1cbac3516427a693a2c84e589356bca1d8c3b8012d1d77fbffc35c3b27974443",
+  "input_shape": [
+    928,
+    1232,
+    3
+  ],
+  "output_shape": [
+    928,
+    1232
+  ],
+  "finite": true,
+  "depth_min": 0.8191769123077393,
+  "depth_max": 1.3311251401901245,
+  "elapsed_seconds": 47.7,
+  "gui_cuda_available": false
+}

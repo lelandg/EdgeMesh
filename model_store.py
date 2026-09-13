@@ -18,6 +18,7 @@ import tempfile
 import threading
 
 from model_licensing import canonical_model_identity, policy_digest, policy_for
+from da3_backend import DA3_ALIASES, DA3_MODELS
 
 
 HF_MODELS = {
@@ -27,6 +28,7 @@ HF_MODELS = {
     "sam2": ("facebook/sam2.1-hiera-tiny", "apache-2.0"),
 }
 ALIASES = {
+    **DA3_ALIASES,
     "DepthAnythingV1": "depth_anything_v1",
     "DepthAnythingV2": "depth_anything_v2",
     "Depth Pro": "depth_pro",
@@ -563,6 +565,15 @@ class ModelStore:
             _check_cancel(cancelled)
             if model_type in ("midas", "dpt"):
                 return self._get_midas(model_type, device, cancelled)
+            if model_type in DA3_MODELS:
+                from da3_backend import load_da3
+
+                # The separate process owns inference memory. Recheck its runtime
+                # and pinned files for each preparation instead of caching a model.
+                return load_da3(
+                    model_type, device, root=self.root, cache_dir=self.cache_dir,
+                    allow_download=allow_download, cancelled=cancelled,
+                )
             if model_type not in ("depth_anything_v1", "depth_anything_v2", "depth_pro"):
                 raise ModelSetupError(f"Unsupported depth model: {model_type}")
             return self._get_hf(

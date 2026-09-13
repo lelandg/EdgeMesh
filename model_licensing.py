@@ -8,6 +8,7 @@ No ML, NumPy, keyring, or GUI dependency is imported at module load time.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from da3_backend import DA3_ALIASES
 import hashlib
 import hmac
 import json
@@ -151,6 +152,7 @@ for _suffix, _nc in (
 CATALOG = MappingProxyType({policy.model_type: policy for policy in _POLICIES})
 _BY_ID = MappingProxyType({policy.model_id: policy for policy in _POLICIES})
 _ALIASES = MappingProxyType({
+    **DA3_ALIASES,
     "DepthAnythingV1": "depth_anything_v1",
     "DepthAnythingV2": "depth_anything_v2", "Depth Pro": "depth_pro", "SAM2": "sam2",
     "DepthAnythingV2Small": "depth_anything_v2_small", "DepthAnythingV2Base": "depth_anything_v2_base",

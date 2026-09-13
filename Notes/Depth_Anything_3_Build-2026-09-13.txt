@@ -1,0 +1,424 @@
+Installed 6 packages in 3.42s
+* Getting build dependencies for sdist...
+running egg_info
+creating edgemesh.egg-info
+writing edgemesh.egg-info\PKG-INFO
+writing dependency_links to edgemesh.egg-info\dependency_links.txt
+writing entry points to edgemesh.egg-info\entry_points.txt
+writing requirements to edgemesh.egg-info\requires.txt
+writing top-level names to edgemesh.egg-info\top_level.txt
+writing manifest file 'edgemesh.egg-info\SOURCES.txt'
+reading manifest file 'edgemesh.egg-info\SOURCES.txt'
+reading manifest template 'MANIFEST.in'
+no previously-included directories found matching 'MeshTools\.git'
+no previously-included directories found matching 'MeshTools\tests'
+warning: no previously-included files matching '__pycache__' found anywhere in distribution
+warning: no previously-included files matching '*.py[cod]' found anywhere in distribution
+warning: no previously-included files matching '*.log' found anywhere in distribution
+warning: no previously-included files matching '*.pth' found anywhere in distribution
+warning: no previously-included files matching '*.pt' found anywhere in distribution
+warning: no previously-included files matching '*.safetensors' found anywhere in distribution
+warning: no previously-included files matching '*.onnx' found anywhere in distribution
+adding license file 'LICENSE'
+adding license file 'MeshTools/LICENSE'
+writing manifest file 'edgemesh.egg-info\SOURCES.txt'
+* Building sdist...
+running sdist
+running egg_info
+writing edgemesh.egg-info\PKG-INFO
+writing dependency_links to edgemesh.egg-info\dependency_links.txt
+writing entry points to edgemesh.egg-info\entry_points.txt
+writing requirements to edgemesh.egg-info\requires.txt
+writing top-level names to edgemesh.egg-info\top_level.txt
+reading manifest file 'edgemesh.egg-info\SOURCES.txt'
+reading manifest template 'MANIFEST.in'
+no previously-included directories found matching 'MeshTools\.git'
+no previously-included directories found matching 'MeshTools\tests'
+warning: no previously-included files matching '__pycache__' found anywhere in distribution
+warning: no previously-included files matching '*.py[cod]' found anywhere in distribution
+warning: no previously-included files matching '*.log' found anywhere in distribution
+warning: no previously-included files matching '*.pth' found anywhere in distribution
+warning: no previously-included files matching '*.pt' found anywhere in distribution
+warning: no previously-included files matching '*.safetensors' found anywhere in distribution
+warning: no previously-included files matching '*.onnx' found anywhere in distribution
+adding license file 'LICENSE'
+adding license file 'MeshTools/LICENSE'
+writing manifest file 'edgemesh.egg-info\SOURCES.txt'
+running check
+creating edgemesh-1.0.1
+creating edgemesh-1.0.1\Images
+creating edgemesh-1.0.1\MeshTools
+creating edgemesh-1.0.1\docs
+creating edgemesh-1.0.1\edgemesh.egg-info
+creating edgemesh-1.0.1\edgemesh_bootstrap
+copying files to edgemesh-1.0.1...
+copying EdgeMesh.ico -> edgemesh-1.0.1
+copying LICENSE -> edgemesh-1.0.1
+copying MANIFEST.in -> edgemesh-1.0.1
+copying README.md -> edgemesh-1.0.1
+copying _build_support.py -> edgemesh-1.0.1
+copying _version.py -> edgemesh-1.0.1
+copying agent_process_worker.py -> edgemesh-1.0.1
+copying agent_runtime.py -> edgemesh-1.0.1
+copying agent_sdk_worker.py -> edgemesh-1.0.1
+copying assistant_panel.py -> edgemesh-1.0.1
+copying color_transition_gradient_generator.py -> edgemesh-1.0.1
+copying da3_backend.py -> edgemesh-1.0.1
+copying da3_setup.py -> edgemesh-1.0.1
+copying da3_worker.py -> edgemesh-1.0.1
+copying data_contracts.py -> edgemesh-1.0.1
+copying depth_anything.py -> edgemesh-1.0.1
+copying depth_based3d_reconstruction.py -> edgemesh-1.0.1
+copying depth_cue_estimator_util.py -> edgemesh-1.0.1
+copying depth_diagnostics.py -> edgemesh-1.0.1
+copying depth_to_3d.py -> edgemesh-1.0.1
+copying edge_clustering_analyzer.py -> edgemesh-1.0.1
+copying edge_detection.py -> edgemesh-1.0.1
+copying edge_mesh.py -> edgemesh-1.0.1
+copying embedded_viewport.py -> edgemesh-1.0.1
+copying feature_workflows.py -> edgemesh-1.0.1
+copying file_tools.py -> edgemesh-1.0.1
+copying flow_layout.py -> edgemesh-1.0.1
+copying generation_jobs.py -> edgemesh-1.0.1
+copying history_panel.py -> edgemesh-1.0.1
+copying image_processor.py -> edgemesh-1.0.1
+copying log_utils.py -> edgemesh-1.0.1
+copying mesh_generator.py -> edgemesh-1.0.1
+copying mesh_health.py -> edgemesh-1.0.1
+copying model_compliance_ui.py -> edgemesh-1.0.1
+copying model_licensing.py -> edgemesh-1.0.1
+copying model_store.py -> edgemesh-1.0.1
+copying parameter_suggestions.py -> edgemesh-1.0.1
+copying project_store.py -> edgemesh-1.0.1
+copying project_workflows.py -> edgemesh-1.0.1
+copying pyproject.toml -> edgemesh-1.0.1
+copying pyside6_extensions.py -> edgemesh-1.0.1
+copying session_state.py -> edgemesh-1.0.1
+copying setup.py -> edgemesh-1.0.1
+copying shape_analyzer.py -> edgemesh-1.0.1
+copying smoothing_depth_map_utils.py -> edgemesh-1.0.1
+copying space_mouse_controller.py -> edgemesh-1.0.1
+copying space_mouse_event_handler.py -> edgemesh-1.0.1
+copying spinner.py -> edgemesh-1.0.1
+copying subject_mask.py -> edgemesh-1.0.1
+copying surface_partitioning.py -> edgemesh-1.0.1
+copying torch_utils.py -> edgemesh-1.0.1
+copying ui_persistence.py -> edgemesh-1.0.1
+copying user_state.py -> edgemesh-1.0.1
+copying version.py -> edgemesh-1.0.1
+copying workspace_ui.py -> edgemesh-1.0.1
+copying Images\example.png -> edgemesh-1.0.1\Images
+copying MeshTools\LICENSE -> edgemesh-1.0.1\MeshTools
+copying MeshTools\_version.py -> edgemesh-1.0.1\MeshTools
+copying MeshTools\color_transition_gradient_generator.py -> edgemesh-1.0.1\MeshTools
+copying MeshTools\file_tools.py -> edgemesh-1.0.1\MeshTools
+copying MeshTools\measurement_grid_visualizer.py -> edgemesh-1.0.1\MeshTools
+copying MeshTools\mesh_gradient_colorizer.py -> edgemesh-1.0.1\MeshTools
+copying MeshTools\mesh_manipulation.py -> edgemesh-1.0.1\MeshTools
+copying MeshTools\mesh_tools.py -> edgemesh-1.0.1\MeshTools
+copying MeshTools\space_mouse_controller.py -> edgemesh-1.0.1\MeshTools
+copying MeshTools\space_mouse_event_handler.py -> edgemesh-1.0.1\MeshTools
+copying MeshTools\spacemouse_demo.py -> edgemesh-1.0.1\MeshTools
+copying MeshTools\spinner.py -> edgemesh-1.0.1\MeshTools
+copying MeshTools\text_3d.py -> edgemesh-1.0.1\MeshTools
+copying MeshTools\viewport_3d.py -> edgemesh-1.0.1\MeshTools
+copying docs\Depth_Anything_3.html -> edgemesh-1.0.1\docs
+copying docs\Depth_Anything_3.md -> edgemesh-1.0.1\docs
+copying edgemesh.egg-info\PKG-INFO -> edgemesh-1.0.1\edgemesh.egg-info
+copying edgemesh.egg-info\SOURCES.txt -> edgemesh-1.0.1\edgemesh.egg-info
+copying edgemesh.egg-info\dependency_links.txt -> edgemesh-1.0.1\edgemesh.egg-info
+copying edgemesh.egg-info\entry_points.txt -> edgemesh-1.0.1\edgemesh.egg-info
+copying edgemesh.egg-info\requires.txt -> edgemesh-1.0.1\edgemesh.egg-info
+copying edgemesh.egg-info\top_level.txt -> edgemesh-1.0.1\edgemesh.egg-info
+copying edgemesh_bootstrap\__init__.py -> edgemesh-1.0.1\edgemesh_bootstrap
+copying edgemesh_bootstrap\__main__.py -> edgemesh-1.0.1\edgemesh_bootstrap
+copying edgemesh_bootstrap\cli.py -> edgemesh-1.0.1\edgemesh_bootstrap
+copying edgemesh_bootstrap\resources.py -> edgemesh-1.0.1\edgemesh_bootstrap
+copying edgemesh_bootstrap\runtime.py -> edgemesh-1.0.1\edgemesh_bootstrap
+copying edgemesh.egg-info\SOURCES.txt -> edgemesh-1.0.1\edgemesh.egg-info
+Writing edgemesh-1.0.1\setup.cfg
+Creating tar archive
+removing 'edgemesh-1.0.1' (and everything under it)
+* Building wheel from sdist
+* Getting build dependencies for wheel...
+running egg_info
+writing edgemesh.egg-info\PKG-INFO
+writing dependency_links to edgemesh.egg-info\dependency_links.txt
+writing entry points to edgemesh.egg-info\entry_points.txt
+writing requirements to edgemesh.egg-info\requires.txt
+writing top-level names to edgemesh.egg-info\top_level.txt
+reading manifest file 'edgemesh.egg-info\SOURCES.txt'
+reading manifest template 'MANIFEST.in'
+no previously-included directories found matching 'tests'
+no previously-included directories found matching 'MeshTools\.git'
+no previously-included directories found matching 'MeshTools\tests'
+warning: no previously-included files matching '__pycache__' found anywhere in distribution
+warning: no previously-included files matching '*.py[cod]' found anywhere in distribution
+warning: no previously-included files matching '*.log' found anywhere in distribution
+warning: no previously-included files matching '*.pth' found anywhere in distribution
+warning: no previously-included files matching '*.pt' found anywhere in distribution
+warning: no previously-included files matching '*.safetensors' found anywhere in distribution
+warning: no previously-included files matching '*.onnx' found anywhere in distribution
+adding license file 'LICENSE'
+adding license file 'MeshTools/LICENSE'
+writing manifest file 'edgemesh.egg-info\SOURCES.txt'
+* Building wheel...
+running bdist_wheel
+running build
+running build_py
+creating build\lib
+copying _version.py -> build\lib
+copying agent_process_worker.py -> build\lib
+copying agent_runtime.py -> build\lib
+copying agent_sdk_worker.py -> build\lib
+copying assistant_panel.py -> build\lib
+copying color_transition_gradient_generator.py -> build\lib
+copying da3_backend.py -> build\lib
+copying da3_setup.py -> build\lib
+copying da3_worker.py -> build\lib
+copying data_contracts.py -> build\lib
+copying depth_anything.py -> build\lib
+copying depth_based3d_reconstruction.py -> build\lib
+copying depth_cue_estimator_util.py -> build\lib
+copying depth_diagnostics.py -> build\lib
+copying depth_to_3d.py -> build\lib
+copying edge_clustering_analyzer.py -> build\lib
+copying edge_detection.py -> build\lib
+copying edge_mesh.py -> build\lib
+copying embedded_viewport.py -> build\lib
+copying feature_workflows.py -> build\lib
+copying file_tools.py -> build\lib
+copying flow_layout.py -> build\lib
+copying generation_jobs.py -> build\lib
+copying history_panel.py -> build\lib
+copying image_processor.py -> build\lib
+copying log_utils.py -> build\lib
+copying mesh_generator.py -> build\lib
+copying mesh_health.py -> build\lib
+copying model_compliance_ui.py -> build\lib
+copying model_licensing.py -> build\lib
+copying model_store.py -> build\lib
+copying parameter_suggestions.py -> build\lib
+copying project_store.py -> build\lib
+copying project_workflows.py -> build\lib
+copying pyside6_extensions.py -> build\lib
+copying session_state.py -> build\lib
+copying shape_analyzer.py -> build\lib
+copying smoothing_depth_map_utils.py -> build\lib
+copying space_mouse_controller.py -> build\lib
+copying space_mouse_event_handler.py -> build\lib
+copying spinner.py -> build\lib
+copying subject_mask.py -> build\lib
+copying surface_partitioning.py -> build\lib
+copying torch_utils.py -> build\lib
+copying ui_persistence.py -> build\lib
+copying user_state.py -> build\lib
+copying version.py -> build\lib
+copying workspace_ui.py -> build\lib
+creating build\lib\edgemesh_bootstrap
+copying edgemesh_bootstrap\cli.py -> build\lib\edgemesh_bootstrap
+copying edgemesh_bootstrap\resources.py -> build\lib\edgemesh_bootstrap
+copying edgemesh_bootstrap\runtime.py -> build\lib\edgemesh_bootstrap
+copying edgemesh_bootstrap\__init__.py -> build\lib\edgemesh_bootstrap
+copying edgemesh_bootstrap\__main__.py -> build\lib\edgemesh_bootstrap
+creating build\lib\MeshTools
+copying MeshTools\color_transition_gradient_generator.py -> build\lib\MeshTools
+copying MeshTools\file_tools.py -> build\lib\MeshTools
+copying MeshTools\measurement_grid_visualizer.py -> build\lib\MeshTools
+copying MeshTools\mesh_gradient_colorizer.py -> build\lib\MeshTools
+copying MeshTools\mesh_manipulation.py -> build\lib\MeshTools
+copying MeshTools\mesh_tools.py -> build\lib\MeshTools
+copying MeshTools\spacemouse_demo.py -> build\lib\MeshTools
+copying MeshTools\space_mouse_controller.py -> build\lib\MeshTools
+copying MeshTools\space_mouse_event_handler.py -> build\lib\MeshTools
+copying MeshTools\spinner.py -> build\lib\MeshTools
+copying MeshTools\text_3d.py -> build\lib\MeshTools
+copying MeshTools\viewport_3d.py -> build\lib\MeshTools
+copying MeshTools\_version.py -> build\lib\MeshTools
+copying MeshTools\LICENSE -> build\lib\MeshTools
+installing to build\bdist.win-amd64\wheel
+running install
+running install_lib
+creating build\bdist.win-amd64\wheel
+copying build\lib\agent_process_worker.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\agent_runtime.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\agent_sdk_worker.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\assistant_panel.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\color_transition_gradient_generator.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\da3_backend.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\da3_setup.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\da3_worker.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\data_contracts.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\depth_anything.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\depth_based3d_reconstruction.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\depth_cue_estimator_util.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\depth_diagnostics.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\depth_to_3d.py -> build\bdist.win-amd64\wheel\.
+creating build\bdist.win-amd64\wheel\edgemesh_bootstrap
+creating build\bdist.win-amd64\wheel\edgemesh_bootstrap\assets
+creating build\bdist.win-amd64\wheel\edgemesh_bootstrap\assets\docs
+copying build\lib\edgemesh_bootstrap\assets\docs\Depth_Anything_3.html -> build\bdist.win-amd64\wheel\.\edgemesh_bootstrap\assets\docs
+copying build\lib\edgemesh_bootstrap\assets\docs\Depth_Anything_3.md -> build\bdist.win-amd64\wheel\.\edgemesh_bootstrap\assets\docs
+copying build\lib\edgemesh_bootstrap\assets\EdgeMesh.ico -> build\bdist.win-amd64\wheel\.\edgemesh_bootstrap\assets
+creating build\bdist.win-amd64\wheel\edgemesh_bootstrap\assets\Images
+copying build\lib\edgemesh_bootstrap\assets\Images\example.png -> build\bdist.win-amd64\wheel\.\edgemesh_bootstrap\assets\Images
+copying build\lib\edgemesh_bootstrap\cli.py -> build\bdist.win-amd64\wheel\.\edgemesh_bootstrap
+copying build\lib\edgemesh_bootstrap\resources.py -> build\bdist.win-amd64\wheel\.\edgemesh_bootstrap
+copying build\lib\edgemesh_bootstrap\runtime.py -> build\bdist.win-amd64\wheel\.\edgemesh_bootstrap
+copying build\lib\edgemesh_bootstrap\__init__.py -> build\bdist.win-amd64\wheel\.\edgemesh_bootstrap
+copying build\lib\edgemesh_bootstrap\__main__.py -> build\bdist.win-amd64\wheel\.\edgemesh_bootstrap
+copying build\lib\edge_clustering_analyzer.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\edge_detection.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\edge_mesh.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\embedded_viewport.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\feature_workflows.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\file_tools.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\flow_layout.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\generation_jobs.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\history_panel.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\image_processor.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\log_utils.py -> build\bdist.win-amd64\wheel\.
+creating build\bdist.win-amd64\wheel\MeshTools
+copying build\lib\MeshTools\color_transition_gradient_generator.py -> build\bdist.win-amd64\wheel\.\MeshTools
+copying build\lib\MeshTools\file_tools.py -> build\bdist.win-amd64\wheel\.\MeshTools
+copying build\lib\MeshTools\LICENSE -> build\bdist.win-amd64\wheel\.\MeshTools
+copying build\lib\MeshTools\measurement_grid_visualizer.py -> build\bdist.win-amd64\wheel\.\MeshTools
+copying build\lib\MeshTools\mesh_gradient_colorizer.py -> build\bdist.win-amd64\wheel\.\MeshTools
+copying build\lib\MeshTools\mesh_manipulation.py -> build\bdist.win-amd64\wheel\.\MeshTools
+copying build\lib\MeshTools\mesh_tools.py -> build\bdist.win-amd64\wheel\.\MeshTools
+copying build\lib\MeshTools\spacemouse_demo.py -> build\bdist.win-amd64\wheel\.\MeshTools
+copying build\lib\MeshTools\space_mouse_controller.py -> build\bdist.win-amd64\wheel\.\MeshTools
+copying build\lib\MeshTools\space_mouse_event_handler.py -> build\bdist.win-amd64\wheel\.\MeshTools
+copying build\lib\MeshTools\spinner.py -> build\bdist.win-amd64\wheel\.\MeshTools
+copying build\lib\MeshTools\text_3d.py -> build\bdist.win-amd64\wheel\.\MeshTools
+copying build\lib\MeshTools\viewport_3d.py -> build\bdist.win-amd64\wheel\.\MeshTools
+copying build\lib\MeshTools\_version.py -> build\bdist.win-amd64\wheel\.\MeshTools
+copying build\lib\mesh_generator.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\mesh_health.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\model_compliance_ui.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\model_licensing.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\model_store.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\parameter_suggestions.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\project_store.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\project_workflows.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\pyside6_extensions.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\session_state.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\shape_analyzer.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\smoothing_depth_map_utils.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\space_mouse_controller.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\space_mouse_event_handler.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\spinner.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\subject_mask.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\surface_partitioning.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\torch_utils.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\ui_persistence.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\user_state.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\version.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\workspace_ui.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\_version.py -> build\bdist.win-amd64\wheel\.
+running install_egg_info
+running egg_info
+writing edgemesh.egg-info\PKG-INFO
+writing dependency_links to edgemesh.egg-info\dependency_links.txt
+writing entry points to edgemesh.egg-info\entry_points.txt
+writing requirements to edgemesh.egg-info\requires.txt
+writing top-level names to edgemesh.egg-info\top_level.txt
+reading manifest file 'edgemesh.egg-info\SOURCES.txt'
+reading manifest template 'MANIFEST.in'
+no previously-included directories found matching 'tests'
+no previously-included directories found matching 'MeshTools\.git'
+no previously-included directories found matching 'MeshTools\tests'
+warning: no previously-included files matching '__pycache__' found anywhere in distribution
+warning: no previously-included files matching '*.py[cod]' found anywhere in distribution
+warning: no previously-included files matching '*.log' found anywhere in distribution
+warning: no previously-included files matching '*.pth' found anywhere in distribution
+warning: no previously-included files matching '*.pt' found anywhere in distribution
+warning: no previously-included files matching '*.safetensors' found anywhere in distribution
+warning: no previously-included files matching '*.onnx' found anywhere in distribution
+adding license file 'LICENSE'
+adding license file 'MeshTools/LICENSE'
+writing manifest file 'edgemesh.egg-info\SOURCES.txt'
+Copying edgemesh.egg-info to build\bdist.win-amd64\wheel\.\edgemesh-1.0.1-py3.12.egg-info
+running install_scripts
+creating build\bdist.win-amd64\wheel\edgemesh-1.0.1.dist-info\WHEEL
+creating 'D:\Documents\Code\GitHub\EdgeMesh\.worktrees\depth-anything-3\dist\.tmp-v548byx7\edgemesh-1.0.1-py3-none-any.whl' and adding 'build\bdist.win-amd64\wheel' to it
+adding '_version.py'
+adding 'agent_process_worker.py'
+adding 'agent_runtime.py'
+adding 'agent_sdk_worker.py'
+adding 'assistant_panel.py'
+adding 'color_transition_gradient_generator.py'
+adding 'da3_backend.py'
+adding 'da3_setup.py'
+adding 'da3_worker.py'
+adding 'data_contracts.py'
+adding 'depth_anything.py'
+adding 'depth_based3d_reconstruction.py'
+adding 'depth_cue_estimator_util.py'
+adding 'depth_diagnostics.py'
+adding 'depth_to_3d.py'
+adding 'edge_clustering_analyzer.py'
+adding 'edge_detection.py'
+adding 'edge_mesh.py'
+adding 'embedded_viewport.py'
+adding 'feature_workflows.py'
+adding 'file_tools.py'
+adding 'flow_layout.py'
+adding 'generation_jobs.py'
+adding 'history_panel.py'
+adding 'image_processor.py'
+adding 'log_utils.py'
+adding 'mesh_generator.py'
+adding 'mesh_health.py'
+adding 'model_compliance_ui.py'
+adding 'model_licensing.py'
+adding 'model_store.py'
+adding 'parameter_suggestions.py'
+adding 'project_store.py'
+adding 'project_workflows.py'
+adding 'pyside6_extensions.py'
+adding 'session_state.py'
+adding 'shape_analyzer.py'
+adding 'smoothing_depth_map_utils.py'
+adding 'space_mouse_controller.py'
+adding 'space_mouse_event_handler.py'
+adding 'spinner.py'
+adding 'subject_mask.py'
+adding 'surface_partitioning.py'
+adding 'torch_utils.py'
+adding 'ui_persistence.py'
+adding 'user_state.py'
+adding 'version.py'
+adding 'workspace_ui.py'
+adding 'MeshTools/LICENSE'
+adding 'MeshTools/_version.py'
+adding 'MeshTools/color_transition_gradient_generator.py'
+adding 'MeshTools/file_tools.py'
+adding 'MeshTools/measurement_grid_visualizer.py'
+adding 'MeshTools/mesh_gradient_colorizer.py'
+adding 'MeshTools/mesh_manipulation.py'
+adding 'MeshTools/mesh_tools.py'
+adding 'MeshTools/space_mouse_controller.py'
+adding 'MeshTools/space_mouse_event_handler.py'
+adding 'MeshTools/spacemouse_demo.py'
+adding 'MeshTools/spinner.py'
+adding 'MeshTools/text_3d.py'
+adding 'MeshTools/viewport_3d.py'
+adding 'edgemesh-1.0.1.dist-info/licenses/LICENSE'
+adding 'edgemesh-1.0.1.dist-info/licenses/MeshTools/LICENSE'
+adding 'edgemesh_bootstrap/__init__.py'
+adding 'edgemesh_bootstrap/__main__.py'
+adding 'edgemesh_bootstrap/cli.py'
+adding 'edgemesh_bootstrap/resources.py'
+adding 'edgemesh_bootstrap/runtime.py'
+adding 'edgemesh_bootstrap/assets/EdgeMesh.ico'
+adding 'edgemesh_bootstrap/assets/Images/example.png'
+adding 'edgemesh_bootstrap/assets/docs/Depth_Anything_3.html'
+adding 'edgemesh_bootstrap/assets/docs/Depth_Anything_3.md'
+adding 'edgemesh-1.0.1.dist-info/METADATA'
+adding 'edgemesh-1.0.1.dist-info/WHEEL'
+adding 'edgemesh-1.0.1.dist-info/entry_points.txt'
+adding 'edgemesh-1.0.1.dist-info/top_level.txt'
+adding 'edgemesh-1.0.1.dist-info/RECORD'
+removing build\bdist.win-amd64\wheel
+Successfully built edgemesh-1.0.1.tar.gz and edgemesh-1.0.1-py3-none-any.whl

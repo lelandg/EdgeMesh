@@ -1,7 +1,7 @@
 import argparse
 import os
 from pathlib import Path
-from data_contracts import as_bgr, output_shape, normalized_depth, foreground_mask as validate_mask
+from data_contracts import as_bgr, output_shape, normalized_depth, normalized_inverse_depth, foreground_mask as validate_mask
 from log_utils import get_logger
 import cv2
 from datetime import datetime
@@ -13,6 +13,7 @@ from trimesh import Trimesh
 from PIL import Image
 from transformers import AutoImageProcessor as AutoImageProcessor  # Backwards-compatible public import.
 from model_store import ModelStore
+from da3_backend import DA3_ALIASES
 from MeshTools.mesh_tools import MeshTools
 
 import smoothing_depth_map_utils
@@ -22,7 +23,7 @@ import PySide6.QtGui as QtGui
 
 """!@brief DepthTo3D modelnames supported by the DepthTo3D class."""
 model_names = {"MiDaS": "midas", "DPT": "dpt",
-               "DepthAnythingV2": "depth_anything_v2", "Depth Pro": "depth_pro"}
+               "DepthAnythingV2": "depth_anything_v2", "Depth Pro": "depth_pro", **DA3_ALIASES}
 
 
 class DepthTo3D:
@@ -105,6 +106,14 @@ class DepthTo3D:
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         if flip:
             rgb_image = cv2.flip(rgb_image, 1)
+
+        if getattr(self, "model_info", {}).get("backend") == "depth_anything_3":
+            depth = self.model.predict_depth(rgb_image, cancelled=self.cancelled)
+            if flip:
+                depth = np.fliplr(depth).copy()
+            # DA3 returns distance; the relief surface requires nearer-is-higher
+            # inverse depth, as returned by the existing HF/MiDaS model paths.
+            return normalized_inverse_depth(depth, output_size)
 
         with torch.no_grad():
             if getattr(self, "model_info", {}).get("backend") == "huggingface" or self.model_type in ("depth_anything_v2", "depth_pro"):
