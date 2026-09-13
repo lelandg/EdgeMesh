@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-09-13
+
+Fix clean Windows CI installations by including the missing mesh dependencies and their transitive requirements. Validate the installed application requirements before testing, and report import and test failures before later native failures can hide their tracebacks. Add a regression check for application and depth dependencies in the CPU profile.
+
 ## [1.1.0] - 2026-09-13
 
 ### Added
