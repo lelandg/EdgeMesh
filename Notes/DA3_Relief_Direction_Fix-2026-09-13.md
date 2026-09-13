@@ -63,15 +63,31 @@ Evidence: [validation report](DA3_Relief_Direction_Validation-2026-09-13.json),
 [red test log](DA3_Relief_Direction_Red-2026-09-13.txt),
 [build log](DA3_Relief_Direction_Build-2026-09-13.txt).
 
-Corrected render:
-[PNG](../.da3-validation/relief-direction-fix/corrected_da3.png).
+Corrected render: `.da3-validation/relief-direction-fix/corrected_da3.png` under
+the checkout root. The `.da3-validation/` directory is gitignored, so the render
+exists only on the machine that ran the validation.
 Reproduction helper: [validate_da3_relief.py](../scripts/validate_da3_relief.py).
 
 ## Use
 
 Restart the DA3 preview to load the changed code. Select Depth Anything 3 Small.
 Generate the mesh again. Saved meshes are not modified automatically.
-The [setup page](../docs/Depth_Anything_3.html) contains the preview launcher.
+
+### Prepared local preview
+
+On the validation machine, DA3 Small and the separate CPU runtime are already
+prepared under `.da3-validation/`. The launcher
+[Launch_DA3_Preview.ps1](Launch_DA3_Preview.ps1) uses separate preview settings
+and the verified checkpoint cache. Run it from the checkout root in PowerShell:
+
+```powershell
+& '.\Notes\Launch_DA3_Preview.ps1'
+```
+
+Choose Depth Anything 3 Small, open an image, and click Depth Mesh. The other
+three variants download their own checkpoints when downloads are enabled.
+Generic setup and launch commands are on the
+[setup page](../docs/Depth_Anything_3.html).
 
 The correction remains in codex/depth-anything-3. No commit, push, merge, or
 version change was requested or performed. The original main checkout and its
