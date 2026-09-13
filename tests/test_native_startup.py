@@ -60,8 +60,9 @@ class NativeStartupTests(unittest.TestCase):
             faulthandler.enable()
             if sys.argv[1] == 'source':
                 from edge_mesh import main as source_main
-            from PySide6.QtCore import QTimer
-            from PySide6.QtWidgets import QApplication
+            source_launch = sys.argv[1] == "source"
+            from PySide6.QtCore import QByteArray, QTimer, Qt
+            from PySide6.QtWidgets import QApplication, QMainWindow
 
             original_exec = QApplication.exec
             failures = []
@@ -77,6 +78,22 @@ class NativeStartupTests(unittest.TestCase):
                         assert window._workspace_ready and window._product_ready
                         assert not window._error_log.toPlainText(), window._error_log.toPlainText()
                         assert not window.mask_preview.pixmap().isNull()
+                        if source_launch:
+                            import configparser
+                            import os
+                            from pathlib import Path
+                            config = configparser.ConfigParser()
+                            config.read(Path(os.environ['EDGEMESH_DATA_DIR']) / 'expected-layout.ini')
+                            geometry = QByteArray.fromHex(config['UI_Settings']['windowgeometry'].encode())
+                            expected = QMainWindow()
+                            expected.setMinimumSize(window.minimumSize())
+                            assert expected.restoreGeometry(geometry)
+                            assert window.normalGeometry().size() == expected.normalGeometry().size(), (
+                                window.normalGeometry(), expected.normalGeometry())
+                            assert window.isMaximized() == expected.isMaximized()
+                            assert window.dockWidgetArea(window.controls_dock) == Qt.RightDockWidgetArea
+                            assert window.controls_dock.isVisible()
+                            expected.close()
                         import cv2
                         from concurrent.futures import ThreadPoolExecutor
                         with ThreadPoolExecutor(max_workers=1) as pool:
@@ -159,6 +176,7 @@ class NativeStartupTests(unittest.TestCase):
                 encoding="utf-8",
             )
             if source_launch:
+                shutil.copyfile(root / "config.ini", root / "expected-layout.ini")
                 # Both persistence stores existed in the reported failure. The
                 # JSON record used to restore the main window again on Show.
                 (root / 'ui-settings.json').write_text(

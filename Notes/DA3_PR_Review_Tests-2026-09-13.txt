@@ -1,0 +1,17 @@
+test_da3_setup_page_has_portable_copyable_commands (tests.test_packaging.PackagingTests.test_da3_setup_page_has_portable_copyable_commands) ... ok
+test_depth_command_forwards_arguments_and_exit_code (tests.test_packaging.PackagingTests.test_depth_command_forwards_arguments_and_exit_code) ... ok
+test_explicit_project_prevents_restoring_the_previous_project (tests.test_packaging.PackagingTests.test_explicit_project_prevents_restoring_the_previous_project) ... ok
+test_help_and_version_do_not_import_desktop_or_depth_runtime (tests.test_packaging.PackagingTests.test_help_and_version_do_not_import_desktop_or_depth_runtime) ... ok
+test_metadata_keeps_depth_optional_and_version_single_sourced (tests.test_packaging.PackagingTests.test_metadata_keeps_depth_optional_and_version_single_sourced) ... ok
+test_missing_depth_runtime_is_logged_without_stdout_noise (tests.test_packaging.PackagingTests.test_missing_depth_runtime_is_logged_without_stdout_noise) ... ok
+test_packaging_excludes_developer_scripts (tests.test_packaging.PackagingTests.test_packaging_excludes_developer_scripts) ... ok
+test_resources_exist_and_reject_escape_paths (tests.test_packaging.PackagingTests.test_resources_exist_and_reject_escape_paths) ... ok
+test_setup_metadata_does_not_require_source_on_sys_path (tests.test_packaging.PackagingTests.test_setup_metadata_does_not_require_source_on_sys_path) ... ok
+test_source_manifest_preserves_readme_case_and_excludes_tests (tests.test_packaging.PackagingTests.test_source_manifest_preserves_readme_case_and_excludes_tests) ... ok
+test_console_launcher_displays_window_and_survives_delayed_processing (tests.test_native_startup.NativeStartupTests.test_console_launcher_displays_window_and_survives_delayed_processing) ... ok
+test_source_launcher_restores_saved_geometry_and_docks_without_aborting (tests.test_native_startup.NativeStartupTests.test_source_launcher_restores_saved_geometry_and_docks_without_aborting) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 55.777s
+
+OK

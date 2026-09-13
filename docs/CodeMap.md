@@ -1,6 +1,6 @@
 # EdgeMesh Code Map
 
-Last updated: 2026-09-13 12:10 (America/Chicago).
+Last updated: 2026-09-13 13:41 (America/Chicago).
 
 This map describes the current source, including the selected workflow improvements.
 The application uses **PySide6**, OpenCV, PyTorch, Trimesh and Open3D. Python 3.12
@@ -73,6 +73,9 @@ regenerating geometry; portable project assets are described below.
 |-----------------------------------------------------------------------|-----------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
 | [edge_detection.py](../edge_detection.py)                             | `detect_edges`, `detect_and_project_edges`                                              | Canny edges, thickness and source-image overlays.                                                                         |
 | [depth_to_3d.py](../depth_to_3d.py)                                   | `DepthTo3D.estimate_depth`, `process_image`, `create_3d_mesh`, `create_background_mask` | Model preprocessing/inference, normalized depth, background/subject masking, colored mesh construction and staged output. |
+| [da3_backend.py](../da3_backend.py) | `load_da3`, `DA3DepthModel` | DA3 catalog and cancellable proxy to the separate runtime. |
+| [da3_worker.py](../da3_worker.py) | `prepare_snapshot`, `padded_image`, `run`, `main` | Pinned snapshot preparation, hash verification and proportional single-image inference. |
+| [da3_setup.py](../da3_setup.py) | `install`, `main` | Install the isolated DA3 runtime from pinned source with a seven-day package age limit. |
 | [smoothing_depth_map_utils.py](../smoothing_depth_map_utils.py)       | `SmoothingDepthMapUtils.apply_smoothing`, `anisotropic_diffusion`                       | Gaussian, bilateral, median and anisotropic depth smoothing.                                                              |
 | [mesh_generator.py](../mesh_generator.py)                             | `MeshGenerator.generate`, `mesh_from_shapes`                                            | Contour-based reconstruction without a depth model.                                                                       |
 | [depth_based3d_reconstruction.py](../depth_based3d_reconstruction.py) | `ExtrusionProjectionReconstruction.extrude`, `project`                                  | Lower/upper vertex pairs per contour point.                                                                               |

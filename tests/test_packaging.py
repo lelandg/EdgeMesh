@@ -1,6 +1,7 @@
 """Packaging contracts that can run before a distribution build."""
 import contextlib
 import io
+from html.parser import HTMLParser
 from pathlib import Path
 import subprocess
 import sys
@@ -45,6 +46,39 @@ assert not any(name.split('.')[0] in {'torch', 'PySide6', 'transformers'} for na
                 resource_path("C:outside.png")
         with self.assertRaises(FileNotFoundError):
             resource_path("missing-resource.png")
+
+    def test_da3_setup_page_has_portable_copyable_commands(self):
+        class Commands(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.commands = {}
+                self.buttons = set()
+                self.current = None
+
+            def handle_starttag(self, tag, attrs):
+                attrs = dict(attrs)
+                if tag == "pre":
+                    self.current = attrs["id"]
+                    self.commands[self.current] = ""
+                elif tag == "button" and "data-copy" in attrs:
+                    self.buttons.add(attrs["data-copy"])
+
+            def handle_data(self, data):
+                if self.current is not None:
+                    self.commands[self.current] += data
+
+            def handle_endtag(self, tag):
+                if tag == "pre":
+                    self.current = None
+
+        page = Commands()
+        page.feed(resource_path("docs/Depth_Anything_3.html").read_text(encoding="utf-8"))
+        self.assertEqual(set(page.commands), page.buttons)
+        self.assertIn("python -m da3_setup", page.commands.values())
+        self.assertIn("python -m edgemesh_bootstrap", page.commands.values())
+        for command in page.commands.values():
+            with self.subTest(command=command):
+                self.assertNotRegex(command, r"[A-Za-z]:[\\/]|/Users/|/home/|\.worktrees|<[^>]+>")
 
     def test_metadata_keeps_depth_optional_and_version_single_sourced(self):
         metadata = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))

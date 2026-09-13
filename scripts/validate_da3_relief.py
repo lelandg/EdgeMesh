@@ -1,4 +1,8 @@
-"""Regenerate DA3 from a saved project without modifying project or original assets."""
+"""Reproduce the reported DA3 relief defect without modifying original assets.
+
+This one-off helper uses the diagnosis image at (527, 700) and its fixed
+foreground/background patch coordinates. It is not a general mesh validator.
+"""
 from __future__ import annotations
 import argparse
 import hashlib
@@ -34,7 +38,7 @@ def main():
     cv2.setNumThreads(1)
     import numpy as np
     import trimesh
-    from data_contracts import normalized_inverse_depth, proportional_shape
+    from data_contracts import proportional_shape
     from depth_to_3d import DepthTo3D
     from model_store import ModelStore
 
