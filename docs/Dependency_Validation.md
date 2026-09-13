@@ -23,9 +23,12 @@ its first failure so a later worker failure cannot hide its unittest traceback.
 
 Local validation in the fresh environment passed: wheel build and installation,
 `pip check`, mesh/depth imports, 357 EdgeMesh tests (two opt-in native GUI tests
-skipped), and 11 MeshTools tests. The folder-memory test that failed on GitHub
-passed in the full clean-environment suite; its earlier hosted-only failure has
-not been independently explained. A new hosted run remains required. The local
+skipped), and 11 MeshTools tests. The hosted run then exposed a test-only path mismatch: Python used the
+Windows short TEMP name `RUNNER~1`, while Qt returned `runneradmin`.
+The dialog tests now resolve temporary roots with cross-platform `Path.resolve()`
+so both use the same directory name. This also works on the Ubuntu EC2 reviewer;
+no Windows-only path API or machine-specific path is introduced.
+A new hosted run remains required after this correction. The local
 test record is in `Notes/CI_Clean_Environment_Tests-2026-09-13.txt`.
 
 ## Earlier dependency snapshot

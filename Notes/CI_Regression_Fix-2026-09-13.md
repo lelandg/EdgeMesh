@@ -58,3 +58,26 @@ No source behavior or dependency version already pinned by main was changed.
 The user authorized commit, push, and PR creation after local validation.
 Hosted CI and the configured automated review remain the next verification gates.
 A fresh GitHub run must verify the hosted result before calling CI green.
+
+
+## Hosted path failure and automated correction
+
+PR 4 run 34780057607 passed dependency installation, application installation,
+`pip check`, and both imports. Fail-fast then exposed the earlier hidden assertion:
+Qt returned `C:/Users/runneradmin/...` while the test expected the equivalent
+`C:/Users/RUNNER~1/...`. This was a test spelling assumption, not a persistence
+failure. The reviewer on Ubuntu EC2 independently confirmed the cause.
+
+Draft PR 5 supplied commit `a6170e96c2c835f8796b3c3e25245cb60727cb3b`.
+It resolves temporary test roots once and consistently uses those roots in
+mask/settings and dialog-persistence tests. This commit is integrated into PR 4
+with its original author and history. The equivalent manual assertion edits
+were set aside in favor of the reviewed automation. Their focused test logs
+record 15 mask and 22 persistence tests passing.
+
+The final correction uses cross-platform `Path.resolve()`. It adds no Windows
+path literals or Windows-only API calls to the tests. Product code is unchanged.
+The exact integrated code passed all 357 tests (two native GUI tests skipped);
+see `CI_Autofix_Tests-2026-09-13.txt`. Scoped Ruff and mypy also passed.
+A workflow comment distinguishes source imports from isolated installed-copy
+subprocess tests. Hosted verification and renewed review are still pending.
