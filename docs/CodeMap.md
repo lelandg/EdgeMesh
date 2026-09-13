@@ -9,18 +9,18 @@ are not additional directories.
 
 ## Application and orchestration
 
-| Module | Verified entry points | Responsibility |
-|---|---|---|
-| [edge_mesh.py](../edge_mesh.py) | `main`, `MainWindowImageProcessing` | PySide6 application, image controls, preview, viewport creation and explicit export. |
-| [workspace_ui.py](../workspace_ui.py) | `WorkspaceMixin`, `ImagePreviewLabel` | Resizable workspace, detachable parameter panel, visible mask, Setup and History integration, layout persistence. |
-| [project_workflows.py](../project_workflows.py) | `ProjectWorkflowMixin` | Project menus, visible project location, autosave and project save/open/copy orchestration. |
-| [model_compliance_ui.py](../model_compliance_ui.py) | `ModelComplianceMixin`, `ModelLicenseDialog` | Model consent UI, separate selected/accepted model labels and bindings between accepted mesh provenance and export. |
-| [history_panel.py](../history_panel.py) | `HistoryPanel` | Metadata-only history browser, setting comparisons and explicit snapshot restore requests. |
-| [embedded_viewport.py](../embedded_viewport.py) | `EmbeddedMeshViewport`, `validated_mesh`, `mesh_to_polydata` | Lazy PySide6/VTK viewer with independent display buffers and Open3D geometry for health/export. |
-| [feature_workflows.py](../feature_workflows.py) | `WorkflowMixin`, `preview_image`, `pixmap` | Session/AI/model/mesh menus, immutable job inputs, cancellation, result acceptance and optional previews. |
-| [generation_jobs.py](../generation_jobs.py) | `JobController`, `Cancellation`, `JobCancelled` | One cooperative `QThread` job per controller; result/progress/error/cancellation signals. |
-| [data_contracts.py](../data_contracts.py) | `as_bgr`, `output_shape`, `proportional_shape`, `normalized_depth`, `foreground_mask` | Shared image, dimension, depth and foreground-mask validation. |
-| [pyside6_extensions.py](../pyside6_extensions.py) | `FlowLayout`, `ExpandableLineEdit`, `state_to_bool` | Layout helpers and PySide6 checkbox-state conversion. |
+| Module                                              | Verified entry points                                                                 | Responsibility                                                                                                      |
+|-----------------------------------------------------|---------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
+| [edge_mesh.py](../edge_mesh.py)                     | `main`, `MainWindowImageProcessing`                                                   | PySide6 application, image controls, preview, viewport creation and explicit export.                                |
+| [workspace_ui.py](../workspace_ui.py)               | `WorkspaceMixin`, `ImagePreviewLabel`                                                 | Resizable workspace, detachable parameter panel, visible mask, Setup and History integration, layout persistence.   |
+| [project_workflows.py](../project_workflows.py)     | `ProjectWorkflowMixin`                                                                | Project menus, visible project location, autosave and project save/open/copy orchestration.                         |
+| [model_compliance_ui.py](../model_compliance_ui.py) | `ModelComplianceMixin`, `ModelLicenseDialog`                                          | Model consent UI, separate selected/accepted model labels and bindings between accepted mesh provenance and export. |
+| [history_panel.py](../history_panel.py)             | `HistoryPanel`                                                                        | Metadata-only history browser, setting comparisons and explicit snapshot restore requests.                          |
+| [embedded_viewport.py](../embedded_viewport.py)     | `EmbeddedMeshViewport`, `validated_mesh`, `mesh_to_polydata`                          | Lazy PySide6/VTK viewer with independent display buffers and Open3D geometry for health/export.                     |
+| [feature_workflows.py](../feature_workflows.py)     | `WorkflowMixin`, `preview_image`, `pixmap`                                            | Session/AI/model/mesh menus, immutable job inputs, cancellation, result acceptance and optional previews.           |
+| [generation_jobs.py](../generation_jobs.py)         | `JobController`, `Cancellation`, `JobCancelled`                                       | One cooperative `QThread` job per controller; result/progress/error/cancellation signals.                           |
+| [data_contracts.py](../data_contracts.py)           | `as_bgr`, `output_shape`, `proportional_shape`, `normalized_depth`, `foreground_mask` | Shared image, dimension, depth and foreground-mask validation.                                                      |
+| [pyside6_extensions.py](../pyside6_extensions.py)   | `FlowLayout`, `ExpandableLineEdit`, `state_to_bool`                                   | Layout helpers and PySide6 checkbox-state conversion.                                                               |
 
 `MainWindowImageProcessing` inherits `ProjectWorkflowMixin`, `ModelComplianceMixin`,
 `WorkspaceMixin` and `WorkflowMixin`. `process_image` starts the
@@ -62,17 +62,17 @@ regenerating geometry; portable project assets are described below.
    clear repair undo state and release the previous accepted work folder.
    Explicit Export Mesh writes the user's selected file.
 
-| Module | Verified symbols | Role |
-|---|---|---|
-| [edge_detection.py](../edge_detection.py) | `detect_edges`, `detect_and_project_edges` | Canny edges, thickness and source-image overlays. |
-| [depth_to_3d.py](../depth_to_3d.py) | `DepthTo3D.estimate_depth`, `process_image`, `create_3d_mesh`, `create_background_mask` | Model preprocessing/inference, normalized depth, background/subject masking, colored mesh construction and staged output. |
-| [smoothing_depth_map_utils.py](../smoothing_depth_map_utils.py) | `SmoothingDepthMapUtils.apply_smoothing`, `anisotropic_diffusion` | Gaussian, bilateral, median and anisotropic depth smoothing. |
-| [mesh_generator.py](../mesh_generator.py) | `MeshGenerator.generate`, `mesh_from_shapes` | Contour-based reconstruction without a depth model. |
-| [depth_based3d_reconstruction.py](../depth_based3d_reconstruction.py) | `ExtrusionProjectionReconstruction.extrude`, `project` | Lower/upper vertex pairs per contour point. |
-| [edge_clustering_analyzer.py](../edge_clustering_analyzer.py) | `EdgeClustering.analyze_edges` | Contours, Hough lines and DBSCAN edge clusters. |
-| [shape_analyzer.py](../shape_analyzer.py) | `ShapeAnalysis.extract_geometric_primitives` | Polygon/ellipse analysis used by the contour route. |
-| [surface_partitioning.py](../surface_partitioning.py) | `SurfacePartitioning.apply` | Edge-region and convex-hull analysis in the contour route. |
-| [depth_cue_estimator_util.py](../depth_cue_estimator_util.py) | `DepthCueEstimator` | Light/shading cues used by contour analysis and `image_processor.py`. |
+| Module                                                                | Verified symbols                                                                        | Role                                                                                                                      |
+|-----------------------------------------------------------------------|-----------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| [edge_detection.py](../edge_detection.py)                             | `detect_edges`, `detect_and_project_edges`                                              | Canny edges, thickness and source-image overlays.                                                                         |
+| [depth_to_3d.py](../depth_to_3d.py)                                   | `DepthTo3D.estimate_depth`, `process_image`, `create_3d_mesh`, `create_background_mask` | Model preprocessing/inference, normalized depth, background/subject masking, colored mesh construction and staged output. |
+| [smoothing_depth_map_utils.py](../smoothing_depth_map_utils.py)       | `SmoothingDepthMapUtils.apply_smoothing`, `anisotropic_diffusion`                       | Gaussian, bilateral, median and anisotropic depth smoothing.                                                              |
+| [mesh_generator.py](../mesh_generator.py)                             | `MeshGenerator.generate`, `mesh_from_shapes`                                            | Contour-based reconstruction without a depth model.                                                                       |
+| [depth_based3d_reconstruction.py](../depth_based3d_reconstruction.py) | `ExtrusionProjectionReconstruction.extrude`, `project`                                  | Lower/upper vertex pairs per contour point.                                                                               |
+| [edge_clustering_analyzer.py](../edge_clustering_analyzer.py)         | `EdgeClustering.analyze_edges`                                                          | Contours, Hough lines and DBSCAN edge clusters.                                                                           |
+| [shape_analyzer.py](../shape_analyzer.py)                             | `ShapeAnalysis.extract_geometric_primitives`                                            | Polygon/ellipse analysis used by the contour route.                                                                       |
+| [surface_partitioning.py](../surface_partitioning.py)                 | `SurfacePartitioning.apply`                                                             | Edge-region and convex-hull analysis in the contour route.                                                                |
+| [depth_cue_estimator_util.py](../depth_cue_estimator_util.py)         | `DepthCueEstimator`                                                                     | Light/shading cues used by contour analysis and `image_processor.py`.                                                     |
 
 Images remain contiguous BGR `uint8` arrays internally. `as_bgr` copies input,
 converts grayscale, and composites BGRA transparency over white. Conversion to
@@ -91,17 +91,17 @@ geometry, not a conversion to physical units.
 
 ## State ownership and cancellation
 
-| Owner | State and lifecycle |
-|---|---|
-| Main window / `WorkflowMixin` | Source image/path, processed preview, settings, accepted `_subject_mask`, `_last_model_info`, mesh references, `_accepted_job_folder` and `_mesh_before_repair`. |
-| `JobController` | Worker, thread and cancellation token until `QThread.finished`; controls return to idle only after thread cleanup. |
-| Worker closure | Independent input snapshots and one `job-*` output folder under `UserPaths.work_dir`. Unfinished or discarded jobs remove their own staged folder. |
-| `_source_generation` / `_job_source_generation` | Reject results from an older source, mask or edited processing settings; cancellation and pending window close also prevent acceptance. |
-| `ModelStore` | Shared prepared model/processor pairs, immutable identity manifest and synchronized access. |
-| `SessionHistory` | Bounded in-memory settings/mask snapshots with undo/redo; mesh repair has a separate single backup. |
-| `ProjectStore` / `ProjectWorkflowMixin` | Portable source/mesh assets, project metadata and visible autosave destination; project writes are separate from image and mesh export commands. |
-| `ProvenanceStore` / `ModelComplianceMixin` | Policy/consent records and accepted-mesh provenance. Changing the selected model does not rewrite the accepted result's identity. |
-| `AgentRuntime` / `OwnedProcessTree` | Optional provider process, protocol output and cancellation ownership, independent of mesh-generation workers. |
+| Owner                                           | State and lifecycle                                                                                                                                              |
+|-------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Main window / `WorkflowMixin`                   | Source image/path, processed preview, settings, accepted `_subject_mask`, `_last_model_info`, mesh references, `_accepted_job_folder` and `_mesh_before_repair`. |
+| `JobController`                                 | Worker, thread and cancellation token until `QThread.finished`; controls return to idle only after thread cleanup.                                               |
+| Worker closure                                  | Independent input snapshots and one `job-*` output folder under `UserPaths.work_dir`. Unfinished or discarded jobs remove their own staged folder.               |
+| `_source_generation` / `_job_source_generation` | Reject results from an older source, mask or edited processing settings; cancellation and pending window close also prevent acceptance.                          |
+| `ModelStore`                                    | Shared prepared model/processor pairs, immutable identity manifest and synchronized access.                                                                      |
+| `SessionHistory`                                | Bounded in-memory settings/mask snapshots with undo/redo; mesh repair has a separate single backup.                                                              |
+| `ProjectStore` / `ProjectWorkflowMixin`         | Portable source/mesh assets, project metadata and visible autosave destination; project writes are separate from image and mesh export commands.                 |
+| `ProvenanceStore` / `ModelComplianceMixin`      | Policy/consent records and accepted-mesh provenance. Changing the selected model does not rewrite the accepted result's identity.                                |
+| `AgentRuntime` / `OwnedProcessTree`             | Optional provider process, protocol output and cancellation ownership, independent of mesh-generation workers.                                                   |
 
 Cancellation is cooperative. `_Worker.run` checks before work and before
 publishing a result. `DepthTo3D.process_image` and mesh construction check between
@@ -306,13 +306,13 @@ replace a newer mesh delivered during modal events.
 submodule changes are separate commits; the parent tracks a submodule revision.
 Do not treat edits there as ordinary parent-repository files.
 
-| Module | Verified symbols | Responsibility |
-|---|---|---|
-| [MeshTools/mesh_tools.py](../MeshTools/mesh_tools.py) | `MeshTools.solidify_mesh_with_flat_back`, `add_mirror_mesh`, `_boundary_edges`, `_stitch_back`, `fix_mesh` | Trimesh operations; boundary-only back stitching, winding, duplicate cleanup. |
-| [MeshTools/viewport_3d.py](../MeshTools/viewport_3d.py) | `ThreeDViewport.load_mesh`, `run`, `_export_mesh` | Open3D display, mesh loading, standalone event loop and checked OBJ/STL export. |
-| [MeshTools/mesh_manipulation.py](../MeshTools/mesh_manipulation.py) | `MeshManipulation` | Interactive geometry transformations. |
-| [MeshTools/measurement_grid_visualizer.py](../MeshTools/measurement_grid_visualizer.py) | `MeasurementGrid` | Depth/percentage measurement overlays. |
-| [MeshTools/mesh_gradient_colorizer.py](../MeshTools/mesh_gradient_colorizer.py) | `MeshColorizer` | Depth-based vertex coloring. |
+| Module                                                                                  | Verified symbols                                                                                           | Responsibility                                                                  |
+|-----------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
+| [MeshTools/mesh_tools.py](../MeshTools/mesh_tools.py)                                   | `MeshTools.solidify_mesh_with_flat_back`, `add_mirror_mesh`, `_boundary_edges`, `_stitch_back`, `fix_mesh` | Trimesh operations; boundary-only back stitching, winding, duplicate cleanup.   |
+| [MeshTools/viewport_3d.py](../MeshTools/viewport_3d.py)                                 | `ThreeDViewport.load_mesh`, `run`, `_export_mesh`                                                          | Open3D display, mesh loading, standalone event loop and checked OBJ/STL export. |
+| [MeshTools/mesh_manipulation.py](../MeshTools/mesh_manipulation.py)                     | `MeshManipulation`                                                                                         | Interactive geometry transformations.                                           |
+| [MeshTools/measurement_grid_visualizer.py](../MeshTools/measurement_grid_visualizer.py) | `MeasurementGrid`                                                                                          | Depth/percentage measurement overlays.                                          |
+| [MeshTools/mesh_gradient_colorizer.py](../MeshTools/mesh_gradient_colorizer.py)         | `MeshColorizer`                                                                                            | Depth-based vertex coloring.                                                    |
 
 ## Validation and dependency boundaries
 
