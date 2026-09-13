@@ -13,7 +13,7 @@ from log_utils import setup_logger
 class UserStateTests(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
-        self.root = Path(self.directory.name)
+        self.root = Path(self.directory.name).resolve()
         self.environment = patch.dict("os.environ", {"EDGEMESH_DATA_DIR": str(self.root / "user")})
         self.environment.start()
         self.paths = UserPaths.discover()

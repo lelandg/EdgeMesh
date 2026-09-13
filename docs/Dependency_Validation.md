@@ -17,7 +17,9 @@ could pass even when required application imports were absent. A packaging
 regression test also checks that the profile covers every applicable application
 and depth-extra requirement for Windows Python 3.12.
 
-An early mesh/depth import check uses the application's Windows runtime guard.
+The import check and each test process invoke the application's Windows runtime
+guard before importing scientific libraries. The guard is a no-op on Ubuntu.
+A guard in a separate preflight process cannot protect later test discovery.
 Faulthandler supplies native exception diagnostics. The EdgeMesh suite stops on
 its first failure so a later worker failure cannot hide its unittest traceback.
 
@@ -25,11 +27,13 @@ Local validation in the fresh environment passed: wheel build and installation,
 `pip check`, mesh/depth imports, 357 EdgeMesh tests (two opt-in native GUI tests
 skipped), and 11 MeshTools tests. The hosted run then exposed a test-only path mismatch: Python used the
 Windows short TEMP name `RUNNER~1`, while Qt returned `runneradmin`.
-The dialog tests now resolve temporary roots with cross-platform `Path.resolve()`
+The dialog, project-store, user-state, and workflow UI tests now resolve temporary
+roots with cross-platform `Path.resolve()`
 so both use the same directory name. This also works on the Ubuntu EC2 reviewer;
 no Windows-only path API or machine-specific path is introduced.
-A new hosted run remains required after this correction. The local
-test record is in `Notes/CI_Clean_Environment_Tests-2026-09-13.txt`.
+A new hosted run remains required after this correction. The final local test
+record is in `Notes/CI_Final_Guarded_Tests-2026-09-13.txt`. All 35 project-store,
+user-state, and workflow UI tests also passed under a verified Windows 8.3 alias.
 
 ## Earlier dependency snapshot
 

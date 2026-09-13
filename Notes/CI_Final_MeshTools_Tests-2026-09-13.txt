@@ -1,0 +1,16 @@
+test_boundary_touching_back_plane_has_no_degenerate_walls (test_mesh_topology.MeshTopologyTests.test_boundary_touching_back_plane_has_no_degenerate_walls) ... ok
+test_closed_mesh_has_no_boundary_walls (test_mesh_topology.MeshTopologyTests.test_closed_mesh_has_no_boundary_walls) ... ok
+test_fix_mesh_removes_duplicate_face_mask (test_mesh_topology.MeshTopologyTests.test_fix_mesh_removes_duplicate_face_mask) ... ok
+test_hole_boundary_stays_open_through_solid (test_mesh_topology.MeshTopologyTests.test_hole_boundary_stays_open_through_solid) ... ok
+test_square_flat_back (test_mesh_topology.MeshTopologyTests.test_square_flat_back) ... ok
+test_square_mirror (test_mesh_topology.MeshTopologyTests.test_square_mirror) ... ok
+test_empty_export_reaches_caller (test_mesh_topology.ViewportMeshTests.test_empty_export_reaches_caller) ... ok
+test_export_failure_reaches_caller (test_mesh_topology.ViewportMeshTests.test_export_failure_reaches_caller) ... ok
+test_invalid_replacement_preserves_previous_mesh_and_raises (test_mesh_topology.ViewportMeshTests.test_invalid_replacement_preserves_previous_mesh_and_raises) ... ok
+test_load_mesh_rebinds_rotation_to_current_mesh (test_mesh_topology.ViewportMeshTests.test_load_mesh_rebinds_rotation_to_current_mesh) ... ok
+test_stl_export_round_trip (test_mesh_topology.ViewportMeshTests.test_stl_export_round_trip) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.028s
+
+OK

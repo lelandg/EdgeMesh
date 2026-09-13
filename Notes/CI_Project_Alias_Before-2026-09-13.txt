@@ -1,0 +1,15 @@
+Using an actual short-path alias: C:\Users\aboog\AppData\Local\Temp\ED88E1~1
+test_new_project_root_does_not_move_current_project (test_project_store.ProjectStoreTests.test_new_project_root_does_not_move_current_project) ... FAIL
+
+======================================================================
+FAIL: test_new_project_root_does_not_move_current_project (test_project_store.ProjectStoreTests.test_new_project_root_does_not_move_current_project)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Documents\Code\GitHub\EdgeMesh\.worktrees\fix-windows-ci\tests\test_project_store.py", line 161, in test_new_project_root_does_not_move_current_project
+    self.assertEqual(second.parent.parent, changed_root)
+AssertionError: Windo[38 chars]emp/EdgeMesh CI alias reproduction ytu_l6q9/tm[19 chars]cts') != Windo[38 chars]emp/ED88E1~1/tmp_z9j59wk/new projects')
+
+----------------------------------------------------------------------
+Ran 1 test in 0.091s
+
+FAILED (failures=1)

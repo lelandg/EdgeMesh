@@ -30,7 +30,7 @@ class WorkflowUITests(unittest.TestCase):
 
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
-        self.root = Path(self.directory.name)
+        self.root = Path(self.directory.name).resolve()
         self.environment = patch.dict(
             os.environ, {"EDGEMESH_DATA_DIR": str(self.root / "data")}
         )

@@ -81,3 +81,32 @@ The exact integrated code passed all 357 tests (two native GUI tests skipped);
 see `CI_Autofix_Tests-2026-09-13.txt`. Scoped Ruff and mypy also passed.
 A workflow comment distinguishes source imports from isolated installed-copy
 subprocess tests. Hosted verification and renewed review are still pending.
+
+## Remaining path fixtures and test-process initialization
+
+The next hosted run, 34780726729, passed 248 tests before finding the same path
+spelling assumption in `test_project_store`. Its temporary root, and the roots
+in `test_user_state` and `test_workflow_ui`, now use `Path.resolve()` as well.
+These are portable test-fixture changes. No product paths were changed.
+
+A local Windows-only reproduction harness generated and verified a real 8.3
+alias with `GetShortPathNameW`. The project-folder assertion failed before the
+fix, then all 35 tests in those three modules passed under that alias. The
+harness stays in the ignored local environment; it is not required on Ubuntu.
+See `CI_Project_Alias_Before-2026-09-13.txt` and
+`CI_Path_Modules_Alias_Tests-2026-09-13.txt`.
+
+An experimental whole-suite alias run aborted natively at a cancellation test.
+A separate normal discovery run exposed the known CPython 3.12 WMI fault during
+Trimesh import and then a native process-start failure. Neither run passed.
+The workflow previously applied the existing runtime guard only in its import
+preflight. That separate process cannot initialize the test process.
+Both test steps now invoke the guard before unittest discovery. This is a no-op
+on Ubuntu, and fresh-subprocess startup regression tests remain independent.
+
+The final guarded EdgeMesh command passed all 357 tests, with two opt-in GUI
+tests skipped. The guarded MeshTools command passed all 11 tests. Scoped Ruff
+and mypy passed for the three additional fixtures. Workflow YAML parsing and
+`git diff --check` passed.
+The full alias experiment is not claimed as successful; the targeted alias test
+and the complete guarded suite are the validation evidence.
