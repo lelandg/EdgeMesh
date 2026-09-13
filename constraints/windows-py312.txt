@@ -52,6 +52,7 @@ parso==0.8.5
 pillow==12.3.0
 platformdirs==4.4.0
 plotly==6.3.0
+pooch==1.8.2
 prompt-toolkit==3.0.52
 pure-eval==0.2.3
 pygetwindow==0.0.9
@@ -62,6 +63,7 @@ pyside6==6.11.2
 pyside6-addons==6.11.2
 pyside6-essentials==6.11.2
 python-dateutil==2.9.0.post0
+pyvista==0.46.3
 pywin32==311
 pyyaml==6.0.3
 referencing==0.36.2
@@ -72,7 +74,9 @@ rpds-py==0.27.1
 safetensors==0.6.2
 scikit-learn==1.7.2
 scipy==1.16.2
+scooby==0.10.2
 setuptools==83.0.0
+shapely==2.1.2
 shiboken6==6.11.2
 six==1.17.0
 stack-data==0.6.3

@@ -1,5 +1,35 @@
 # Dependency validation boundaries
 
+## Clean Windows CI validation — 2026-09-13
+
+The CPU profile now contains 95 exact pins. It includes the application roots
+`shapely==2.1.2` and `pyvista==0.46.3`, plus PyVista dependencies
+`pooch==1.8.2` and `scooby==0.10.2`. These four additions were derived from
+the application requirements and installed Windows distribution metadata.
+The other 91 pins remain unchanged. `requirements-cpu-test.txt` includes this
+profile. All packages were installed in a fresh CPython 3.12.10 environment
+with uv's seven-day age cutoff; no system or development packages were changed.
+
+CI now installs EdgeMesh itself with dependency resolution and build isolation
+disabled before `pip check`. This makes missing application dependencies visible
+to the check. Previously, only third-party metadata was installed, so `pip check`
+could pass even when required application imports were absent. A packaging
+regression test also checks that the profile covers every applicable application
+and depth-extra requirement for Windows Python 3.12.
+
+An early mesh/depth import check uses the application's Windows runtime guard.
+Faulthandler supplies native exception diagnostics. The EdgeMesh suite stops on
+its first failure so a later worker failure cannot hide its unittest traceback.
+
+Local validation in the fresh environment passed: wheel build and installation,
+`pip check`, mesh/depth imports, 357 EdgeMesh tests (two opt-in native GUI tests
+skipped), and 11 MeshTools tests. The folder-memory test that failed on GitHub
+passed in the full clean-environment suite; its earlier hosted-only failure has
+not been independently explained. A new hosted run remains required. The local
+test record is in `Notes/CI_Clean_Environment_Tests-2026-09-13.txt`.
+
+## Earlier dependency snapshot
+
 Recorded 2026-09-04 19:12, local Windows time.
 
 The supported regression-test target is Windows x64, CPython 3.12.10, with

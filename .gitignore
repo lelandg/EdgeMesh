@@ -219,3 +219,4 @@ logs/ImageResizingWithInterpolationMethods.py
 /.da3-validation/
 /.test-user/
 /.worktrees/
+/.venv-ci/

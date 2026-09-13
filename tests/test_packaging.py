@@ -11,12 +11,41 @@ import types
 import unittest
 from unittest.mock import Mock, patch
 
+from packaging.markers import default_environment
+from packaging.requirements import Requirement
+from packaging.utils import canonicalize_name
+
 from edgemesh_bootstrap.resources import resource_path
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class PackagingTests(unittest.TestCase):
+    def test_cpu_profile_covers_application_and_depth_requirements(self):
+        metadata = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+        project = metadata["project"]
+        environment = default_environment()
+        environment.update(sys_platform="win32", platform_system="Windows",
+                           python_version="3.12", python_full_version="3.12.10", extra="")
+        constraints = {}
+        for line in (ROOT / "constraints/windows-py312.txt").read_text(encoding="utf-8").splitlines():
+            if line.strip() and not line.lstrip().startswith("#"):
+                requirement = Requirement(line)
+                pins = list(requirement.specifier)
+                self.assertEqual(len(pins), 1, line)
+                self.assertEqual(pins[0].operator, "==", line)
+                name = canonicalize_name(requirement.name)
+                self.assertNotIn(name, constraints, line)
+                constraints[name] = pins[0].version
+        for line in project["dependencies"] + project["optional-dependencies"]["depth"]:
+            requirement = Requirement(line)
+            if requirement.marker and not requirement.marker.evaluate(environment):
+                continue
+            with self.subTest(requirement=line):
+                name = canonicalize_name(requirement.name)
+                self.assertIn(name, constraints, f"CI does not install {line}")
+                self.assertIn(constraints[name], requirement.specifier)
+
     def test_help_and_version_do_not_import_desktop_or_depth_runtime(self):
         code = """import sys
 from edgemesh_bootstrap.cli import main
