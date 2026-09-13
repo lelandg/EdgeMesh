@@ -46,6 +46,18 @@ def normalized_depth(depth, shape=None):
     return cv2.normalize(value, None, 0, 255, cv2.NORM_MINMAX).astype(np.float32)
 
 
+def normalized_inverse_depth(distance, shape=None):
+    """Convert positive camera distances to relief heights: nearer is higher.
+
+    Scale the reciprocal by the nearest distance before normalizing. This is
+    equivalent to normalizing 1/distance, without overflow for tiny distances.
+    """
+    value = np.asarray(distance, dtype=np.float32)
+    if value.ndim != 2 or value.size == 0 or not np.isfinite(value).all() or np.any(value <= 0):
+        raise ValueError('Distance must be a nonempty, positive, finite, two-dimensional array.')
+    return normalized_depth(value.min() / value, shape)
+
+
 def foreground_mask(mask, shape):
     value = np.asarray(mask)
     if value.ndim != 2 or value.size == 0 or not np.isfinite(value).all():

@@ -169,9 +169,13 @@ The first command is a dry run. Curate the generated notes into prose in
 - Commit, push, or open a PR only when Leland asks. Commit subjects are
   imperative; releases and breaking changes use Conventional Commits prefixes
   (`feat!:`, `chore(release):`, `docs(agents):`).
-- Review before push, always. Sequence: implement → tests green → commit →
-  local review → fix → version bump → push → PR. Automated review runs on
-  push, so a late local review only duplicates it.
+- Requested PRs use the configured Claude Code automation. Sequence:
+  implement → local checks green → commit → version bump → push → PR → wait
+  for the automated review comment (normally 2-5 minutes). A request to open a
+  PR authorizes this review; do not require a separate local Claude CLI review
+  or another confirmation. Inspect comments, reviews and checks, address
+  validated findings, and push tested corrections. Report a missing review as
+  pending. Merge only when asked. Any additional local review runs before push.
 - Before pushing, check `git log --oneline origin/main..HEAD` for commits that
   are not yours. Rebase them out rather than publish them.
 - Typecheck and lint touched files before every commit. Never commit on a
@@ -187,7 +191,8 @@ These come from `~/.config/agents/AGENTS.md`. Read that file for detail.
   or a file you write. Use `.env`, credential files, or ask Leland to type the
   value. If a credential is exposed, tell Leland to rotate it and give a
   runbook.
-- **Cross-model review.** Write with one model family, audit with another.
+- **Cross-model review.** The configured Claude Code PR automation supplies
+  the independent review for requested PRs; wait for its comment after opening.
   The `gpt-5.6-sol` model is review-only: it runs read-only review commands
   and never anything that can write. Commit everything before a Sol review.
 - **Subagents.** Prefer a specialized agent when one fits. Verify any file a

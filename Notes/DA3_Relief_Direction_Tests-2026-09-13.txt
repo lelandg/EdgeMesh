@@ -1,0 +1,126 @@
+test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel (test_da3_relief_direction.DA3ReliefDirectionTests.test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel) ... ok
+test_pipeline_model_names_include_every_variant (test_da3_integration.DA3DepthPipelineTests.test_pipeline_model_names_include_every_variant) ... ok
+test_rgb_processing_flip_is_undone_and_depth_normalized (test_da3_integration.DA3DepthPipelineTests.test_rgb_processing_flip_is_undone_and_depth_normalized) ... ok
+test_shape_constant_depth_and_nonfinite_contract (test_da3_integration.DA3DepthPipelineTests.test_shape_constant_depth_and_nonfinite_contract) ... ok
+test_all_variants_roundtrip_and_resolve_permissive_policy (test_da3_integration.DA3IntegrationTests.test_all_variants_roundtrip_and_resolve_permissive_policy) ... ok
+test_store_cancellation_prevents_da3_preparation (test_da3_integration.DA3IntegrationTests.test_store_cancellation_prevents_da3_preparation) ... ok
+test_store_dispatches_all_aliases_without_transformers_or_proxy_cache (test_da3_integration.DA3IntegrationTests.test_store_dispatches_all_aliases_without_transformers_or_proxy_cache) ... ok
+test_cancel_before_start_does_not_launch (test_da3_backend.AdapterTests.test_cancel_before_start_does_not_launch) ... ok
+test_cancellation_terminates_worker_and_removes_temporary_images (test_da3_backend.AdapterTests.test_cancellation_terminates_worker_and_removes_temporary_images) ... ok
+test_inference_uses_prepared_revision_and_forbids_download (test_da3_backend.AdapterTests.test_inference_uses_prepared_revision_and_forbids_download) ... ok
+test_missing_runtime_has_actionable_error (test_da3_backend.AdapterTests.test_missing_runtime_has_actionable_error) ... ok
+test_portrait_landscape_and_singleton_images_are_padded_without_crop (test_da3_backend.AdapterTests.test_portrait_landscape_and_singleton_images_are_padded_without_crop) ... ok
+test_offline_snapshot_records_and_verifies_hashes (test_da3_backend.SnapshotTests.test_offline_snapshot_records_and_verifies_hashes) ... ok
+test_offline_without_revision_does_not_query_remote (test_da3_backend.SnapshotTests.test_offline_without_revision_does_not_query_remote) ... ok
+test_constant_singleton_depth_and_proportions (test_data_contracts.ContractTests.test_constant_singleton_depth_and_proportions) ... ok
+test_distance_converts_to_inverse_depth_without_mutating_input (test_data_contracts.ContractTests.test_distance_converts_to_inverse_depth_without_mutating_input) ... ok
+test_gray_and_transparent_images (test_data_contracts.ContractTests.test_gray_and_transparent_images) ... ok
+test_invalid_distances_are_rejected_and_tiny_distances_do_not_overflow (test_data_contracts.ContractTests.test_invalid_distances_are_rejected_and_tiny_distances_do_not_overflow) ... ok
+test_masks_remain_binary_and_do_not_mutate (test_data_contracts.ContractTests.test_masks_remain_binary_and_do_not_mutate) ... ok
+test_nonfinite_and_empty_depth_rejected (test_data_contracts.ContractTests.test_nonfinite_and_empty_depth_rejected) ... ok
+test_background_mask_preserves_enclosed_foreground (test_depth_and_edges.DepthTests.test_background_mask_preserves_enclosed_foreground) ... ok
+test_background_tolerance_does_not_wrap_black_or_white (test_depth_and_edges.DepthTests.test_background_tolerance_does_not_wrap_black_or_white) ... ok
+test_depth_loading_delegates_identity_download_and_cancellation_to_store (test_depth_and_edges.DepthTests.test_depth_loading_delegates_identity_download_and_cancellation_to_store) ... ok
+test_dpt_and_midas_restore_original_dimensions (test_depth_and_edges.DepthTests.test_dpt_and_midas_restore_original_dimensions) ... ok
+test_exact_automatic_background_and_isolated_pixel (test_depth_and_edges.DepthTests.test_exact_automatic_background_and_isolated_pixel) ... ok
+test_hf_models_use_rgb_flip_and_requested_shape (test_depth_and_edges.DepthTests.test_hf_models_use_rgb_flip_and_requested_shape) ... ok
+test_missing_image_has_actionable_error (test_depth_and_edges.DepthTests.test_missing_image_has_actionable_error) ... ok
+test_prediction_flip_is_undone_for_color_alignment (test_depth_and_edges.DepthTests.test_prediction_flip_is_undone_for_color_alignment) ... ok
+test_qcolor_and_rgb_tuple_match_bgr_pixels (test_depth_and_edges.DepthTests.test_qcolor_and_rgb_tuple_match_bgr_pixels) ... ok
+test_real_mesh_pipeline_exports_watertight_flat_and_mirror (test_depth_and_edges.DepthTests.test_real_mesh_pipeline_exports_watertight_flat_and_mirror) ... ok
+test_bgr_channels_use_opencv_luminance (test_depth_and_edges.EdgeTests.test_bgr_channels_use_opencv_luminance) ... ok
+test_grayscale_works_on_canvas_and_overlay (test_depth_and_edges.EdgeTests.test_grayscale_works_on_canvas_and_overlay) ... ok
+test_cached_v1_comparison_uses_its_own_permissive_identity (test_model_store.ModelStoreTests.test_cached_v1_comparison_uses_its_own_permissive_identity) ... ok
+test_cancellation_before_resolution_is_side_effect_free (test_model_store.ModelStoreTests.test_cancellation_before_resolution_is_side_effect_free) ... ok
+test_cancellation_between_processor_and_weights_prevents_model_load (test_model_store.ModelStoreTests.test_cancellation_between_processor_and_weights_prevents_model_load) ... ok
+test_cancelled_midas_registration_does_not_write (test_model_store.ModelStoreTests.test_cancelled_midas_registration_does_not_write) ... ok
+test_consent_callback_requires_literal_true (test_model_store.ModelStoreTests.test_consent_callback_requires_literal_true) ... ok
+test_depth_pro_notice_is_research_only (test_model_store.ModelStoreTests.test_depth_pro_notice_is_research_only) ... ok
+test_download_permission_is_not_nc_license_consent (test_model_store.ModelStoreTests.test_download_permission_is_not_nc_license_consent) ... ok
+test_existing_hf_snapshot_supplies_pin_without_network (test_model_store.ModelStoreTests.test_existing_hf_snapshot_supplies_pin_without_network) ... ok
+test_explicit_download_records_same_sha_for_model_and_processor (test_model_store.ModelStoreTests.test_explicit_download_records_same_sha_for_model_and_processor) ... ok
+test_first_run_acknowledgment_is_bound_when_revision_resolves (test_model_store.ModelStoreTests.test_first_run_acknowledgment_is_bound_when_revision_resolves) ... ok
+test_invalid_manifest_is_preserved_and_reported (test_model_store.ModelStoreTests.test_invalid_manifest_is_preserved_and_reported) ... ok
+test_license_consent_is_revision_specific_and_survives_restart (test_model_store.ModelStoreTests.test_license_consent_is_revision_specific_and_survives_restart) ... ok
+test_local_weight_terms_do_not_require_an_unsupported_download_acknowledgment (test_model_store.ModelStoreTests.test_local_weight_terms_do_not_require_an_unsupported_download_acknowledgment) ... ok
+test_midas_local_backbone_avoids_nested_hub_and_uses_correct_transform (test_model_store.ModelStoreTests.test_midas_local_backbone_avoids_nested_hub_and_uses_correct_transform) ... ok
+test_midas_registration_and_tamper_detection (test_model_store.ModelStoreTests.test_midas_registration_and_tamper_detection) ... ok
+test_offline_miss_never_calls_hub (test_model_store.ModelStoreTests.test_offline_miss_never_calls_hub) ... ok
+test_offline_nc_load_needs_no_new_download_acknowledgment (test_model_store.ModelStoreTests.test_offline_nc_load_needs_no_new_download_acknowledgment) ... ok
+test_policy_change_requires_a_new_acknowledgment (test_model_store.ModelStoreTests.test_policy_change_requires_a_new_acknowledgment) ... ok
+test_preprocessing_cannot_override_offline_or_identity (test_model_store.ModelStoreTests.test_preprocessing_cannot_override_offline_or_identity) ... ok
+test_recorded_revision_loads_offline_after_restart (test_model_store.ModelStoreTests.test_recorded_revision_loads_offline_after_restart) ... ok
+test_revision_device_preprocessing_and_clear_invalidate_pairs (test_model_store.ModelStoreTests.test_revision_device_preprocessing_and_clear_invalidate_pairs) ... ok
+test_sam2_is_optional_and_uses_its_own_identity (test_model_store.ModelStoreTests.test_sam2_is_optional_and_uses_its_own_identity) ... ok
+test_unpinned_midas_fails_with_setup_guidance (test_model_store.ModelStoreTests.test_unpinned_midas_fails_with_setup_guidance) ... ok
+test_weight_hashes_reject_anchored_or_traversing_shard_names (test_model_store.ModelStoreTests.test_weight_hashes_reject_anchored_or_traversing_shard_names) ... ok
+test_weight_hashes_use_exact_cached_revision (test_model_store.ModelStoreTests.test_weight_hashes_use_exact_cached_revision) ... ok
+test_catalog_identity_wins_over_editable_license (test_model_licensing.LicensingTests.test_catalog_identity_wins_over_editable_license) ... ok
+test_model_families_keep_their_checkpoint_specific_terms (test_model_licensing.LicensingTests.test_model_families_keep_their_checkpoint_specific_terms) ... ok
+test_unknown_checkpoint_cannot_borrow_known_model_type_license (test_model_licensing.LicensingTests.test_unknown_checkpoint_cannot_borrow_known_model_type_license) ... ok
+test_concurrent_first_seals_share_one_complete_key (test_model_licensing.ProvenanceTests.test_concurrent_first_seals_share_one_complete_key) ... ok
+test_editing_license_or_geometry_breaks_binding (test_model_licensing.ProvenanceTests.test_editing_license_or_geometry_breaks_binding) ... ok
+test_hash_is_stable_across_array_endian_and_memory_layout (test_model_licensing.ProvenanceTests.test_hash_is_stable_across_array_endian_and_memory_layout) ... ok
+test_key_storage_failure_retains_unsigned_unverified_metadata (test_model_licensing.ProvenanceTests.test_key_storage_failure_retains_unsigned_unverified_metadata) ... ok
+test_malformed_geometry_and_metadata_return_unverified (test_model_licensing.ProvenanceTests.test_malformed_geometry_and_metadata_return_unverified) ... ok
+test_missing_or_different_profile_key_is_unverified (test_model_licensing.ProvenanceTests.test_missing_or_different_profile_key_is_unverified) ... ok
+test_round_trip_is_plain_json_and_binds_both_model_stages (test_model_licensing.ProvenanceTests.test_round_trip_is_plain_json_and_binds_both_model_stages) ... ok
+test_actual_startup_is_offline_health_optional_and_user_scoped (test_workflow_ui.WorkflowUITests.test_actual_startup_is_offline_health_optional_and_user_scoped) ... ok
+test_closed_mask_dialog_releases_source_preview (test_workflow_ui.WorkflowUITests.test_closed_mask_dialog_releases_source_preview) ... ok
+test_corrupt_model_identity_does_not_partly_restore (test_workflow_ui.WorkflowUITests.test_corrupt_model_identity_does_not_partly_restore) ... ok
+test_da3_variants_appear_in_actual_model_license_dialog (test_workflow_ui.WorkflowUITests.test_da3_variants_appear_in_actual_model_license_dialog) ... ok
+test_da3_variants_are_selectable_and_persist_in_settings (test_workflow_ui.WorkflowUITests.test_da3_variants_are_selectable_and_persist_in_settings) ... ok
+test_explicit_project_startup_skips_stale_previous_project (test_workflow_ui.WorkflowUITests.test_explicit_project_startup_skips_stale_previous_project) ... ok
+test_export_dialog_writes_accepted_mesh_without_loading_selected_model (test_workflow_ui.WorkflowUITests.test_export_dialog_writes_accepted_mesh_without_loading_selected_model) ... ok
+test_failed_close_after_job_keeps_window_open_and_allows_later_work (test_workflow_ui.WorkflowUITests.test_failed_close_after_job_keeps_window_open_and_allows_later_work) ... ok
+test_live_depth_field_records_history_after_editing (test_workflow_ui.WorkflowUITests.test_live_depth_field_records_history_after_editing) ... ok
+test_preset_roundtrip_retains_source_and_mask (test_workflow_ui.WorkflowUITests.test_preset_roundtrip_retains_source_and_mask) ... ok
+test_session_save_load_restores_settings_and_accepted_mask (test_workflow_ui.WorkflowUITests.test_session_save_load_restores_settings_and_accepted_mask) ... ok
+test_startup_without_image_or_saved_ui_settings (test_workflow_ui.WorkflowUITests.test_startup_without_image_or_saved_ui_settings) ... ok
+test_suggestions_require_acceptance_and_can_be_undone (test_workflow_ui.WorkflowUITests.test_suggestions_require_acceptance_and_can_be_undone) ... ok
+test_undo_redo_settings_and_mask_acceptance (test_workflow_ui.WorkflowUITests.test_undo_redo_settings_and_mask_acceptance) ... ok
+
+----------------------------------------------------------------------
+Ran 81 tests in 25.637s
+
+OK
+Creating 3D mesh with depth amount: 1.0...
+Image size: 5x5, target_size: (5, 5)
+Image size: (5, 5, 3), depth size: (5, 5), mask size: (5, 5)
+3D mesh saved to C:\Users\aboog\AppData\Local\Temp\tmpx9x71a0m\relief_D1_0-depth_anything_3_small_R5x520260913_113154.ply
+Creating 3D mesh with depth amount: 1.0...
+Image size: 5x5, target_size: (5, 5)
+Image size: (5, 5, 3), depth size: (5, 5), mask size: (5, 5)
+3D mesh saved to C:\Users\aboog\AppData\Local\Temp\tmp5yjqlz2l\relief_D1_0-depth_anything_3_small_R5x520260913_113154.ply
+Creating 3D mesh with depth amount: 1.0...
+Image size: 5x5, target_size: (5, 5)
+Image size: (5, 5, 3), depth size: (5, 5), mask size: (5, 5)
+3D mesh saved to C:\Users\aboog\AppData\Local\Temp\tmpr_m6ganc\relief_D1_0-depth_anything_3_base_R5x520260913_113154.ply
+Creating 3D mesh with depth amount: 1.0...
+Image size: 5x5, target_size: (5, 5)
+Image size: (5, 5, 3), depth size: (5, 5), mask size: (5, 5)
+3D mesh saved to C:\Users\aboog\AppData\Local\Temp\tmpudna877s\relief_D1_0-depth_anything_3_base_R5x520260913_113154.ply
+Creating 3D mesh with depth amount: 1.0...
+Image size: 5x5, target_size: (5, 5)
+Image size: (5, 5, 3), depth size: (5, 5), mask size: (5, 5)
+3D mesh saved to C:\Users\aboog\AppData\Local\Temp\tmphyepchnh\relief_D1_0-depth_anything_3_mono_large_R5x520260913_113154.ply
+Creating 3D mesh with depth amount: 1.0...
+Image size: 5x5, target_size: (5, 5)
+Image size: (5, 5, 3), depth size: (5, 5), mask size: (5, 5)
+3D mesh saved to C:\Users\aboog\AppData\Local\Temp\tmpg_umyzny\relief_D1_0-depth_anything_3_mono_large_R5x520260913_113154.ply
+Creating 3D mesh with depth amount: 1.0...
+Image size: 5x5, target_size: (5, 5)
+Image size: (5, 5, 3), depth size: (5, 5), mask size: (5, 5)
+3D mesh saved to C:\Users\aboog\AppData\Local\Temp\tmpzelf2xsl\relief_D1_0-depth_anything_3_metric_large_R5x520260913_113154.ply
+Creating 3D mesh with depth amount: 1.0...
+Image size: 5x5, target_size: (5, 5)
+Image size: (5, 5, 3), depth size: (5, 5), mask size: (5, 5)
+3D mesh saved to C:\Users\aboog\AppData\Local\Temp\tmpkpi88c_x\relief_D1_0-depth_anything_3_metric_large_R5x520260913_113154.ply
+Creating 3D mesh with depth amount: 1.0...
+Image size: 3x4, target_size: (3, 4)
+Image size: (3, 4, 3), depth size: (3, 4), mask size: (3, 4)
+3D mesh saved to C:\Users\aboog\AppData\Local\Temp\tmpbcf7g6u4\input_D1_0_gaussian-midas_R3x420260913_113154.ply
+Creating 3D mesh with depth amount: 1.0...
+Image size: 3x4, target_size: (3, 4)
+Image size: (3, 4, 3), depth size: (3, 4), mask size: (3, 4)
+3D mesh saved to C:\Users\aboog\AppData\Local\Temp\tmpbcf7g6u4\input_D1_0_gaussian-midas_R3x4_dyn20260913_113154.ply

@@ -1,5 +1,6 @@
 include pyproject.toml setup.py _build_support.py README.md LICENSE
 include EdgeMesh.ico Images/example.png
+include docs/Depth_Anything_3.html docs/Depth_Anything_3.md
 include MeshTools/LICENSE MeshTools/*.py
 recursive-include edgemesh_bootstrap *.py
 prune tests

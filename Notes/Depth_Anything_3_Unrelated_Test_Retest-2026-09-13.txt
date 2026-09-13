@@ -1,0 +1,6 @@
+test_cancel_stops_descendant_processes (test_agent_runtime.RuntimeProcessTests.test_cancel_stops_descendant_processes) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 5.261s
+
+OK

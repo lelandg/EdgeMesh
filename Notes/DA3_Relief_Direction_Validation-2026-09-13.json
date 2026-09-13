@@ -1,0 +1,147 @@
+{
+  "project": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\.worktrees\\depth-anything-3\\.da3-validation\\projects\\project-example-a1b35241\\project.json",
+  "target_height_width": [
+    527,
+    700
+  ],
+  "settings": {
+    "resolution": 700,
+    "depth_amount": 1.0,
+    "depth_drop_percentage": 0.0,
+    "smoothing_method": "anisotropic",
+    "sensitivity": 150,
+    "line_thickness": 1,
+    "blend_amount": 100,
+    "grayscale_enabled": false,
+    "edge_detection_enabled": true,
+    "invert_colors_enabled": false,
+    "project_on_original": true,
+    "flat_back_enabled": false,
+    "drop_background_enabled": false,
+    "background_tolerance": 10.0,
+    "use_processed_image_enabled": false,
+    "use_selected_color": false,
+    "current_selected_color": [
+      30,
+      30,
+      30
+    ],
+    "model": "Depth Anything 3 Small"
+  },
+  "model_info": {
+    "backend": "depth_anything_3",
+    "depth_semantics": "nearer_is_higher_relative_relief; metric scale is not retained",
+    "device": "cpu",
+    "license": "apache-2.0",
+    "model_card": "https://huggingface.co/depth-anything/DA3-SMALL/tree/e08cab65ca0ec38e7826075418411ab90cab4da3",
+    "model_id": "depth-anything/DA3-SMALL",
+    "model_type": "depth_anything_3_small",
+    "preprocessing": {
+      "aspect_ratio": "resize_and_pad",
+      "process_res": 504,
+      "relief_transform": "normalized_inverse_distance"
+    },
+    "revision": "e08cab65ca0ec38e7826075418411ab90cab4da3",
+    "weight_files_sha256": {
+      "config.json": "a486e29e82b7ab4a7d4cefc1ea4526cfe2ae438a572c8ca98917cfbcde7447d2",
+      "model.safetensors": "364492e38a3a06d221ac75da7f6621ada3f2361cd24fde11ba79091e9f40efcf"
+    },
+    "license_policy": {
+      "model_type": "depth_anything_3_small",
+      "model_id": "depth-anything/DA3-SMALL",
+      "display_name": "DA3 SMALL",
+      "license": "apache-2.0",
+      "usage_class": "permissive",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "source_url": "https://github.com/ByteDance-Seed/Depth-Anything-3#-model-cards",
+      "guidance": "The weight license permits commercial and non-commercial use subject to its terms. Keep required copyright, license, and NOTICE material when distributing covered material; identify modifications and do not imply endorsement.",
+      "restriction": "",
+      "commercial_status": "included",
+      "commercial_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "commercial_info": "Commercial use is included under Apache 2.0; follow its conditions.",
+      "policy_version": 1,
+      "requires_acceptance": false,
+      "badge": "Permissive model license",
+      "notice": "General guidance, not legal advice. Read the linked weight license for your intended use. EdgeMesh being free or non-commercial does not change a model's terms. This label records the model used; it does not decide ownership or license of every output."
+    },
+    "policy_sha256": "1cbac3516427a693a2c84e589356bca1d8c3b8012d1d77fbffc35c3b27974443"
+  },
+  "elapsed_seconds": 60.448502799998096,
+  "metrics": {
+    "original_da3": {
+      "path": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\.worktrees\\depth-anything-3\\.da3-validation\\projects\\project-example-a1b35241\\assets\\mesh-3b1656c6bc26140028850849257c8da2f4db4f4b23322cfa9b92b83c64d5f836.ply",
+      "sha256": "3b1656c6bc26140028850849257c8da2f4db4f4b23322cfa9b92b83c64d5f836",
+      "vertices": 737800,
+      "faces": 1475596,
+      "same_xy_order_as_original_da3": true,
+      "exact_rgba_agreement_at_matching_xy": true,
+      "central_patch_median_front_z": 128.81224060058594,
+      "corner_background_median_front_z": 126.62643432617188,
+      "central_10x10_mean_front_z": 145.79884994506835,
+      "top_left_10x10_mean_front_z": 225.18852844238282,
+      "foreground_above_background": false,
+      "foreground_minus_background": -79.38967849731446
+    },
+    "corrected_da3": {
+      "path": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\.worktrees\\depth-anything-3\\.da3-validation\\relief-direction-fix\\source-e55036180a7145bf1b5a2280eb835f3d73d3e1d39648ac15a94e9170fc72fdcd_D1_0_anisotropic_proj-depth_anything_3_small_R527x700_edge20260913_113434.ply",
+      "sha256": "356c0917930836c9b6cc288b9ee5680be5ea21ee95047a8ec3a51a5e43977506",
+      "vertices": 737800,
+      "faces": 1475596,
+      "same_xy_order_as_original_da3": true,
+      "exact_rgba_agreement_at_matching_xy": true,
+      "central_patch_median_front_z": 179.4942398071289,
+      "corner_background_median_front_z": 186.8126106262207,
+      "central_10x10_mean_front_z": 161.59467422485352,
+      "top_left_10x10_mean_front_z": 88.63074295043945,
+      "foreground_above_background": true,
+      "foreground_minus_background": 72.96393127441407
+    },
+    "original_depth_pro": {
+      "path": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\.worktrees\\depth-anything-3\\.da3-validation\\projects\\project-example-a1b35241\\assets\\mesh-ea421783102e8b7262abd6ec64fff97694ba3a4ea20dd20373c367b3ce10d7e3.ply",
+      "sha256": "ea421783102e8b7262abd6ec64fff97694ba3a4ea20dd20373c367b3ce10d7e3",
+      "vertices": 737800,
+      "faces": 1475596,
+      "same_xy_order_as_original_da3": true,
+      "exact_rgba_agreement_at_matching_xy": true,
+      "central_patch_median_front_z": 223.44347381591797,
+      "corner_background_median_front_z": 140.85666847229004,
+      "central_10x10_mean_front_z": 221.18863693237304,
+      "top_left_10x10_mean_front_z": 13.945482168197632,
+      "foreground_above_background": true,
+      "foreground_minus_background": 207.24315476417542
+    }
+  },
+  "originals_preserved": true,
+  "renders": {
+    "original_da3": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\.worktrees\\depth-anything-3\\.da3-validation\\relief-direction-fix\\original_da3.png",
+    "corrected_da3": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\.worktrees\\depth-anything-3\\.da3-validation\\relief-direction-fix\\corrected_da3.png",
+    "original_depth_pro": "D:\\Documents\\Code\\GitHub\\EdgeMesh\\.worktrees\\depth-anything-3\\.da3-validation\\relief-direction-fix\\original_depth_pro.png"
+  },
+  "diagnostic_note": "An initial broad 40-60 percent center versus all four 10 percent corner comparison failed the direction oracle. The lower corners contain near objects. Those medians remain as supplementary metrics. The headline assertion uses the exact 10x10 foreground and top-left background patches from the original diagnosis.",
+  "region_definition": {
+    "bounds": "start inclusive, end exclusive; source image coordinates",
+    "background_rows": [
+      0,
+      10
+    ],
+    "foreground_columns": [
+      345,
+      355
+    ],
+    "height": "mean of max Z at each XY",
+    "foreground_rows": [
+      258,
+      268
+    ],
+    "background_columns": [
+      0,
+      10
+    ]
+  },
+  "original_sha256": {
+    "D:\\Documents\\Code\\GitHub\\EdgeMesh\\.worktrees\\depth-anything-3\\.da3-validation\\projects\\project-example-a1b35241\\assets\\source-e55036180a7145bf1b5a2280eb835f3d73d3e1d39648ac15a94e9170fc72fdcd.png": "e55036180a7145bf1b5a2280eb835f3d73d3e1d39648ac15a94e9170fc72fdcd",
+    "D:\\Documents\\Code\\GitHub\\EdgeMesh\\.worktrees\\depth-anything-3\\.da3-validation\\projects\\project-example-a1b35241\\assets\\mesh-ea421783102e8b7262abd6ec64fff97694ba3a4ea20dd20373c367b3ce10d7e3.ply": "ea421783102e8b7262abd6ec64fff97694ba3a4ea20dd20373c367b3ce10d7e3",
+    "D:\\Documents\\Code\\GitHub\\EdgeMesh\\.worktrees\\depth-anything-3\\.da3-validation\\projects\\project-example-a1b35241\\assets\\mesh-3b1656c6bc26140028850849257c8da2f4db4f4b23322cfa9b92b83c64d5f836.ply": "3b1656c6bc26140028850849257c8da2f4db4f4b23322cfa9b92b83c64d5f836",
+    "D:\\Documents\\Code\\GitHub\\EdgeMesh\\.worktrees\\depth-anything-3\\.da3-validation\\projects\\project-example-a1b35241\\project.json": "b2c05d544cf2c7bf6b888091d62a9348de47d1edf90872c8e4e0f25b54afa15a"
+  }
+}

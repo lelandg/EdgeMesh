@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-09-13
+
+### Added
+
+- Add Depth Anything 3 Small, Base, Mono-Large and Metric-Large for single-image relief meshes, with an isolated optional runtime, cancellable workers, verified checkpoint identities and offline inference.
+- Add model licensing, setup guidance and validation coverage for the DA3 workflow.
+
+### Fixed
+
+- Convert DA3 camera distance to inverse depth so nearby surfaces rise correctly while source colors stay aligned.
+- Restore the main-window layout once after construction to prevent native startup crashes from competing saved layouts and retain saved dock visibility.
+
 ## [1.0.1] - 2026-09-12
 
 ### Changed

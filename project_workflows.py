@@ -113,13 +113,17 @@ class ProjectWorkflowMixin:
         restored = self._restore_startup_project()
         if not restored:
             self._request_project_save()
-        saved = getattr(self, '_pending_window_state', '')
-        if saved:
-            try:
-                if not isinstance(saved, str) or not self.restoreState(QByteArray.fromHex(saved.encode('ascii'))):
-                    _project_warning('Could not restore the saved workspace layout; keeping the available layout.')
-            except (TypeError, ValueError, UnicodeError, RuntimeError):
-                _project_warning('Could not restore the saved workspace layout; keeping the available layout.')
+        # All docks and toolbars now exist. Use one owner and one restoration
+        # before Show; repeated restoration across two stores can abort Qt.
+        for key, restore in (('windowGeometry', self.restoreGeometry),
+                             ('windowState', self.restoreState)):
+            saved = self._startup_window_layout.get(key, '')
+            if saved:
+                try:
+                    if not restore(QByteArray(bytes.fromhex(saved))):
+                        raise ValueError('Qt rejected the saved layout')
+                except (TypeError, ValueError, UnicodeError, RuntimeError):
+                    _project_warning(f'Could not restore saved {key}; keeping the available layout.')
         try:
             active = self.config.getint('Workspace', 'active_tab', fallback=0)
         except (TypeError, ValueError):

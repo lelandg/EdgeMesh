@@ -1,0 +1,78 @@
+test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel (test_da3_relief_direction.DA3ReliefDirectionTests.test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel) ...
+  test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel (test_da3_relief_direction.DA3ReliefDirectionTests.test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel) (model='depth_anything_3_small', flip=False) ... FAIL
+  test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel (test_da3_relief_direction.DA3ReliefDirectionTests.test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel) (model='depth_anything_3_small', flip=True) ... FAIL
+  test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel (test_da3_relief_direction.DA3ReliefDirectionTests.test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel) (model='depth_anything_3_base', flip=False) ... FAIL
+  test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel (test_da3_relief_direction.DA3ReliefDirectionTests.test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel) (model='depth_anything_3_base', flip=True) ... FAIL
+  test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel (test_da3_relief_direction.DA3ReliefDirectionTests.test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel) (model='depth_anything_3_mono_large', flip=False) ... FAIL
+  test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel (test_da3_relief_direction.DA3ReliefDirectionTests.test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel) (model='depth_anything_3_mono_large', flip=True) ... FAIL
+  test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel (test_da3_relief_direction.DA3ReliefDirectionTests.test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel) (model='depth_anything_3_metric_large', flip=False) ... FAIL
+  test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel (test_da3_relief_direction.DA3ReliefDirectionTests.test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel) (model='depth_anything_3_metric_large', flip=True) ... FAIL
+
+======================================================================
+FAIL: test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel (test_da3_relief_direction.DA3ReliefDirectionTests.test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel) (model='depth_anything_3_small', flip=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Documents\Code\GitHub\EdgeMesh\.worktrees\depth-anything-3\tests\test_da3_relief_direction.py", line 34, in test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel
+    self.assertGreater(depth[2, 2], depth[0, 2],
+AssertionError: np.float32(0.0) not greater than np.float32(191.25) : Near DA3 features must rise above the distant background.
+
+======================================================================
+FAIL: test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel (test_da3_relief_direction.DA3ReliefDirectionTests.test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel) (model='depth_anything_3_small', flip=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Documents\Code\GitHub\EdgeMesh\.worktrees\depth-anything-3\tests\test_da3_relief_direction.py", line 34, in test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel
+    self.assertGreater(depth[2, 2], depth[0, 2],
+AssertionError: np.float32(0.0) not greater than np.float32(191.25) : Near DA3 features must rise above the distant background.
+
+======================================================================
+FAIL: test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel (test_da3_relief_direction.DA3ReliefDirectionTests.test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel) (model='depth_anything_3_base', flip=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Documents\Code\GitHub\EdgeMesh\.worktrees\depth-anything-3\tests\test_da3_relief_direction.py", line 34, in test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel
+    self.assertGreater(depth[2, 2], depth[0, 2],
+AssertionError: np.float32(0.0) not greater than np.float32(191.25) : Near DA3 features must rise above the distant background.
+
+======================================================================
+FAIL: test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel (test_da3_relief_direction.DA3ReliefDirectionTests.test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel) (model='depth_anything_3_base', flip=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Documents\Code\GitHub\EdgeMesh\.worktrees\depth-anything-3\tests\test_da3_relief_direction.py", line 34, in test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel
+    self.assertGreater(depth[2, 2], depth[0, 2],
+AssertionError: np.float32(0.0) not greater than np.float32(191.25) : Near DA3 features must rise above the distant background.
+
+======================================================================
+FAIL: test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel (test_da3_relief_direction.DA3ReliefDirectionTests.test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel) (model='depth_anything_3_mono_large', flip=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Documents\Code\GitHub\EdgeMesh\.worktrees\depth-anything-3\tests\test_da3_relief_direction.py", line 34, in test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel
+    self.assertGreater(depth[2, 2], depth[0, 2],
+AssertionError: np.float32(0.0) not greater than np.float32(191.25) : Near DA3 features must rise above the distant background.
+
+======================================================================
+FAIL: test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel (test_da3_relief_direction.DA3ReliefDirectionTests.test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel) (model='depth_anything_3_mono_large', flip=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Documents\Code\GitHub\EdgeMesh\.worktrees\depth-anything-3\tests\test_da3_relief_direction.py", line 34, in test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel
+    self.assertGreater(depth[2, 2], depth[0, 2],
+AssertionError: np.float32(0.0) not greater than np.float32(191.25) : Near DA3 features must rise above the distant background.
+
+======================================================================
+FAIL: test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel (test_da3_relief_direction.DA3ReliefDirectionTests.test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel) (model='depth_anything_3_metric_large', flip=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Documents\Code\GitHub\EdgeMesh\.worktrees\depth-anything-3\tests\test_da3_relief_direction.py", line 34, in test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel
+    self.assertGreater(depth[2, 2], depth[0, 2],
+AssertionError: np.float32(0.0) not greater than np.float32(191.25) : Near DA3 features must rise above the distant background.
+
+======================================================================
+FAIL: test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel (test_da3_relief_direction.DA3ReliefDirectionTests.test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel) (model='depth_anything_3_metric_large', flip=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Documents\Code\GitHub\EdgeMesh\.worktrees\depth-anything-3\tests\test_da3_relief_direction.py", line 34, in test_near_feature_is_raised_and_rgb_stays_at_its_source_pixel
+    self.assertGreater(depth[2, 2], depth[0, 2],
+AssertionError: np.float32(0.0) not greater than np.float32(191.25) : Near DA3 features must rise above the distant background.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.021s
+
+FAILED (failures=8)

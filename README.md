@@ -50,6 +50,7 @@ The [earlier workspace guide](docs/Workspace_Refresh.html), [current model resea
 ### 🧠 Depth Estimation Models
 Choose from multiple state-of-the-art models:
 - **DepthAnythingV2** - Default image-to-relief route
+- **Depth Anything 3** - Optional Small, Base, Mono-Large, and Metric-Large backends. Use the [separate-runtime setup guide](docs/Depth_Anything_3.html).
 - **Depth Pro** - Alternative depth model
 - **MiDaS / DPT** - Use registered local source and matching checkpoints
 

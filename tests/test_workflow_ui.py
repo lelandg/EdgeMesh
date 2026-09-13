@@ -79,6 +79,32 @@ class WorkflowUITests(unittest.TestCase):
         self.assertTrue(hasattr(self.window, "health_action"), self.output.getvalue())
         self.assertEqual(self.window._error_log.toPlainText(), "")
 
+    def test_da3_variants_appear_in_actual_model_license_dialog(self):
+        from da3_backend import DA3_MODELS
+        from PySide6.QtWidgets import QComboBox
+        inspected = []
+
+        def inspect_dialog(dialog):
+            selector = dialog.findChild(QComboBox)
+            inspected.extend(selector.itemData(index) for index in range(selector.count()))
+            return QDialog.DialogCode.Rejected
+
+        with patch('model_compliance_ui.QDialog.exec', new=inspect_dialog):
+            self.window.model_details()
+        self.assertTrue(set(DA3_MODELS).issubset(inspected))
+
+    def test_da3_variants_are_selectable_and_persist_in_settings(self):
+        from da3_backend import DA3_ALIASES
+        for label in DA3_ALIASES:
+            with self.subTest(model=label):
+                self.assertGreaterEqual(self.window.depth_method_dropdown.findText(label), 0)
+                self.window.depth_method_dropdown.setCurrentText(label)
+                self.application.processEvents()
+                self.assertEqual(self.window._settings_snapshot()['model'], label)
+                self.assertNotIn('NC', self.window.process_button.text())
+                self.assertNotIn('Check terms', self.window.process_button.text())
+        self.assert_no_workflow_error()
+
     def test_actual_startup_is_offline_health_optional_and_user_scoped(self):
         self.assert_no_workflow_error()
         self.assertTrue(self.window.initialized)

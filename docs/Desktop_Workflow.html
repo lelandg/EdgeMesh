@@ -128,8 +128,8 @@
 <h3 style="margin-top:24px">Depth amount and resolution</h3>
 <p>The flattening problem came from measuring X/Y in image pixels while leaving Z at a fixed size. Depth scaling now follows the image proportion: at Depth 1, the available depth range is half the longer image side. Changing processing resolution therefore does not, by itself, flatten the same relative depth shape.</p>
 <p class="muted">This scale is a relief setting, not a measured physical dimension. Actual cached DA1 and DA2 runs produced varied depth and watertight meshes with consistent proportions. See the <a href="Depth_Diagnosis.md">measured comparison</a> for revisions, settings and timings. These small CPU runs used an illustration; they do not establish model accuracy or a quality ranking.</p>
-<h3>Depth Anything 3 remains a research reference</h3>
-<p>DA3 is documented in <a href="Model_Options.md">Model options</a> and its <a href="https://github.com/ByteDance-Seed/Depth-Anything-3">official research repository</a>. It is not an integrated EdgeMesh backend. The report separates checkpoint licenses, runtime requirements and multiview output from the current relief workflow.</p>
+<h3>Depth Anything 3 uses an optional local runtime</h3>
+<p>Follow <a href="Depth_Anything_3.html">Depth Anything 3 setup</a>, then select Small, Base, Mono-Large or Metric-Large in the depth model picker. These checkpoints use Apache 2.0 weights. Inference runs locally in a separate runtime and returns depth to the existing preview and accept workflow. The mesh uses normalized relief scale, including for Metric-Large. Multiview reconstruction is not exposed by this integration. See <a href="Model_Options.md">Model options</a> for other checkpoints and their terms.</p>
 </section>
 
 <footer>

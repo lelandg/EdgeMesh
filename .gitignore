@@ -214,3 +214,8 @@ torch_hub_model_list.py
 torch_info.txt
 build.bat
 logs/ImageResizingWithInterpolationMethods.py
+
+# Local optional-backend validation and isolated checkouts
+/.da3-validation/
+/.test-user/
+/.worktrees/

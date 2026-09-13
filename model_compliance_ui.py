@@ -255,7 +255,7 @@ class ModelComplianceMixin:
             dialog.deleteLater()
 
     def model_details(self):
-        from model_store import HF_MODELS
+        from model_store import HF_MODELS, DA3_MODELS
         dialog = QDialog(self)
         dialog.setObjectName('modelLicenseCatalog')
         dialog.setWindowTitle('Model licenses and preparation')
@@ -263,7 +263,7 @@ class ModelComplianceMixin:
         layout = QVBoxLayout(dialog)
         selector = QComboBox()
         selector.setAccessibleName('Model to inspect')
-        keys = list(HF_MODELS) + ['midas', 'dpt']
+        keys = list(HF_MODELS) + list(DA3_MODELS) + ['midas', 'dpt']
         for key in keys:
             policy = policy_for(key).as_dict()
             selector.addItem(f"{policy.get('display_name', key)} · {policy.get('badge', 'Check terms')}", key)
