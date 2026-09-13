@@ -21,7 +21,8 @@ from ui_persistence import DialogPersistence, SettingsStore, get_dialog_service
 class SettingsStoreTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
-        self.path = Path(self.temporary.name) / "ui-settings.json"
+        self.root = Path(self.temporary.name).resolve()
+        self.path = self.root / "ui-settings.json"
         self.error = patch("ui_persistence._error").start()
 
     def tearDown(self):
@@ -90,7 +91,8 @@ class DialogPersistenceTests(unittest.TestCase):
 
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
-        self.path = Path(self.temporary.name) / "ui-settings.json"
+        self.root = Path(self.temporary.name).resolve()
+        self.path = self.root / "ui-settings.json"
         self.store = SettingsStore(self.path)
         self.service = DialogPersistence(self.store)
         self.windows = []
@@ -183,7 +185,7 @@ class DialogPersistenceTests(unittest.TestCase):
         self.assertEqual(clicked, [True])
 
     def test_cancel_remembers_folder_and_filter_without_selecting_a_file(self):
-        target = Path(self.temporary.name) / "target"
+        target = self.root / "target"
         target.mkdir()
 
         def cancel_after_navigation(dialog):
@@ -193,14 +195,14 @@ class DialogPersistenceTests(unittest.TestCase):
 
         with patch.object(QFileDialog, "exec", cancel_after_navigation):
             result = self.service.open_file(None, "Open image", "images", "Images (*.png);;All files (*)",
-                                            self.temporary.name)
+                                            str(self.root))
         self.assertEqual(result, ("", "All files (*)"))
         settings = SettingsStore(self.path).get("directories")["images"]
         self.assertEqual(Path(settings["directory"]), target)
         self.assertEqual(settings["filter"], "All files (*)")
         first = self.service._file_dialogs[("open", "images")]
         reused = self.service._dialog(None, "Load another image", "images", "open",
-                                     "Images (*.png);;All files (*)", self.temporary.name)
+                                     "Images (*.png);;All files (*)", str(self.root))
         self.assertIs(reused, first)
         self.assertEqual(Path(reused.directory().absolutePath()), target)
         self.assertEqual(reused.selectedNameFilter(), "All files (*)")
@@ -208,7 +210,7 @@ class DialogPersistenceTests(unittest.TestCase):
         self.assertIn("state", self.store.get("windows")["file-dialog:open:images"])
         owner = self.window("new-file-dialog-owner")
         reparented = self.service._dialog(owner, "Load image", "images", "open",
-                                         "Images (*.png);;All files (*)", self.temporary.name)
+                                         "Images (*.png);;All files (*)", str(self.root))
         self.assertIs(reparented, first)
         self.assertIs(reparented.parentWidget(), owner)
 
@@ -263,8 +265,8 @@ class DialogPersistenceTests(unittest.TestCase):
         self.assertEqual(clicked, ["accept"])
 
     def test_binary_dialog_state_cannot_override_the_remembered_target_directory(self):
-        first_directory = Path(self.temporary.name) / "first"
-        remembered_directory = Path(self.temporary.name) / "remembered"
+        first_directory = self.root / "first"
+        remembered_directory = self.root / "remembered"
         first_directory.mkdir()
         remembered_directory.mkdir()
         first = self.service._dialog(None, "Open image", "images", "open", "All files (*)", first_directory)
@@ -279,7 +281,7 @@ class DialogPersistenceTests(unittest.TestCase):
         self.assertEqual(Path(second.directory().absolutePath()), remembered_directory)
 
     def test_save_and_directory_chooser_return_the_selected_target(self):
-        directory = Path(self.temporary.name)
+        directory = self.root
         selected = directory / "new-project.edgeproj"
 
         def accept(dialog):
@@ -313,7 +315,7 @@ class DialogPersistenceTests(unittest.TestCase):
     def test_widget_fallback_accepts_an_absolute_path_with_spaces(self):
         # The offscreen platform has no native picker. Exercise PySide6's fallback
         # filename field with the same full path a user can type or paste.
-        target_directory = Path(self.temporary.name) / "Project folder"
+        target_directory = self.root / "Project folder"
         target_directory.mkdir()
         target = target_directory / "saved project.edgeproj"
         target.write_bytes(b"file chooser selection only")
@@ -327,12 +329,12 @@ class DialogPersistenceTests(unittest.TestCase):
 
         with patch.object(QFileDialog, "exec", enter_path):
             selected, _ = self.service.open_file(None, "Load project", "projects",
-                "Project (*.edgeproj)", self.temporary.name)
+                "Project (*.edgeproj)", str(self.root))
         self.assertEqual(Path(selected), target)
         self.assertEqual(Path(self.store.get("directories")["projects"]["directory"]), target_directory)
 
     def test_default_save_suffix_only_fills_a_missing_extension_and_can_be_reset(self):
-        directory = Path(self.temporary.name)
+        directory = self.root
         cases = [("png", "image", "image.png"), ("png", "mesh.obj", "mesh.obj"),
                  (None, "plain", "plain")]
         for suffix, typed, expected in cases:
@@ -349,8 +351,8 @@ class DialogPersistenceTests(unittest.TestCase):
                 self.assertEqual(Path(selected), directory / expected)
 
     def test_accepted_file_and_directory_targets_win_over_the_browsed_folder(self):
-        browsed = Path(self.temporary.name) / "browsed"
-        chosen = Path(self.temporary.name) / "chosen"
+        browsed = self.root / "browsed"
+        chosen = self.root / "chosen"
         browsed.mkdir()
         chosen.mkdir()
         target = chosen / "image.png"

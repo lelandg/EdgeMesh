@@ -32,7 +32,7 @@ class MaskSettingsTests(unittest.TestCase):
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
-        self.root = Path(self.temp.name)
+        self.root = Path(self.temp.name).resolve()
         self.parent = QWidget()
         self.settings = SettingsStore(self.root / "ui-settings.json")
         self.parent.ui_settings = self.settings
