@@ -1,5 +1,42 @@
 # Dependency validation boundaries
 
+## Clean Windows CI validation — 2026-09-13
+
+The CPU profile now contains 95 exact pins. It includes the application roots
+`shapely==2.1.2` and `pyvista==0.46.3`, plus PyVista dependencies
+`pooch==1.8.2` and `scooby==0.10.2`. These four additions were derived from
+the application requirements and installed Windows distribution metadata.
+The other 91 pins remain unchanged. `requirements-cpu-test.txt` includes this
+profile. All packages were installed in a fresh CPython 3.12.10 environment
+with uv's seven-day age cutoff; no system or development packages were changed.
+
+CI now installs EdgeMesh itself with dependency resolution and build isolation
+disabled before `pip check`. This makes missing application dependencies visible
+to the check. Previously, only third-party metadata was installed, so `pip check`
+could pass even when required application imports were absent. A packaging
+regression test also checks that the profile covers every applicable application
+and depth-extra requirement for Windows Python 3.12.
+
+The import check and each test process invoke the application's Windows runtime
+guard before importing scientific libraries. The guard is a no-op on Ubuntu.
+A guard in a separate preflight process cannot protect later test discovery.
+Faulthandler supplies native exception diagnostics. The EdgeMesh suite stops on
+its first failure so a later worker failure cannot hide its unittest traceback.
+
+Local validation in the fresh environment passed: wheel build and installation,
+`pip check`, mesh/depth imports, 357 EdgeMesh tests (two opt-in native GUI tests
+skipped), and 11 MeshTools tests. The hosted run then exposed a test-only path mismatch: Python used the
+Windows short TEMP name `RUNNER~1`, while Qt returned `runneradmin`.
+The dialog, project-store, user-state, and workflow UI tests now resolve temporary
+roots with cross-platform `Path.resolve()`
+so both use the same directory name. This also works on the Ubuntu EC2 reviewer;
+no Windows-only path API or machine-specific path is introduced.
+A new hosted run remains required after this correction. The final local test
+record is in `Notes/CI_Final_Guarded_Tests-2026-09-13.txt`. All 35 project-store,
+user-state, and workflow UI tests also passed under a verified Windows 8.3 alias.
+
+## Earlier dependency snapshot
+
 Recorded 2026-09-04 19:12, local Windows time.
 
 The supported regression-test target is Windows x64, CPython 3.12.10, with

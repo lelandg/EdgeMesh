@@ -1,0 +1,11 @@
+Processing d:\documents\code\github\edgemesh\.worktrees\fix-windows-ci
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: edgemesh
+  Building wheel for edgemesh (pyproject.toml): started
+  Building wheel for edgemesh (pyproject.toml): finished with status 'done'
+  Created wheel for edgemesh: filename=edgemesh-1.1.0-py3-none-any.whl size=1703855 sha256=a60daca0d3ba248d153c816df34c1cbaaded4ab629684f9b32e2fdcc15af34d3
+  Stored in directory: d:\documents\code\github\edgemesh\.worktrees\fix-windows-ci\.venv-ci\pip-cache\wheels\da\a2\d3\fb25404308a69ea5af029a60b2994a568a64efac7a126e509b
+Successfully built edgemesh
+Installing collected packages: edgemesh
+Successfully installed edgemesh-1.1.0

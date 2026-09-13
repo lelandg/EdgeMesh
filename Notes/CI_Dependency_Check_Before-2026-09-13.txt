@@ -1,0 +1,2 @@
+edgemesh 1.1.0 requires pyvista, which is not installed.
+edgemesh 1.1.0 requires shapely, which is not installed.

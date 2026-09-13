@@ -1,0 +1,20 @@
+test_cancel_persists_only_whitelisted_editor_choices (test_mask_settings.MaskSettingsTests.test_cancel_persists_only_whitelisted_editor_choices) ... ok
+test_controls_have_buddies_and_stable_window_names (test_mask_settings.MaskSettingsTests.test_controls_have_buddies_and_stable_window_names) ... ok
+test_enter_on_focused_cancel_rejects_without_accepting_mask (test_mask_settings.MaskSettingsTests.test_enter_on_focused_cancel_rejects_without_accepting_mask) ... ok
+test_four_browsed_directories_are_remembered_even_on_cancel (test_mask_settings.MaskSettingsTests.test_four_browsed_directories_are_remembered_even_on_cancel) ... ok
+test_invalid_saved_choices_fall_back_without_loading_other_fields (test_mask_settings.MaskSettingsTests.test_invalid_saved_choices_fall_back_without_loading_other_fields) ... ok
+test_keyboard_box_is_one_edit_and_ignores_repeated_space (test_mask_settings.MaskSettingsTests.test_keyboard_box_is_one_edit_and_ignores_repeated_space) ... ok
+test_keyboard_brush_gesture_has_no_gaps_and_one_undo_step (test_mask_settings.MaskSettingsTests.test_keyboard_brush_gesture_has_no_gaps_and_one_undo_step) ... ok
+test_keyboard_points_clamp_cursor_and_ignore_repeated_space (test_mask_settings.MaskSettingsTests.test_keyboard_points_clamp_cursor_and_ignore_repeated_space) ... ok
+test_mask_export_adds_png_suffix_to_a_bare_filename (test_mask_settings.MaskSettingsTests.test_mask_export_adds_png_suffix_to_a_bare_filename) ... ok
+test_midas_remembers_model_but_not_typed_artifact_paths (test_mask_settings.MaskSettingsTests.test_midas_remembers_model_but_not_typed_artifact_paths) ... ok
+test_pending_first_keyboard_box_can_be_undone_immediately (test_mask_settings.MaskSettingsTests.test_pending_first_keyboard_box_can_be_undone_immediately) ... ok
+test_service_settings_work_without_parent_ui_settings_attribute (test_mask_settings.MaskSettingsTests.test_service_settings_work_without_parent_ui_settings_attribute) ... ok
+test_shift_enter_accepts_without_running_focused_sam_action (test_mask_settings.MaskSettingsTests.test_shift_enter_accepts_without_running_focused_sam_action) ... ok
+test_shift_enter_keeps_validation_and_disabled_accept_gate (test_mask_settings.MaskSettingsTests.test_shift_enter_keeps_validation_and_disabled_accept_gate) ... ok
+test_tool_switch_finishes_box_before_the_next_edit (test_mask_settings.MaskSettingsTests.test_tool_switch_finishes_box_before_the_next_edit) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 2.836s
+
+OK

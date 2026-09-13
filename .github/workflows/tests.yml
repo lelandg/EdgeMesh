@@ -37,9 +37,16 @@ jobs:
         run: '& "$env:GITHUB_WORKSPACE/.venv-ci/Scripts/python.exe" -m pip install --no-deps --only-binary=:all: pip==25.0.1 setuptools==83.0.0'
       - name: Install complete pinned CPU dependency closure
         run: '& "$env:GITHUB_WORKSPACE/.venv-ci/Scripts/python.exe" -m pip install --no-deps --no-build-isolation -r "$env:GITHUB_WORKSPACE/requirements-cpu-test.txt"'
+      # The installed wheel supplies metadata; ordinary tests import the checkout.
+      # Isolated (-I) subprocesses can intentionally exercise the installed copy.
+      - name: Install application metadata without resolving dependencies
+        run: '& "$env:GITHUB_WORKSPACE/.venv-ci/Scripts/python.exe" -m pip install --no-deps --no-build-isolation "$env:GITHUB_WORKSPACE"'
       - name: Check installed dependency contracts
         run: '& "$env:GITHUB_WORKSPACE/.venv-ci/Scripts/python.exe" -m pip check'
+      - name: Check application and depth imports before UI tests
+        run: '& "$env:GITHUB_WORKSPACE/.venv-ci/Scripts/python.exe" -X faulthandler -c "from edgemesh_bootstrap.runtime import initialize_platform_runtime; initialize_platform_runtime(); import mesh_generator; import depth_to_3d"'
       - name: Test EdgeMesh without model downloads
-        run: '& "$env:GITHUB_WORKSPACE/.venv-ci/Scripts/python.exe" -m unittest discover -s "$env:GITHUB_WORKSPACE/tests" -v'
+        # Each Python process needs the guard before discovery imports libraries.
+        run: '& "$env:GITHUB_WORKSPACE/.venv-ci/Scripts/python.exe" -X faulthandler -c "from edgemesh_bootstrap.runtime import initialize_platform_runtime; initialize_platform_runtime(); import unittest; unittest.main(module=None)" discover -s "$env:GITHUB_WORKSPACE/tests" -v -f'
       - name: Test MeshTools without opening a viewport
-        run: '& "$env:GITHUB_WORKSPACE/.venv-ci/Scripts/python.exe" -m unittest discover -s "$env:GITHUB_WORKSPACE/MeshTools/tests" -v'
+        run: '& "$env:GITHUB_WORKSPACE/.venv-ci/Scripts/python.exe" -X faulthandler -c "from edgemesh_bootstrap.runtime import initialize_platform_runtime; initialize_platform_runtime(); import unittest; unittest.main(module=None)" discover -s "$env:GITHUB_WORKSPACE/MeshTools/tests" -v'
