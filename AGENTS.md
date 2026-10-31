@@ -44,8 +44,11 @@ Two runtimes share this checkout. Use the one native to your shell.
 | WSL (bash) | `python3` in `.venv_linux` | 3.14.7 | Experimental source runs only. Not a packaging target. |
 
 - The packaged release requires CPython 3.12 (`requires-python = ">=3.12,<3.13"`).
-  Open3D 0.19.0 has no 3.13/3.14 wheels. Keep even-numbered minor versions of
-  Python and Node. Say so if a dependency forces an odd version.
+  Open3D 0.19.0 has no 3.13/3.14 wheels. Pick a runtime version by the rule in
+  `~/.config/agents/AGENTS.md` -> "Environment": the longest remaining
+  security-support window the dependencies allow, never an even/odd heuristic.
+  Say so when a dependency holds this project on an older line, and name that
+  line's EOL date.
 - Never use `cd`. Use absolute paths (`git -C <abs-path> ...`). WSL path
   `/mnt/d/Documents/Code/GitHub/EdgeMesh` is `D:\Documents\Code\GitHub\EdgeMesh`
   on Windows.
@@ -169,13 +172,12 @@ The first command is a dry run. Curate the generated notes into prose in
 - Commit, push, or open a PR only when Leland asks. Commit subjects are
   imperative; releases and breaking changes use Conventional Commits prefixes
   (`feat!:`, `chore(release):`, `docs(agents):`).
-- Requested PRs use the configured Claude Code automation. Sequence:
-  implement → local checks green → commit → version bump → push → PR → wait
-  for the automated review comment (normally 2-5 minutes). A request to open a
-  PR authorizes this review; do not require a separate local Claude CLI review
-  or another confirmation. Inspect comments, reviews and checks, address
-  validated findings, and push tested corrections. Report a missing review as
-  pending. Merge only when asked. Any additional local review runs before push.
+- Requested PRs use the reviewers named in "Scanning & review" below.
+  Sequence: implement → local checks green → commit → Codex review → version
+  bump → push → PR → wait for the automated review (normally 2-5 minutes). A
+  request to open a PR authorizes that review. Inspect comments, reviews and
+  checks, address validated findings, and push tested corrections. Report a
+  missing review as pending. Merge only when asked.
 - Before pushing, check `git log --oneline origin/main..HEAD` for commits that
   are not yours. Rebase them out rather than publish them.
 - Typecheck and lint touched files before every commit. Never commit on a
@@ -191,8 +193,8 @@ These come from `~/.config/agents/AGENTS.md`. Read that file for detail.
   or a file you write. Use `.env`, credential files, or ask Leland to type the
   value. If a credential is exposed, tell Leland to rotate it and give a
   runbook.
-- **Cross-model review.** The configured Claude Code PR automation supplies
-  the independent review for requested PRs; wait for its comment after opening.
+- **Cross-model review.** Write with one model family, audit with another. The
+  reviewers for this repo are named in "Scanning & review" below.
   The `gpt-5.6-sol` model is review-only: it runs read-only review commands
   and never anything that can write. Commit everything before a Sol review.
 - **Subagents.** Prefer a specialized agent when one fits. Verify any file a
@@ -216,3 +218,32 @@ These come from `~/.config/agents/AGENTS.md`. Read that file for detail.
 - Assistant panel boundaries: `docs/Agent_Integrations.md`.
 - Python 3.14 migration record: `docs/python-3.14-migration-2026-08-07.md`.
 - Global house rules: `~/.config/agents/AGENTS.md`.
+
+## Scanning & review
+
+Policy lives in `~/.config/agents/AGENTS.md` -> "Dependency, code, and secret
+scanning" and "Model delegation & cross-provider review". It is not restated
+here; read it there. What is specific to this repo:
+
+- CI runs `gitleaks` and `osv-scanner` on every PR, every push to `main`, and
+  weekly (`.github/workflows/security.yml`).
+- Dependabot config is committed, with grouped security PRs (`.github/dependabot.yml`).
+- Dependabot **alerts** are a per-repo GitHub setting; a config file does not
+  turn them on. Without them the config above governs version updates only.
+  Check: `gh api -X GET repos/lelandg/EdgeMesh/vulnerability-alerts` (exit 0 = on,
+  404 = off). Enable: same path with `-X PUT`.
+- PR reviewers: **Codex** (GPT-6 Astra, run locally against the committed branch
+  before opening the PR) and **CodeRabbit** (`coderabbitai[bot]`, re-reviews
+  every push — the one to wait on for the head being merged). A green CodeRabbit
+  check does not mean a review ran: read the check run's output title, where only
+  `Finished` means reviewed. Silence means clean; findings arrive as inline
+  comments. `no-ai-review` at PR creation skips the bots.
+- **GrepTile** (`greptile-apps[bot]`) reviews too, when the org has credits.
+  Two properties differ from CodeRabbit and both bite: it reviews on PR **open
+  only** and does NOT re-review a push, so after adding commits its check goes
+  missing and a fresh review must be triggered; and `Greptile Review: SUCCESS`
+  means the review ran, not that it found nothing — findings arrive as inline
+  comments while the summary stays empty. Each review costs a credit
+  (`.greptile/config.json` pins `effort: base` = 1). Running out of credits does
+  not block a merge. `no-greptile` skips GrepTile alone.
+- The global pre-commit hook runs `gitleaks` and fails closed.
