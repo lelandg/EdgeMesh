@@ -1,0 +1,73 @@
+# Security floors for transitive dependencies. This file installs nothing on its
+# own: it is a pip CONSTRAINTS file, included from each requirements file with
+#     -c requirements-security.txt
+# so a fresh install resolves to patched versions instead of the oldest version
+# that satisfies a loose `>=` floor.
+#
+# Why this exists: osv-scanner (and pip, given `pkg>=X`) resolves to the MINIMUM
+# satisfying version. A repo declaring `streamlit>=1.22.0` and nothing else
+# resolved a transitive `pillow 9.5.0` and reported 84 advisories. Raising the
+# floor is the fix; the advisory count is the acceptance test.
+#
+# Floors are the LOWEST release that clears every advisory affecting the version
+# actually resolved -- not the latest release -- per the house rule that
+# remediation must not smuggle in a feature jump.
+#
+# Pattern and precedent: ImageAI/requirements-security.txt, which has been in
+# production use and keeps that repo at zero open Dependabot alerts.
+#
+# A constraints file CANNOT relax an exact pin. If a repo declares `pillow==X`,
+# edit that pin directly; adding a conflicting constraint makes pip fail.
+
+aiohttp>=3.14.4           # 244 advisory instances; 3.14.3 is one patch short
+anyio>=4.14.2             # via httpx2 / starlette
+certifi>=2026.10.18       # drops a compromised root; critical
+cryptography>=50.0.0
+filelock>=4.2.1           # lock-handling CVEs
+httpcore2>=2.10.0         # httpx 2.x line, republished under pydantic
+httpx2>=2.12.0            # legitimate: same author as httpx, 22 releases
+idna>=3.15
+jinja2>=3.1.6
+nltk>=3.10.4              # 132 instances
+pillow>=13.0.0            # 883 instances across 6 repos -- the single biggest win
+# pyasn1 0.6.5 was published 2026-10-27, i.e. 4 days before this file was
+# written, so it is inside the 7-day minimum-package-age window. It is applied
+# anyway under the remediation-wins precedence: an advisory with an available
+# fix is remediated immediately, "no approval, no age floor, however recently
+# the fix shipped" (~/.config/agents/AGENTS.md). Every other floor here clears
+# 7 days comfortably; the next youngest is nltk at 10 days.
+pyasn1>=0.6.5
+pyjwt>=2.15.0
+python-multipart>=0.0.31
+requests>=2.33.0
+setuptools>=84.1.0
+urllib3>=2.8.0
+virtualenv>=21.14.13        # NOTE: canonical file says 21.14.9; that release is
+                            # itself affected (GHSA-4f8h-vr72-p32c fixed in 21.14.10,
+                            # GHSA-cx6f-vjhg-g3cc a regression IN 21.14.9, fixed in
+                            # 21.14.13). 21.14.13 is the lowest clearing both.
+
+# ---------------------------------------------------------------------------
+# DELIBERATELY NOT CONSTRAINED HERE. Each needs a judgement call and a test
+# pass, so pinning them blind would trade a known advisory for an unknown
+# breakage. Tracked in Plans/2026-10-31-dependency-remediation-plan.md.
+#
+#   starlette      0.49.1 -> 1.3.1 is the lowest clearing release, and that is a
+#                  MAJOR jump (latest is 1.10.0). Needs per-repo testing.
+#   langchain      0.0.344 -> 1.3.9 and langchain-core 0.0.9 -> 1.2.22: a major
+#   langchain-core rewrite, not a bump.
+#   torch          2.9.1 -> 2.13.0 and transformers 5.9.0 -> 5.10.0: ML stacks
+#   transformers   where an upgrade risks model compatibility. Wave 4.
+#   PyPDF2         NO FIX EXISTS. PyPDF2 stopped at 3.0.1 and is deprecated; the
+#                  patched code is in the renamed `pypdf` (6.21.4). This is a
+#                  migration, not a version bump.
+#   ecdsa          NO FIX EXISTS. The Minerva timing attack on P-256
+#                  (PYSEC-2026-1325 / GHSA-wj6h-64fc-37mp) has no fixed release:
+#                  0.19.2 is the latest and is affected. Moved out of the floors
+#                  list here because a floor cannot remediate it, and EdgeMesh has
+#                  no ecdsa in its dependency closure, so the line was pure
+#                  declaration -- it added 2 permanent advisories to the scan and
+#                  protected nothing. Needs a recorded verdict upstream.
+#   python-jose    NO FIX ABOVE CURRENT. 3.5.0 is affected and 3.4.0 (lower) is
+#                  the only release carrying a fix. Needs a recorded verdict or
+#                  a move to another JWT library.
