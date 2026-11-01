@@ -91,7 +91,7 @@ reviews:
   path_instructions:
     - path: "**/*.md"
       instructions: |
-        AGENTS.md, CLAUDE.md, and anything under Docs/, Plans/ or Notes/ are
+        AGENTS.md, CLAUDE.md, and anything under docs/, Plans/ or Notes/ are
         operational rules, not product prose. AI coding agents read and follow
         them, so a wrong rule causes a wrong action.
 
