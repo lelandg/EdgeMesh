@@ -233,21 +233,29 @@ here; read it there. What is specific to this repo:
   security-update PR can ever fire for a pinned action, an
   `applies-to: security-updates` group over github-actions is dead config, and
   the weekly version update is their only automatic remediation -- which is why
-  the github-actions block carries no semver-major ignore. DETECTION comes from
-  osv-scanner's `github/actions` plugin, which is NOT in its default plugin set
-  and so is named explicitly in `security.yml`.
+  the github-actions block carries no semver-major ignore. osv-scanner's
+  `github/actions` plugin (named explicitly in `security.yml`, since it is not
+  in the default set) lists the pinned actions, but OSV matches advisories by
+  version and a SHA is not one, so it is an inventory, not detection.
 - Dependabot **alerts** are a per-repo GitHub setting; a config file does not
   turn them on. Without them the config above governs version updates only.
   Check it by HTTP STATUS, not by exit code -- `gh api` exits 0 on success
   and 1 on any failure, and never exits 404 or 403:
-  `gh api -i -X GET repos/lelandg/EdgeMesh/vulnerability-alerts | head -1`
-  204 = on, 404 = off, 403 = the token has no admin on this repo, which is
-  NOT the same as off. Enable: same path with `-X PUT`.
+  `gh api -i -X GET repos/lelandg/EdgeMesh/vulnerability-alerts`
+  204 = on. A 403 is inconclusive until you read the response: a body that
+  mentions a rate limit, a `retry-after` header, or
+  `x-ratelimit-remaining: 0` means a primary or secondary rate limit (wait,
+  then retry); only a 403 with none of those, from a token whose
+  `.permissions.admin` (below) is not `true`, means the token lacks admin.
+  A 404 means off only when
+  `gh api repos/lelandg/EdgeMesh --jq .permissions.admin`
+  prints `true`; otherwise the token cannot see the setting. Neither of those
+  is the same as off. Enable: same path with `-X PUT`.
 - Alerts and automatic security **updates** are two switches, not one. Alerts
   only report; the half that opens PRs is `automated-security-fixes` (same API
-  shape). It is deliberately OFF here: this repo took its first scan with a
-  pre-existing advisory backlog, and enabling it would open that backlog as
-  PRs at once. Turn it on per repo once the backlog is cleared.
+  shape). It was left OFF while this repo's first-scan advisory backlog was
+  open, because enabling it would have opened that backlog as PRs at once.
+  PR #6 cleared the backlog, so it is due to be switched on.
 - PR reviewers configured for this repo: **Codex** (run locally against the
   committed branch before opening the PR), **CodeRabbit**
   (`coderabbitai[bot]`) and **GrepTile** (`greptile-apps[bot]`, tuned in
