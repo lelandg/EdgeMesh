@@ -119,11 +119,16 @@ reviews:
   path_instructions:
     - path: "**/*.md"
       instructions: |
-        AGENTS.md, CLAUDE.md, and anything under docs/, Plans/ or Notes/ are
+        AGENTS.md, CLAUDE.md, and anything under Plans/ or Notes/ are
         operational rules, not product prose. AI coding agents read and follow
         them, so a wrong rule causes a wrong action.
 
-        Report only:
+        Everything else in Markdown -- docs/ (user and developer documentation,
+        CodeMap.md, CHANGELOG.md) and README files -- gets normal documentation
+        review: also report outdated or wrong facts there. The "Report only"
+        and "Do not report" limits below apply to the operational files only.
+
+        For the operational files, report only:
           - A rule here that contradicts the same rule stated in another file in
             this repo (AGENTS.md vs CLAUDE.md vs a runbook vs a skill body), or
             that contradicts what the repo's own config actually does
