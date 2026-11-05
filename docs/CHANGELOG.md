@@ -2,6 +2,28 @@
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-11-05
+
+### Security
+- Cleared every open advisory in the pinned CPU test closure
+  (`constraints/windows-py312.txt`) and the `depth` extra, each at the lowest
+  clearing release: certifi 2026.10.19, filelock 4.2.1, fsspec 2026.6.0,
+  urllib3 2.8.0, werkzeug 3.1.9, and transformers 4.56.2 -> 5.10.4.
+  Transformers 5 brings huggingface-hub 1.33.0 and a few new transitive
+  packages. Depth Anything V1/V2, Depth Pro and SAM2 point prompts give the
+  same results as before (validation in `docs/Dependency_Validation.md`).
+- Pillow is pinned at 13.0.0, which closes the 20 open Dependabot alerts
+  against the 12.3.0 pin.
+- New `security` workflow: gitleaks, and osv-scanner over every manifest.
+  osv-scanner reads an empty config created outside the checkout and runs
+  with `--no-ignore`, so a pull request cannot silence its own findings.
+- Dependabot, CodeRabbit and Codex review configuration is committed.
+
+### Changed
+- AGENTS.md documents the scanning posture, and how to read the Dependabot
+  alert and security-update API answers. CodeRabbit now reviews `docs/` as
+  normal documentation rather than as agent rules.
+
 ## [0.6.6] - 2026-08-07
 
 ### Changed
