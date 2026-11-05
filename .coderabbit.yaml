@@ -36,6 +36,7 @@ reviews:
   # EMPTY, which reads exactly like a clean review. Empty is `missing`.
   #   SHA=$(gh pr view <PR> --json headRefOid -q .headRefOid)
   #   gh api "repos/OWNER/REPO/commits/$SHA/check-runs" \
+  #     --paginate \
   #     --jq '.check_runs[]|select(.name=="CodeRabbit")|.output.title' \
   #     | grep . || echo "NO CodeRabbit check -- that head is NOT reviewed"
   # This setting narrows the hole; it does not close it.

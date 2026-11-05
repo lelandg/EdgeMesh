@@ -141,7 +141,19 @@ jobs:
           # scanned by nothing: GitHub generates Dependabot alerts only for
           # actions on semantic versions, never for SHA pins. Naming plugins
           # REPLACES the default list, so all four are listed here.
-          osv-scanner scan source --recursive ./ \
+          #
+          # --config points at an empty file OUTSIDE the checkout. Without it,
+          # osv-scanner loads any `osv-scanner.toml` beside a scanned manifest,
+          # so a pull request could add one with `ignore = true` and silence
+          # its own findings.
+          #
+          # --no-ignore: a recursive scan honors .gitignore by default, so a
+          # pull request could also hide a manifest by adding it to .gitignore.
+          # The CI checkout has no installed dependency directories, so this
+          # adds nothing extra to scan.
+          : > "$RUNNER_TEMP/osv-scanner.toml"
+          osv-scanner scan source --recursive ./ --no-ignore \
+            --config "$RUNNER_TEMP/osv-scanner.toml" \
             --x-plugins lockfile --x-plugins sbom --x-plugins directory \
             --x-plugins github/actions || rc=$?
           case "$rc" in
