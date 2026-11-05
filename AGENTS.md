@@ -254,9 +254,10 @@ here; read it there. What is specific to this repo:
 - Alerts and automatic security **updates** are two switches, not one. Alerts
   only report; the half that opens PRs is `automated-security-fixes`. Its
   API answers differently: `gh api repos/lelandg/EdgeMesh/automated-security-fixes`
-  returns 200 with `{"enabled": ..., "paused": ...}`, and updates are
-  active only when `enabled` is true and `paused` is false (enable with
-  `-X PUT`). It was left OFF while this repo's first-scan advisory backlog was
+  returns 200 with `{"enabled": ..., "paused": ...}` (updates are on only
+  when `enabled` is true and `paused` is false), or 404 when they are
+  off. A 404 is also what a token without admin sees, so read it as off
+  only when `.permissions.admin` (above) is `true`. Enable with `-X PUT`. It was left OFF while this repo's first-scan advisory backlog was
   open, because enabling it would have opened that backlog as PRs at once.
   PR #6 cleared the backlog, so it is due to be switched on.
 - PR reviewers configured for this repo: **Codex** (run locally against the
