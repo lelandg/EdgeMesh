@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools==84.1.0"]
+requires = ["setuptools==84.2.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -12,26 +12,26 @@ license = "0BSD AND CC0-1.0"
 license-files = ["LICENSE", "MeshTools/LICENSE"]
 authors = [{name = "Leland Green"}]
 dependencies = [
-    "PySide6==6.11.2",
-    "numpy==2.2.6",
-    "opencv-python==4.12.0.88",
+    "PySide6==6.12.0",
+    "numpy==2.5.4",
+    "opencv-python==4.14.0.94",
     "pillow==13.0.0",
-    "scipy==1.16.2",
-    "scikit-learn==1.7.2",
-    "shapely==2.1.2",
-    "matplotlib==3.10.6",
-    "open3d==0.19.0",
-    "trimesh==4.8.3",
-    "pyvista==0.46.3",
-    "vtk==9.5.2",
+    "scipy==1.18.1",
+    "scikit-learn==1.9.1",
+    "shapely==2.2.0",
+    "matplotlib==3.11.2",
+    "open3d==0.20.0",
+    "trimesh==4.12.2",
+    "pyvista==0.49.2",
+    "vtk==9.7.1",
     "keyboard==0.13.5",
     "PyGetWindow==0.0.9; sys_platform == 'win32'",
 ]
 
 [project.optional-dependencies]
-depth = ["torch==2.13.0", "torchvision==0.28.0", "transformers==5.10.4"]
-assistants = ["google-antigravity==0.1.16"]
-spacemouse = ["pygame-ce==2.5.8", "hidapi==0.14.0.post4"]
+depth = ["torch==2.15.0", "torchvision==0.29.2", "transformers==5.22.0"]
+assistants = ["google-antigravity==0.1.23"]
+spacemouse = ["pygame-ce==2.5.8", "hidapi==0.15.0"]
 
 [project.scripts]
 edgemesh = "edgemesh_bootstrap.cli:main"
