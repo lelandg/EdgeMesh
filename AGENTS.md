@@ -252,8 +252,11 @@ here; read it there. What is specific to this repo:
   prints `true`; otherwise the token cannot see the setting. Neither of those
   is the same as off. Enable: same path with `-X PUT`.
 - Alerts and automatic security **updates** are two switches, not one. Alerts
-  only report; the half that opens PRs is `automated-security-fixes` (same API
-  shape). It was left OFF while this repo's first-scan advisory backlog was
+  only report; the half that opens PRs is `automated-security-fixes`. Its
+  API answers differently: `gh api repos/lelandg/EdgeMesh/automated-security-fixes`
+  returns 200 with `{"enabled": ..., "paused": ...}`, and updates are
+  active only when `enabled` is true and `paused` is false (enable with
+  `-X PUT`). It was left OFF while this repo's first-scan advisory backlog was
   open, because enabling it would have opened that backlog as PRs at once.
   PR #6 cleared the backlog, so it is due to be switched on.
 - PR reviewers configured for this repo: **Codex** (run locally against the
