@@ -10,12 +10,20 @@
   clearing release: certifi 2026.10.19, filelock 4.2.1, fsspec 2026.6.0,
   urllib3 2.8.0, werkzeug 3.1.9, and transformers 4.56.2 -> 5.10.4.
   Transformers 5 brings huggingface-hub 1.33.0 and a few new transitive
-  packages. Depth Anything V1/V2, Depth Pro and SAM2 point prompts give the
-  same results as before (validation in `docs/Dependency_Validation.md`).
+  packages. In an offline check through the repo's own loaders, Depth
+  Anything V1/V2 and Depth Pro give the same depth as before (correlation
+  >= 0.999998), and SAM2 gives the same mask for point prompts passed as
+  lists. Two limits: a box-only SAM2 prompt now returns a different mask
+  (IoU 0.19 against the old one), and GUI point prompts, which pass points
+  as tuples, already failed on both versions (a known bug, not fixed here).
+  Details in `docs/Dependency_Validation.md`.
 - Pillow is pinned at 13.0.0, which closes the 20 open Dependabot alerts
   against the 12.3.0 pin.
-- New `security` workflow: gitleaks, and osv-scanner over every manifest.
-  osv-scanner reads an empty config created outside the checkout and runs
+- New `security` workflow: gitleaks, and osv-scanner over the requirements
+  files and the pinned CPU closure. osv-scanner 2.7.0 does not read
+  `pyproject.toml`, so the pins only declared there (the `assistants` extra)
+  are covered by Dependabot alerts, not by this check. osv-scanner reads an
+  empty config created outside the checkout and runs
   with `--no-ignore`, so a pull request cannot silence its own findings.
 - Dependabot, CodeRabbit and Codex review configuration is committed.
 
@@ -23,81 +31,6 @@
 - AGENTS.md documents the scanning posture, and how to read the Dependabot
   alert and security-update API answers. CodeRabbit now reviews `docs/` as
   normal documentation rather than as agent rules.
-
-## [0.6.6] - 2026-08-07
-
-### Changed
-- Adopt version-manager conventions
-- Normalize line endings across tree; ignore .venv_linux; add 3D face reconstruction PRD
-- Add even-minor Python rule to AGENTS.md and WSL Python 3.14 runbook
-- Unify agent instructions: AGENTS.md canonical, CLAUDE.md/GEMINI.md thin pointers
-- Add project documentation, license, and architecture map
-- Update MeshTools submodule and relax open3d version
-- v0.6.6
-- Update .gitignore
-- Misc. file updates.
-- Reorganize UI. Fix depth map creation when dropping percentage.
-- Update ReadMe, requirements.txt and one change to "Reset Defaults".
-- v0.6.6
-- v0.6.5 Fixed image resizing issue.
-- v0.6.3 Now creates mesh in proportion with original image.
-- v0.6.2 Fixed: background removal is only done from the edges. Even when you use a large tolerance! Finally! :)
-- Now saves the currently selected color (for background removal), if any.
-- v0.6.1 Major upgrade to PyQt6.
-- Update .gitignore
-- Update .gitignore
-- v0.5.18 Depth Pro is working.
-- v0.5.17 SpaceMouse support!
-- v0.5.16 Fix Generate Mesh button and more.
-- v0.5.15 adds Blend Amount slider to blend between original and processed images.
-- v0.5.14
-- Update .gitignore
-- Merge branch 'main' of https://github.com/lelandg/EdgeMesh
-- Delete .idea directory
-- v0.5.13
-- v0.5.12 Additions & fixes
-- v0.5.11 Fixed flat back mesh.
-- v0.5.10 Pick background color, UI improvements.
-- Update .gitignore
-- v0.5.9 UI improvements
-- v0.5.7 rotate with arrow keys. New
-- v0.5.6 bug fix
-- v0.5.5
-- v0.5.4 Add 'Depth' toggle.
-- v0.5.3 adds rainbow mesh coloring based on depth.
-- v0.5.2 Enhancements for measurement grid.
-- v0.5.1 Enhancement
-- v0.5.0 = half way there? :-)
-- v0.4.3 UI improvements.
-- Merge branch 'main' of https://github.com/lelandg/EdgeMesh
-- v0.4.2 fix
-- Delete config.ini
-- Update config.ini
-- Update .gitignore
-- Updated viewport_3d so it will show the newest 3D model in a directory when given the directory on the command line.
-- Update .gitignore
-- Just tweaking output file name.
-- v0.4.1 Improvements and fixes.
-- Update .gitignore
-- v0.4.1 Bug fix.
-- v0.4.0 Working great so far!
-- Add log_utils.py.
-- v0.3.7
-- Updated spinner.py to limit number of updates.
-- v0.3.7 Resize images on app startup to fit the GUI.
-- v0.3.6 Adds mirrored back mesh.
-- v0.3.6
-- Added JetBrains .idea files.
-- Add build.bat. Not sure this is what I'll settle on, because it takes a while to run.
-- v0.3.5 adds several options for mesh generation
-- v0.3.4 fixes color issues in generated mesh.
-- v0.3.4 use background color in 3D viewport.
-- v0.3.3 Adds automatic background removal.
-- Update README.md
-- Update README.md
-- Update README.md
-- Add files via upload. Initial commit.
-- Initial commit
 
 ## [1.1.1] - 2026-09-13
 
