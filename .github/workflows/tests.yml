@@ -34,7 +34,7 @@ jobs:
       - name: Create an isolated test environment
         run: python -m venv "$env:GITHUB_WORKSPACE/.venv-ci"
       - name: Install pinned packaging tools
-        run: '& "$env:GITHUB_WORKSPACE/.venv-ci/Scripts/python.exe" -m pip install --no-deps --only-binary=:all: pip==25.0.1 setuptools==83.0.0'
+        run: '& "$env:GITHUB_WORKSPACE/.venv-ci/Scripts/python.exe" -m pip install --no-deps --only-binary=:all: pip==25.0.1 setuptools==84.1.0'
       - name: Install complete pinned CPU dependency closure
         run: '& "$env:GITHUB_WORKSPACE/.venv-ci/Scripts/python.exe" -m pip install --no-deps --no-build-isolation -r "$env:GITHUB_WORKSPACE/requirements-cpu-test.txt"'
       # The installed wheel supplies metadata; ordinary tests import the checkout.

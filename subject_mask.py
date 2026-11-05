@@ -243,7 +243,8 @@ def infer_subject_mask(
     with torch.inference_mode():
         outputs = model(**inputs, multimask_output=False)
     check()
-    # Installed transformers 4.56 SAM2 takes original_sizes, not SAM1's resized size.
+    # SAM2 post-processing takes original_sizes, not SAM1's resized size
+    # (checked with transformers 4.56.2 and 5.10.4).
     masks = processor.post_process_masks(
         outputs.pred_masks.detach().cpu(), original_sizes
     )[0]

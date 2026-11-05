@@ -10,7 +10,9 @@ file adds only the Claude Code mechanisms that implement those conventions.
 - **Code map refresh:** the `update-code-map` skill.
 - **Code review:** the `code-reviewer` agent for the structured review; then
   `/codex:review --base origin/main` for the independent second-family pass
-  (Sol, read-only, committed work only).
+  (read-only, committed work only). That command inherits the model in
+  `~/.codex/config.toml`, which is GPT-6 Astra; Sol is review-only and is
+  reachable only by editing that file.
 - **Dependency audit:** the `scan-source` skill. It does not skip `.venv`
   directories, so pass a narrow path.
 - **Options for Leland:** the `AskUserQuestion` tool.

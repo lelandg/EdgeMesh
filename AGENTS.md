@@ -44,8 +44,11 @@ Two runtimes share this checkout. Use the one native to your shell.
 | WSL (bash) | `python3` in `.venv_linux` | 3.14.7 | Experimental source runs only. Not a packaging target. |
 
 - The packaged release requires CPython 3.12 (`requires-python = ">=3.12,<3.13"`).
-  Open3D 0.19.0 has no 3.13/3.14 wheels. Keep even-numbered minor versions of
-  Python and Node. Say so if a dependency forces an odd version.
+  Open3D 0.19.0 has no 3.13/3.14 wheels. Pick a runtime version by the rule in
+  `~/.config/agents/AGENTS.md` -> "Environment": the longest remaining
+  security-support window the dependencies allow, never an even/odd heuristic.
+  Say so when a dependency holds this project on an older line, and name that
+  line's EOL date.
 - Never use `cd`. Use absolute paths (`git -C <abs-path> ...`). WSL path
   `/mnt/d/Documents/Code/GitHub/EdgeMesh` is `D:\Documents\Code\GitHub\EdgeMesh`
   on Windows.
@@ -169,13 +172,12 @@ The first command is a dry run. Curate the generated notes into prose in
 - Commit, push, or open a PR only when Leland asks. Commit subjects are
   imperative; releases and breaking changes use Conventional Commits prefixes
   (`feat!:`, `chore(release):`, `docs(agents):`).
-- Requested PRs use the configured Claude Code automation. Sequence:
-  implement → local checks green → commit → version bump → push → PR → wait
-  for the automated review comment (normally 2-5 minutes). A request to open a
-  PR authorizes this review; do not require a separate local Claude CLI review
-  or another confirmation. Inspect comments, reviews and checks, address
-  validated findings, and push tested corrections. Report a missing review as
-  pending. Merge only when asked. Any additional local review runs before push.
+- Requested PRs use the reviewers named in "Scanning & review" below.
+  Sequence: implement → local checks green → commit → Codex review → version
+  bump → push → PR → wait for the automated review (normally 2-5 minutes). A
+  request to open a PR authorizes that review. Inspect comments, reviews and
+  checks, address validated findings, and push tested corrections. Report a
+  missing review as pending. Merge only when asked.
 - Before pushing, check `git log --oneline origin/main..HEAD` for commits that
   are not yours. Rebase them out rather than publish them.
 - Typecheck and lint touched files before every commit. Never commit on a
@@ -191,8 +193,8 @@ These come from `~/.config/agents/AGENTS.md`. Read that file for detail.
   or a file you write. Use `.env`, credential files, or ask Leland to type the
   value. If a credential is exposed, tell Leland to rotate it and give a
   runbook.
-- **Cross-model review.** The configured Claude Code PR automation supplies
-  the independent review for requested PRs; wait for its comment after opening.
+- **Cross-model review.** Write with one model family, audit with another. The
+  reviewers for this repo are named in "Scanning & review" below.
   The `gpt-5.6-sol` model is review-only: it runs read-only review commands
   and never anything that can write. Commit everything before a Sol review.
 - **Subagents.** Prefer a specialized agent when one fits. Verify any file a
@@ -216,3 +218,52 @@ These come from `~/.config/agents/AGENTS.md`. Read that file for detail.
 - Assistant panel boundaries: `docs/Agent_Integrations.md`.
 - Python 3.14 migration record: `docs/python-3.14-migration-2026-08-07.md`.
 - Global house rules: `~/.config/agents/AGENTS.md`.
+
+## Scanning & review
+
+Policy lives in `~/.config/agents/AGENTS.md` -> "Dependency, code, and secret
+scanning" and "Model delegation & cross-provider review". It is not restated
+here; read it there. What is specific to this repo:
+
+- CI runs `gitleaks` and `osv-scanner` on every PR, every push to `main`, and
+  weekly (`.github/workflows/security.yml`).
+- Dependabot config is committed, with grouped security PRs (`.github/dependabot.yml`).
+- SHA-pinned actions get **no Dependabot alerts**: GitHub generates them only
+  for actions on semantic versions (docs: "About Dependabot alerts"). So no
+  security-update PR can ever fire for a pinned action, an
+  `applies-to: security-updates` group over github-actions is dead config, and
+  the weekly version update is their only automatic remediation -- which is why
+  the github-actions block carries no semver-major ignore. osv-scanner's
+  `github/actions` plugin (named explicitly in `security.yml`, since it is not
+  in the default set) lists the pinned actions, but OSV matches advisories by
+  version and a SHA is not one, so it is an inventory, not detection.
+- Dependabot **alerts** are a per-repo GitHub setting; a config file does not
+  turn them on. Without them the config above governs version updates only.
+  Check it by HTTP STATUS, not by exit code -- `gh api` exits 0 on success
+  and 1 on any failure, and never exits 404 or 403:
+  `gh api -i -X GET repos/lelandg/EdgeMesh/vulnerability-alerts`
+  204 = on. A 403 is inconclusive until you read the response: a body that
+  mentions a rate limit, a `retry-after` header, or
+  `x-ratelimit-remaining: 0` means a primary or secondary rate limit (wait,
+  then retry); only a 403 with none of those, from a token whose
+  `.permissions.admin` (below) is not `true`, means the token lacks admin.
+  A 404 means off only when
+  `gh api repos/lelandg/EdgeMesh --jq .permissions.admin`
+  prints `true`; otherwise the token cannot see the setting. Neither of those
+  is the same as off. Enable: same path with `-X PUT`.
+- Alerts and automatic security **updates** are two switches, not one. Alerts
+  only report; the half that opens PRs is `automated-security-fixes`. Its
+  API answers differently: `gh api repos/lelandg/EdgeMesh/automated-security-fixes`
+  returns 200 with `{"enabled": ..., "paused": ...}` (updates are on only
+  when `enabled` is true and `paused` is false), or 404 when they are
+  off. A 404 is also what a token without admin sees, so read it as off
+  only when `.permissions.admin` (above) is `true`. Enable with `-X PUT`. It was left OFF while this repo's first-scan advisory backlog was
+  open, because enabling it would have opened that backlog as PRs at once.
+  PR #6 cleared the backlog, so it is due to be switched on.
+- PR reviewers configured for this repo: **Codex** (run locally against the
+  committed branch before opening the PR), **CodeRabbit**
+  (`coderabbitai[bot]`) and **GrepTile** (`greptile-apps[bot]`, tuned in
+  `.greptile/config.json`). How to read their checks -- which one re-reviews
+  a push, why a green check does not mean "no findings", and which label
+  skips which bot -- is in the global policy cited above and is deliberately
+  not repeated here.

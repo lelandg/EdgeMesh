@@ -2,6 +2,36 @@
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-11-05
+
+### Security
+- Cleared every open advisory in the pinned CPU test closure
+  (`constraints/windows-py312.txt`) and the `depth` extra, each at the lowest
+  clearing release: certifi 2026.10.19, filelock 4.2.1, fsspec 2026.6.0,
+  urllib3 2.8.0, werkzeug 3.1.9, and transformers 4.56.2 -> 5.10.4.
+  Transformers 5 brings huggingface-hub 1.33.0 and a few new transitive
+  packages. In an offline check through the repo's own loaders, Depth
+  Anything V1/V2 and Depth Pro give the same depth as before (correlation
+  >= 0.999998), and SAM2 gives the same mask for point prompts passed as
+  lists. Two limits: a box-only SAM2 prompt now returns a different mask
+  (IoU 0.19 against the old one), and GUI point prompts, which pass points
+  as tuples, already failed on both versions (a known bug, not fixed here).
+  Details in `docs/Dependency_Validation.md`.
+- Pillow is pinned at 13.0.0, which closes the 20 open Dependabot alerts
+  against the 12.3.0 pin.
+- New `security` workflow: gitleaks, and osv-scanner over the requirements
+  files and the pinned CPU closure. osv-scanner 2.7.0 does not read
+  `pyproject.toml`, so the pins only declared there (the `assistants` extra)
+  are covered by Dependabot alerts, not by this check. osv-scanner reads an
+  empty config created outside the checkout and runs
+  with `--no-ignore`, so a pull request cannot silence its own findings.
+- Dependabot, CodeRabbit and Codex review configuration is committed.
+
+### Changed
+- AGENTS.md documents the scanning posture, and how to read the Dependabot
+  alert and security-update API answers. CodeRabbit now reviews `docs/` as
+  normal documentation rather than as agent rules.
+
 ## [1.1.1] - 2026-09-13
 
 Fix clean Windows CI installations by including the missing mesh dependencies and their transitive requirements. Validate the installed application requirements before testing, and report import and test failures before later native failures can hide their tracebacks. Add a regression check for application and depth dependencies in the CPU profile. Normalize temporary test roots so Windows short-name aliases do not cause false folder-persistence failures. Initialize the existing Windows runtime guard in each test process before discovery.

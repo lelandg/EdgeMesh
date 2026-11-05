@@ -1,5 +1,50 @@
 # Dependency validation boundaries
 
+## Security remediation — 2026-11-05
+
+osv-scanner flagged six packages in the CPU profile. Each moved to the lowest
+release that clears every advisory against it: certifi 2026.10.19 (drops the
+compromised emSign ECC Root CA - G3 and keeps the unaffected emSign roots that
+2026.10.18 removed by mistake), filelock 4.2.1, fsspec 2026.6.0, urllib3
+2.8.0, werkzeug 3.1.9 and transformers 5.10.4. Transformers 5.10.0 is the
+first release that clears PYSEC-2026-3929, but PyPI yanked it, so the pin is
+5.10.4, the last patch of that minor. The other transformers advisories have
+`last_affected` bounds at or below 5.8.1, so 5.10.4 clears them too.
+
+Transformers 5.x needs huggingface-hub 1.x and regex 2025.10.22 or later.
+uv re-resolved the closure for Windows CPython 3.12. It held every unaffected
+pin and used a seven-day age cutoff. huggingface-hub moved to 1.33.0, the last
+1.x release, and regex moved to 2026.9.29. The new packages are annotated-doc,
+anyio, h11, hf-xet, httpcore, httpx, markdown-it-py, mdurl, rich, shellingham
+and typer. The profile now has 106 exact pins. The `depth` extra in
+`pyproject.toml` pins transformers 5.10.4.
+
+A fresh CPython 3.12.10 environment was built with the CI install commands.
+`pip check` and the import check passed. All 357 EdgeMesh tests passed (two
+opt-in native GUI tests were skipped), and so did all 11 MeshTools tests.
+
+Cached real checkpoints were also loaded offline through `ModelStore`,
+`DepthTo3D` and `infer_subject_mask`, once with transformers 4.56.2 and once
+with 5.10.4, on `Images/example.png` at 256x256:
+
+| Model | Result on 5.10.4 | Change from 4.56.2 (0-255 depth scale) |
+|---|---|---|
+| Depth Anything V1 | loads and infers | max 0.49, mean 0.02, correlation 1.000000 |
+| Depth Anything V2 | loads and infers | max 0.87, mean 0.07, correlation 1.000000 |
+| Depth Pro | loads and infers | max 0.54, mean 0.13, correlation 0.999998 |
+| SAM2.1 tiny, point prompt | loads and infers | identical mask (IoU 1.0) |
+| SAM2.1 tiny, box only | loads and infers | different but plausible mask inside the box (IoU 0.19) |
+
+A box over a cluttered scene is ambiguous, and SAM2 returns a single mask. The
+5.x image preprocessing changes which segment it picks. Both versions keep the
+mask inside the box: 98.4% of the 4.56.2 mask and 99.9% of the 5.10.4 mask.
+
+Both versions show one pre-existing bug. `infer_subject_mask` fails when
+points arrive as tuples, which is how `MaskCanvas` stores them:
+`[[list(points)]]` leaves the inner `(x, y)` tuples, and the SAM2 processor
+requires four list levels. Points passed as lists work. This is not caused by
+the upgrade and still needs its own fix.
+
 ## Clean Windows CI validation — 2026-09-13
 
 The CPU profile now contains 95 exact pins. It includes the application roots
