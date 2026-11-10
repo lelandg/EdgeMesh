@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [1.1.3] - 2026-11-09
+
+### Added
+- `SECURITY.md`: how to report a vulnerability privately.
+- `CONTRIBUTING.md`: how to report a bug and open a pull request.
+
+### Changed
+- The README License section now states the license in `LICENSE` (0BSD). It said "proprietary" before.
+- CI actions: `actions/checkout` 4.2.2 to 7.0.1 (#7) and `actions/setup-python` 5.6.0 to 7.1.0 (#8).
+
 ## [1.1.2] - 2026-11-05
 
 ### Security
