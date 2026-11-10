@@ -302,7 +302,7 @@ Perfect for creating unique images to convert into 3D meshes! 🚀
 
 ## 📄 License
 
-This project is proprietary software. Please see the [LICENSE](LICENSE) file for details.
+EdgeMesh is released under the Zero-Clause BSD license (0BSD). See the [LICENSE](LICENSE) file for details.
 
 ---
 
