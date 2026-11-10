@@ -302,7 +302,7 @@ Perfect for creating unique images to convert into 3D meshes! 🚀
 
 ## 📄 License
 
-EdgeMesh is released under the Zero-Clause BSD license (0BSD). See the [LICENSE](LICENSE) file for details.
+EdgeMesh is released under the Zero-Clause BSD license (0BSD). See the [LICENSE](LICENSE) file for details. The bundled `MeshTools` submodule has its own license, CC0-1.0 ([MeshTools/LICENSE](https://github.com/lelandg/MeshTools/blob/main/LICENSE)).
 
 ---
 
