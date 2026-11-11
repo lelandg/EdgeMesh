@@ -235,11 +235,25 @@ jobs:
           # --no-ignore: a pull request can add .gitignore rules that hide
           # tracked manifests or workflows from a recursive scan.
           # -L adds the pyproject.toml dependencies listed by the step above.
+          #
+          # EdgeMesh only, a deliberate divergence from secure-repo-template:
+          # --no-resolve. requirements-cpu-test.txt -> constraints/windows-py312.txt
+          # is the complete pinned closure CI installs (`--no-deps`), so it
+          # is scanned at its exact versions. Transitive resolution added
+          # nothing true here: osv-scanner 2.7.0's resolver (a) fails on the
+          # closure (`pywin32 311.0.0 not found`, a scanner error) and (b)
+          # resolves the pyproject extras to stale versions pip never picks
+          # (certifi 2026.7.22, httpx2/httpcore2 2.9.1, python-multipart
+          # 0.0.9; `uv pip compile` picks fixed releases of all four).
+          # Cost: transitive deps of the optional extras (`depth`,
+          # `assistants`) outside the closure are not scanned; their direct
+          # pins still are. Revisit by 2026-12-11, or once the resolver
+          # handles pywin32, and drop this flag if it does.
           extra=()
           if [ -s "$RUNNER_TEMP/pyproject-requirements.txt" ]; then
             extra=(-L "requirements.txt:$RUNNER_TEMP/pyproject-requirements.txt")
           fi
-          osv-scanner scan source --recursive --no-ignore \
+          osv-scanner scan source --recursive --no-ignore --no-resolve \
             --config "$RUNNER_TEMP/osv-scanner-trusted.toml" ./ \
             "${extra[@]}" \
             --x-plugins lockfile --x-plugins sbom --x-plugins directory \
