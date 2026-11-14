@@ -30,7 +30,7 @@ dependencies = [
 
 [project.optional-dependencies]
 depth = ["torch==2.15.0", "torchvision==0.29.2", "transformers==5.22.1"]
-assistants = ["google-antigravity==0.1.23"]
+assistants = ["google-antigravity==0.1.16"]
 spacemouse = ["pygame-ce==2.5.8", "hidapi==0.15.0"]
 
 [project.scripts]
