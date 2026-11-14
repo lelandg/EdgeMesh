@@ -9,7 +9,7 @@ scikit-learn
 opencv-python
 numpy
 matplotlib
-PySide6==6.12.0
+PySide6==6.11.2
 transformers
 pillow
 scipy

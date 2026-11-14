@@ -12,7 +12,7 @@ license = "0BSD AND CC0-1.0"
 license-files = ["LICENSE", "MeshTools/LICENSE"]
 authors = [{name = "Leland Green"}]
 dependencies = [
-    "PySide6==6.12.0",
+    "PySide6==6.11.2",
     "numpy==2.5.4",
     "opencv-python==4.14.0.94",
     "pillow==13.0.0",
