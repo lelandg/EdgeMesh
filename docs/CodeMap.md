@@ -277,7 +277,7 @@ timed-out WMI query. It also defines `initialize_opencv_runtime`,
 called by the main window before image loading or background work. It probes
 OpenCV's native parallel scheduler and logs a single-thread fallback if that
 scheduler cannot initialize; healthy runtimes retain their thread settings.
-The package and Windows constraints pin PySide6 6.11.2. Cold subprocess
+The package and Windows constraints pin PySide6 6.12.0. Cold subprocess
 coverage lives in `tests/test_platform_startup.py`; `tests/test_native_startup.py`
 opts into a real Windows event loop with `EDGEMESH_TEST_NATIVE_GUI=1`.
 [_build_support.py](../_build_support.py) defines `application_modules` and
