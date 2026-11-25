@@ -1,10 +1,11 @@
 # AGENTS.md — EdgeMesh
 
 Canonical instructions for every AI coding agent in this repo: Claude Code,
-Codex, Copilot, Gemini, Antigravity (`agy`), and Pi. `CLAUDE.md` imports this
-file and `GEMINI.md` points at it; each adds only tool-specific notes. Codex,
-Copilot, Pi, and `agy` read this file directly. Copilot also reads `CLAUDE.md`
-and `GEMINI.md`, so a rule every agent needs belongs here.
+Codex, Copilot, Gemini, Antigravity (`agy`), and Pi. `CLAUDE.md` and
+`GEMINI.md` import this file (Gemini CLI reaches it only through that import)
+and add only tool-specific notes. Codex, Copilot, Pi, and `agy` read this file
+directly. Copilot also reads `CLAUDE.md` and `GEMINI.md`, so a rule every
+agent needs belongs here.
 
 Leland's global house rules also apply: `~/.config/agents/AGENTS.md`. Every
 CLI's home config carries a copy of that file. Read it when a rule below
@@ -236,8 +237,10 @@ there. What is specific to this repo:
   `.coderabbit.yaml`) reviews on open and re-reviews every push. **GrepTile**
   (`greptile-apps[bot]`, tuned in `.greptile/config.json`) reviews on open
   only, so a later push is not reviewed by it. Neither bot reviews a draft or
-  a Dependabot PR. The `no-ai-review` label skips both bots and `no-greptile`
-  skips GrepTile alone; the label must be on the PR when it opens. A green
+  a Dependabot PR automatically; a `@coderabbitai full review` comment still
+  makes CodeRabbit review one, so read its comments when that was posted. The
+  `no-ai-review` label skips both bots and `no-greptile` skips GrepTile alone;
+  the label must be on the PR when it opens. A green
   bot check does not mean "no findings": read the inline comments. How to
   read each check: `~/.claude/instructions/pr-review-automation.md` and the
   comments in `.coderabbit.yaml`. The list is additive, not closed: nothing
