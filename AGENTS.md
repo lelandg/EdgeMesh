@@ -148,10 +148,13 @@ python3 ~/.claude/skills/land-pr/pr_tool.py land lelandg/EdgeMesh#N --apply
 
 Use `python` on Windows. Without `--apply` the command is a dry run. Put a
 `## Release notes` section in the PR body, with `Release: major|minor|patch|none`
-and user-facing bullets. A small push straight to `main` has no lander. Bump
-and add the changelog entry in the same commit, with the tool directly:
+and user-facing bullets. A small push straight to `main` has no lander. When
+it changes what the product ships, commit the change first, then run the tool
+directly:
 `python3 ~/.claude/skills/version-manager/version_tool.py --repo <abs-repo-path> release patch`
-(dry run; add `--notes FILE --apply` to write). Rules:
+That is a dry run. Add `--notes FILE --apply` to write, with `FILE` outside
+the repo: the tool refuses a dirty tree and makes its own
+`chore(release): vX.Y.Z` commit. A docs-only push needs no bump. Rules:
 `~/.claude/instructions/landing-and-versioning.md`.
 
 ## Git workflow
