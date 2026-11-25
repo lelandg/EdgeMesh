@@ -1,7 +1,5 @@
-@AGENTS.md
+# GEMINI.md — Gemini CLI and agy specifics
 
-# GEMINI.md — Gemini CLI specifics
-
-The line above imports `AGENTS.md`, the canonical guide for every agent.
+All rules for this repository are in AGENTS.md, which agy loads directly.
 EdgeMesh: PySide6 desktop app that turns images into depth reliefs and meshes.
 Nothing Gemini-specific yet.
