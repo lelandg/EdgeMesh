@@ -240,7 +240,8 @@ there. What is specific to this repo:
   a Dependabot PR automatically; a `@coderabbitai full review` comment still
   makes CodeRabbit review one, so read its comments when that was posted. The
   `no-ai-review` label skips both bots and `no-greptile` skips GrepTile alone;
-  the label must be on the PR when it opens. A green
+  a label must be on the PR when the review it skips would fire: at open for
+  GrepTile, and before the open or push in question for CodeRabbit. A green
   bot check does not mean "no findings": read the inline comments. How to
   read each check: `~/.claude/instructions/pr-review-automation.md` and the
   comments in `.coderabbit.yaml`. The list is additive, not closed: nothing
