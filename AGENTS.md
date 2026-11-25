@@ -139,7 +139,8 @@ Two runtimes share this checkout. Use the one native to your shell.
 
 The `version-manager` tool owns `version.py` and every heading in
 `docs/CHANGELOG.md`. Never hand-edit either. The lander runs that tool at
-merge time, so a PR carries no version bump and no changelog entry:
+merge time, so a PR carries no version bump and no changelog entry. When
+Leland asks for the merge (see "Git workflow"), land the PR with:
 
 ```bash
 python3 ~/.claude/skills/land-pr/pr_tool.py land lelandg/EdgeMesh#N --apply
@@ -147,8 +148,9 @@ python3 ~/.claude/skills/land-pr/pr_tool.py land lelandg/EdgeMesh#N --apply
 
 Use `python` on Windows. Without `--apply` the command is a dry run. Put a
 `## Release notes` section in the PR body, with `Release: major|minor|patch|none`
-and user-facing bullets. A release outside a PR runs the tool directly:
-`python3 ~/.claude/skills/version-manager/version_tool.py --repo <abs-repo-path> release <level>`
+and user-facing bullets. A small push straight to `main` has no lander. Bump
+and add the changelog entry in the same commit, with the tool directly:
+`python3 ~/.claude/skills/version-manager/version_tool.py --repo <abs-repo-path> release patch`
 (dry run; add `--notes FILE --apply` to write). Rules:
 `~/.claude/instructions/landing-and-versioning.md`.
 
@@ -165,9 +167,14 @@ and user-facing bullets. A release outside a PR runs the tool directly:
 - Requested PRs get the review council and the automated reviewers named in
   "Scanning & review" below. Sequence: implement → local checks green →
   commit → council review → push → PR → wait for the automated review
-  (normally 2-5 minutes). A request to open a PR authorizes those reviews. Inspect comments, reviews and
-  checks, address validated findings, and push tested corrections. Report a
-  missing review as pending. Merge only when asked.
+  (normally 2-5 minutes). A request to open a PR authorizes those reviews.
+  Inspect comments, reviews and checks, address validated findings, and push
+  tested corrections. Report a missing review as pending. Merge only when
+  asked.
+- The three rules above (direct-to-`main` scope; commit, push and PR on
+  request; merge on request) differ from the global "Branching & working-tree
+  hygiene" rule 4 and "Shipping autonomy". This file applies in this repo
+  until Leland changes it. Do not merge or land a PR here without his request.
 - Before pushing, check `git log --oneline origin/main..HEAD` for commits that
   are not yours. Rebase them out rather than publish them.
 - Typecheck and lint touched files before every commit. Never commit on a
